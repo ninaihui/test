@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>球队管理 - 业余球队管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .gradient-bg {
+            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <!-- 导航栏 -->
+    <nav class="glass border-b border-white/20">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-8">
+                    <a href="/dashboard.html" class="text-white text-xl font-bold">球队管理系统</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/dashboard.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">仪表板</a>
+                        <a href="/teams.html" class="text-white/90 hover:text-white px-3 py-2 rounded-lg bg-white/10">球队管理</a>
+                        <a href="/activities.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">活动管理</a>
+                        <a href="/attendance.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">出勤管理</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userName" class="text-white/90"></span>
+                    <button onclick="showBackgroundSettings()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition" title="背景设置">
+                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </button>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">退出登录</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-4xl font-bold text-white mb-2">球队管理</h1>
+                <p class="text-white/80">管理您的球队信息</p>
+            </div>
+            <button onclick="showCreateTeamModal()" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition">
+                + 创建球队
+            </button>
+        </div>
+
+        <!-- 球队列表 -->
+        <div class="glass rounded-xl p-6">
+            <div id="teamsList" class="space-y-4">
+                <div class="text-center py-12 text-white/70">
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建/编辑球队模态框 -->
+    <div id="teamModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass rounded-2xl p-8 max-w-md w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-white" id="modalTitle">创建球队</h3>
+                <button onclick="closeTeamModal()" class="text-white/70 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="teamForm" class="space-y-4">
+                <div>
+                    <label class="block text-white/80 mb-2">球队名称</label>
+                    <input type="text" id="teamName" required 
+                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-white/80 mb-2">球队描述</label>
+                    <textarea id="teamDescription" rows="3"
+                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div id="teamError" class="hidden bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm mb-4"></div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition">
+                    保存
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.href = '/login.html';
+        }
+
+        let currentTeamId = null;
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        function showCreateTeamModal() {
+            currentTeamId = null;
+            document.getElementById('modalTitle').textContent = '创建球队';
+            document.getElementById('teamForm').reset();
+            const errorDiv = document.getElementById('teamError');
+            if (errorDiv) errorDiv.classList.add('hidden');
+            document.getElementById('teamModal').classList.remove('hidden');
+        }
+
+        function showEditTeamModal(team) {
+            currentTeamId = team.id;
+            document.getElementById('modalTitle').textContent = '编辑球队';
+            document.getElementById('teamName').value = team.name;
+            document.getElementById('teamDescription').value = team.description || '';
+            const errorDiv = document.getElementById('teamError');
+            if (errorDiv) errorDiv.classList.add('hidden');
+            document.getElementById('teamModal').classList.remove('hidden');
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.add('hidden');
+            currentTeamId = null;
+        }
+
+        // 创建或更新球队
+        document.getElementById('teamForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const errorDiv = document.getElementById('teamError');
+            if (errorDiv) errorDiv.classList.add('hidden');
+
+            const name = document.getElementById('teamName').value;
+            const description = document.getElementById('teamDescription').value;
+
+            try {
+                const url = currentTeamId ? `/teams/${currentTeamId}` : '/teams';
+                const method = currentTeamId ? 'PATCH' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    closeTeamModal();
+                    loadTeams();
+                } else {
+                    if (errorDiv) {
+                        errorDiv.textContent = result.message || '操作失败';
+                        errorDiv.classList.remove('hidden');
+                    } else {
+                        alert(result.message || '操作失败');
+                    }
+                }
+            } catch (error) {
+                console.error('操作失败:', error);
+                const errorMsg = error.message.includes('Failed to fetch') 
+                    ? '无法连接到后端服务，请确保后端已启动（运行 npm run dev）'
+                    : '网络错误，请稍后重试';
+                if (errorDiv) {
+                    errorDiv.textContent = errorMsg;
+                    errorDiv.classList.remove('hidden');
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        });
+
+        // 加载球队列表
+        async function loadTeams() {
+            try {
+                const response = await fetch('/teams', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                const teams = await response.json();
+                const teamsList = document.getElementById('teamsList');
+
+                if (teams.length === 0) {
+                    teamsList.innerHTML = `
+                        <div class="text-center py-12 text-white/70">
+                            <p>暂无球队数据</p>
+                            <p class="text-sm mt-2">点击"创建球队"按钮开始创建</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                teamsList.innerHTML = teams.map(team => {
+                    const teamJson = JSON.stringify(team).replace(/"/g, '&quot;');
+                    return `
+                        <div class="glass rounded-lg p-6 hover:bg-white/5 transition">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-bold text-white mb-2">${team.name}</h3>
+                                    <p class="text-white/70 mb-4">${team.description || '暂无描述'}</p>
+                                    <div class="flex items-center space-x-4 text-sm text-white/60">
+                                        <span>成员: ${team._count?.members || 0}</span>
+                                        <span>活动: ${team._count?.activities || 0}</span>
+                                        <span>创建于: ${new Date(team.createdAt).toLocaleDateString('zh-CN')}</span>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 ml-4">
+                                    <button onclick='showEditTeamModal(${teamJson})' 
+                                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition text-sm">
+                                        编辑
+                                    </button>
+                                    <button onclick="deleteTeam('${team.id}')" 
+                                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition text-sm">
+                                        删除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('加载球队列表失败:', error);
+                document.getElementById('teamsList').innerHTML = `
+                    <div class="text-center py-12 text-red-300">
+                        <p>加载失败，请检查后端服务是否运行</p>
+                        <p class="text-sm mt-2">确保已运行: npm run dev</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 删除球队
+        async function deleteTeam(teamId) {
+            if (!confirm('确定要删除这个球队吗？此操作不可恢复。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/teams/${teamId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    loadTeams();
+                } else {
+                    const error = await response.json();
+                    alert(error.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('删除失败，请稍后重试');
+            }
+        }
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/auth/me', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const user = await response.json();
+                document.getElementById('userName').textContent = user.username;
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+            }
+        }
+
+        // 初始化
+        loadUserInfo();
+        loadTeams();
+    </script>
+
+    <!-- 背景设置模态框 -->
+    <div id="backgroundSettingsModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass rounded-2xl p-8 max-w-md w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-white">背景设置</h3>
+                <button onclick="closeBackgroundSettings()" class="text-white/70 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="backgroundUploadForm" onsubmit="handleBackgroundUpload(event)" class="space-y-4">
+                <div>
+                    <label class="block text-white/80 mb-2">
+                        选择背景图片（最多10张）
+                        <span class="text-white/60 text-sm ml-2" id="imageCount">0 / 10</span>
+                    </label>
+                    <input type="file" id="backgroundImageInput" accept="image/*" multiple onchange="onBackgroundFileChange(event)" 
+                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/20 file:text-white hover:file:bg-white/30">
+                    <p class="text-white/60 text-xs mt-1">支持 JPG、PNG、GIF 格式，每张最大 5MB，可多选</p>
+                </div>
+                
+                <!-- 预览区域 -->
+                <div id="backgroundPreviewContainer" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto"></div>
+                
+                <!-- 已上传的图片列表 -->
+                <div>
+                    <label class="block text-white/80 mb-2">已上传的图片</label>
+                    <div id="backgroundImageList" class="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2 bg-white/5 rounded-lg">
+                        <div class="text-center py-8 text-white/60">暂无背景图片，请上传</div>
+                    </div>
+                </div>
+
+                <!-- 轮播间隔设置 -->
+                <div>
+                    <label class="block text-white/80 mb-2">
+                        轮播间隔
+                        <span class="text-white/60 text-sm ml-2" id="intervalDisplay">5 秒</span>
+                    </label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="intervalInput" min="1" max="60" value="5" 
+                            class="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button type="button" onclick="setBackgroundInterval()" 
+                            class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition">
+                            设置
+                        </button>
+                    </div>
+                    <p class="text-white/60 text-xs mt-1">设置背景图片自动切换的间隔时间（秒）</p>
+                </div>
+
+                <div id="backgroundError" class="hidden bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm"></div>
+                <div id="backgroundSuccess" class="hidden bg-green-500/20 border border-green-500/50 rounded-lg p-3 text-green-200 text-sm"></div>
+                
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition">
+                        上传图片
+                    </button>
+                    <button type="button" onclick="resetBackground()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition">
+                        恢复默认
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 引入背景管理器 -->
+    <script src="/js/background-manager.js"></script>
+</body>
+</html>
