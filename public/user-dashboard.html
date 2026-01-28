@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的主页 - 业余球队管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .gradient-bg {
+            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <!-- 导航栏 -->
+    <nav class="glass border-b border-white/20">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-8">
+                    <a href="/user-dashboard.html" class="text-white text-xl font-bold">球队管理系统</a>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/user-dashboard.html" class="text-white/90 hover:text-white px-3 py-2 rounded-lg bg-white/10">我的主页</a>
+                        <a href="/teams.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">我的球队</a>
+                        <a href="/activities.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">活动</a>
+                        <a href="/attendance.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">出勤</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="userName" class="text-white/90"></span>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">退出登录</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">我的主页</h1>
+            <p class="text-white/80">欢迎回来，<span id="welcomeUserName"></span></p>
+        </div>
+
+        <!-- 统计卡片（用户视角） -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="glass rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/70 text-sm mb-1">所属球队数</p>
+                        <p class="text-3xl font-bold text-white" id="teamCount">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/70 text-sm mb-1">参加的活动</p>
+                        <p class="text-3xl font-bold text-white" id="activityCount">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/70 text-sm mb-1">个人出勤率</p>
+                        <p class="text-3xl font-bold text-white" id="attendanceRate">0%</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-lg bg-emerald-500 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 个人信息 -->
+        <div class="glass rounded-xl p-6 mb-8">
+            <h2 class="text-2xl font-bold text-white mb-4">个人信息</h2>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-white/70 text-sm mb-1">用户名</p>
+                    <p class="text-white font-medium" id="userInfoUsername">-</p>
+                </div>
+                <div>
+                    <p class="text-white/70 text-sm mb-1">邮箱</p>
+                    <p class="text-white font-medium" id="userInfoEmail">-</p>
+                </div>
+                <div>
+                    <p class="text-white/70 text-sm mb-1">角色</p>
+                    <p class="text-white font-medium" id="userInfoRole">-</p>
+                </div>
+                <div>
+                    <p class="text-white/70 text-sm mb-1">注册时间</p>
+                    <p class="text-white font-medium" id="userInfoCreatedAt">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速入口 -->
+        <div class="glass rounded-xl p-6">
+            <h2 class="text-2xl font-bold text-white mb-4">快速入口</h2>
+            <div class="grid md:grid-cols-3 gap-4">
+                <a href="/teams.html" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-4 px-6 rounded-lg transition text-center">
+                    查看球队
+                </a>
+                <a href="/activities.html" class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-4 px-6 rounded-lg transition text-center">
+                    查看活动
+                </a>
+                <a href="/attendance.html" class="bg-pink-500 hover:bg-pink-600 text-white font-medium py-4 px-6 rounded-lg transition text-center">
+                    查看出勤记录
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 炫酷背景效果 -->
+    <script src="/js/fancy-background.js"></script>
+    <script>
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.href = '/login.html';
+        }
+
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                const user = await response.json();
+
+                // 如果是管理员，跳转到管理员页面
+                if (user.role === 'admin') {
+                    window.location.href = '/admin-dashboard.html';
+                    return;
+                }
+
+                document.getElementById('userName').textContent = user.username;
+                document.getElementById('welcomeUserName').textContent = user.username;
+                document.getElementById('userInfoUsername').textContent = user.username;
+                document.getElementById('userInfoEmail').textContent = user.email;
+                document.getElementById('userInfoRole').textContent = user.role || 'user';
+                document.getElementById('userInfoCreatedAt').textContent = new Date(user.createdAt).toLocaleString('zh-CN');
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        loadUserInfo();
+    </script>
+</body>
+</html>
+

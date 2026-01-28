@@ -1,74 +1,290 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>登录 - 业余球队管理系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6',
+                        accent: '#ec4899',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        /* 动态渐变背景 */
+        @keyframes gradientMove {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        .gradient-bg {
-            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
+        body {
+            background: radial-gradient(circle at top left, #3b82f6, transparent 55%),
+                        radial-gradient(circle at bottom right, #ec4899, transparent 55%),
+                        linear-gradient(-45deg, #0f172a, #020617, #111827, #0b1120);
+            background-size: 200% 200%;
+            animation: gradientMove 20s ease infinite;
+            min-height: 100vh;
         }
+
+        /* 玻璃卡片 */
         .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            box-shadow:
+                0 25px 50px -12px rgba(15, 23, 42, 0.8),
+                0 0 0 1px rgba(148, 163, 184, 0.15);
+        }
+
+        /* 背景发光圆 */
+        .blob {
+            position: absolute;
+            border-radius: 999px;
+            filter: blur(60px);
+            opacity: 0.6;
+            mix-blend-mode: screen;
+        }
+        .blob-1 {
+            width: 380px;
+            height: 380px;
+            background: #3b82f6;
+            top: -60px;
+            left: -80px;
+        }
+        .blob-2 {
+            width: 420px;
+            height: 420px;
+            background: #8b5cf6;
+            bottom: -80px;
+            right: -60px;
+        }
+        .blob-3 {
+            width: 280px;
+            height: 280px;
+            background: #ec4899;
+            top: 40%;
+            right: 10%;
+        }
+
+        /* 粒子层 */
+        #particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
         }
     </style>
 </head>
-<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
-    <div class="glass rounded-2xl p-8 max-w-md w-full shadow-2xl">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-white mb-2">用户登录</h1>
-            <p class="text-white/80">欢迎回来</p>
+<body class="relative flex items-center justify-center px-4 py-10 text-slate-100">
+
+    <!-- 背景发光块 -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <!-- 粒子画布 -->
+    <canvas id="particles"></canvas>
+
+    <!-- 主内容 -->
+    <div class="relative z-10 max-w-5xl w-full mx-auto flex flex-col lg:flex-row items-stretch gap-8">
+
+        <!-- 左侧品牌 / 说明 -->
+        <div class="hidden lg:flex flex-col justify-between glass rounded-3xl px-10 py-10 w-1/2">
+            <div>
+                <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/10 border border-white/20 text-xs uppercase tracking-wide">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>业余球队管理系统 · Online</span>
+                </div>
+
+                <h1 class="mt-8 text-4xl font-extrabold leading-tight">
+                    管理你的<br/>
+                    <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        球队 · 活动 · 出勤
+                    </span>
+                </h1>
+
+                <p class="mt-5 text-slate-300/90 text-sm leading-relaxed">
+                    集中管理球队成员、训练与比赛活动、出勤统计。<br/>
+                    为教练、队长和球员提供一站式协同平台。
+                </p>
+
+                <div class="mt-6 flex flex-wrap gap-3 text-xs text-slate-300/80">
+                    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/15">实时出勤统计</span>
+                    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/15">活动日历</span>
+                    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/15">多角色权限</span>
+                    <span class="px-3 py-1 rounded-full bg-white/5 border border-white/15">移动端友好</span>
+                </div>
+            </div>
+
+            <div class="mt-10 space-y-2 text-xs text-slate-400">
+                <p>提示：</p>
+                <p>• 管理者账号登录后将进入 <span class="text-blue-300">管理控制台</span></p>
+                <p>• 普通用户将进入 <span class="text-emerald-300">个人主页</span></p>
+            </div>
         </div>
 
-        <form id="loginForm" class="space-y-6">
-            <div>
-                <label class="block text-white/90 mb-2 font-medium">用户名或邮箱</label>
-                <input type="text" id="usernameOrEmail" name="usernameOrEmail" required 
-                    class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                    placeholder="请输入用户名或邮箱">
+        <!-- 右侧登录卡片 -->
+        <div class="glass rounded-3xl px-8 py-8 w-full lg:w-1/2">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold">欢迎登录</h2>
+                    <p class="mt-1 text-sm text-slate-300/80">请使用你的账号登录系统</p>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 text-xs text-slate-300/70">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.9)]"></span>
+                    <span>服务器在线</span>
+                </div>
             </div>
-            <div>
-                <label class="block text-white/90 mb-2 font-medium">密码</label>
-                <input type="password" id="password" name="password" required 
-                    class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                    placeholder="请输入密码">
+
+            <!-- 登录表单 -->
+            <form id="loginForm" class="space-y-6 mt-4">
+                <div>
+                    <label class="block text-sm mb-2 font-medium text-slate-200">用户名或邮箱</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1a4 4 0 004 4M4 17a4 4 0 004-4v-1"/>
+                            </svg>
+                        </span>
+                        <input
+                            type="text"
+                            id="usernameOrEmail"
+                            name="usernameOrEmail"
+                            required
+                            class="w-full pl-9 pr-3 py-3 rounded-xl bg-slate-900/60 border border-slate-500/40 text-sm text-white
+                                   placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="请输入用户名或邮箱"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2 font-medium text-slate-200">密码</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 11c1.104 0 2-.672 2-1.5S13.104 8 12 8s-2 .672-2 1.5S10.896 11 12 11zM17 11V9.5C17 7.567 15.433 6 13.5 6h-3C8.567 6 7 7.567 7 9.5V11m10 0H7v4.5A2.5 2.5 0 009.5 18h5A2.5 2.5 0 0017 15.5V11z"/>
+                            </svg>
+                        </span>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            required
+                            class="w-full pl-9 pr-10 py-3 rounded-xl bg-slate-900/60 border border-slate-500/40 text-sm text-white
+                                   placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="请输入密码"
+                        />
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <label class="inline-flex items-center gap-2">
+                        <input type="checkbox" class="w-3.5 h-3.5 rounded border-slate-500/60 bg-slate-900/70" checked>
+                        <span>记住我</span>
+                    </label>
+                    <span class="cursor-default text-slate-500/80">忘记密码请联系管理员</span>
+                </div>
+
+                <div id="errorMessage"
+                     class="hidden bg-red-500/15 border border-red-500/60 text-red-100 text-xs rounded-xl px-3 py-2"></div>
+
+                <button
+                    type="submit"
+                    class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500
+                           hover:from-blue-400 hover:via-purple-400 hover:to-pink-400 text-white font-medium
+                           text-sm shadow-lg shadow-blue-500/25 transform hover:-translate-y-0.5 hover:shadow-xl
+                           transition duration-200">
+                    登录到系统
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-xs text-slate-400">
+                <p>
+                    还没有账号？
+                    <a href="/register.html" class="text-blue-300 hover:text-blue-200 underline underline-offset-2">
+                        立即注册
+                    </a>
+                </p>
+                <p class="mt-2">
+                    <a href="/" class="text-slate-400 hover:text-slate-200">返回首页</a>
+                </p>
             </div>
-            <div id="errorMessage" class="hidden bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm"></div>
-            <button type="submit" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-lg transition transform hover:scale-105">
-                登录
-            </button>
-        </form>
-
-        <div class="mt-6 text-center">
-            <p class="text-white/70">
-                还没有账号？
-                <a href="/register.html" class="text-purple-300 hover:text-purple-200 font-medium underline">立即注册</a>
-            </p>
-        </div>
-
-        <div class="mt-4 text-center">
-            <a href="/" class="text-white/60 hover:text-white/80 text-sm">返回首页</a>
         </div>
     </div>
 
+    <!-- 粒子动画脚本 + 登录脚本 -->
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // 简单粒子背景
+        (function () {
+            const canvas = document.getElementById('particles');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            const particles = [];
+            const COUNT = 40;
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for (let i = 0; i < COUNT; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    r: 1 + Math.random() * 2,
+                    dx: -0.3 + Math.random() * 0.6,
+                    dy: -0.3 + Math.random() * 0.6,
+                    o: 0.3 + Math.random() * 0.5,
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, width, height);
+                for (const p of particles) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(148, 163, 184, ${p.o})`;
+                    ctx.fill();
+
+                    p.x += p.dx;
+                    p.y += p.dy;
+
+                    if (p.x < 0 || p.x > width) p.dx *= -1;
+                    if (p.y < 0 || p.y > height) p.dy *= -1;
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
+
+        // 登录逻辑
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.classList.add('hidden');
 
-            const usernameOrEmail = document.getElementById('usernameOrEmail').value;
+            const usernameOrEmail = document.getElementById('usernameOrEmail').value.trim();
             const password = document.getElementById('password').value;
+
+            if (!usernameOrEmail || !password) {
+                errorDiv.textContent = '请输入完整的登录信息';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
 
             try {
                 const response = await fetch('/auth/login', {
@@ -84,7 +300,15 @@
                 if (response.ok) {
                     localStorage.setItem('authToken', result.accessToken);
                     localStorage.setItem('user', JSON.stringify(result.user));
-                    window.location.href = '/dashboard.html';
+
+                    // 根据角色跳转（确保后端返回 user.role）
+                    if (result.user && result.user.role === 'super_admin') {
+                        window.location.href = '/admin-dashboard.html'; // 也可单独做 super-admin 页面
+                    } else if (result.user && result.user.role === 'admin') {
+                        window.location.href = '/admin-dashboard.html';
+                    } else {
+                        window.location.href = '/user-dashboard.html';
+                    }
                 } else {
                     errorDiv.textContent = result.message || '登录失败，请检查用户名和密码';
                     errorDiv.classList.remove('hidden');

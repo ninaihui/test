@@ -16,7 +16,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  private async createUserWithRole(registerDto: RegisterDto, role: string) {
     const { email, username, password } = registerDto;
 
     // 检查邮箱是否已存在
@@ -44,11 +44,13 @@ export class AuthService {
         email,
         username,
         password: hashedPassword,
+        role,
       },
       select: {
         id: true,
         email: true,
         username: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -59,12 +61,28 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       username: user.username,
+      role: user.role,
     });
 
     return {
       user,
       accessToken,
     };
+  }
+
+  // 普通注册接口：创建普通用户
+  async register(registerDto: RegisterDto) {
+    return this.createUserWithRole(registerDto, 'user');
+  }
+
+  // 由超级管理员调用：创建管理员
+  async createAdmin(registerDto: RegisterDto) {
+    return this.createUserWithRole(registerDto, 'admin');
+  }
+
+  // 由管理员 / 超级管理员调用：创建普通用户
+  async createNormalUser(registerDto: RegisterDto) {
+    return this.createUserWithRole(registerDto, 'user');
   }
 
   async login(loginDto: LoginDto) {
@@ -95,6 +113,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       username: user.username,
+      role: user.role,
     });
 
     return {
@@ -102,6 +121,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         username: user.username,
+        role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -116,6 +136,7 @@ export class AuthService {
         id: true,
         email: true,
         username: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
