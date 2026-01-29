@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { assertTeamAdmin, assertTeamMember } from './teams.auth';
 
 @Injectable()
 export class TeamsService {
@@ -18,14 +19,18 @@ export class TeamsService {
       data: {
         name: createTeamDto.name,
         description: createTeamDto.description,
+        adminUserId: userId,
         members: {
           create: {
             userId,
-            role: 'captain', // 创建者默认为队长
+            role: 'captain', // 兼容旧语义：队长
           },
         },
       },
       include: {
+        admin: {
+          select: { id: true, username: true, email: true, avatarUrl: true },
+        },
         members: {
           include: {
             user: {
@@ -33,6 +38,7 @@ export class TeamsService {
                 id: true,
                 username: true,
                 email: true,
+                avatarUrl: true,
               },
             },
           },
@@ -53,6 +59,9 @@ export class TeamsService {
         },
       },
       include: {
+        admin: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
         members: {
           include: {
             user: {
@@ -60,6 +69,7 @@ export class TeamsService {
                 id: true,
                 username: true,
                 email: true,
+                avatarUrl: true,
               },
             },
           },
@@ -83,6 +93,9 @@ export class TeamsService {
     const team = await this.prisma.team.findUnique({
       where: { id },
       include: {
+        admin: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
         members: {
           include: {
             user: {
@@ -90,6 +103,7 @@ export class TeamsService {
                 id: true,
                 username: true,
                 email: true,
+                avatarUrl: true,
               },
             },
           },
@@ -114,40 +128,20 @@ export class TeamsService {
     }
 
     // 检查用户是否是球队成员
-    const isMember = team.members.some((member) => member.userId === userId);
-    if (!isMember) {
-      throw new ForbiddenException('您不是该球队的成员');
-    }
+    await assertTeamMember(this.prisma, id, userId);
 
     return team;
   }
 
   async update(id: string, userId: string, updateTeamDto: UpdateTeamDto) {
-    // 检查用户是否是队长或教练
-    const team = await this.prisma.team.findUnique({
-      where: { id },
-      include: {
-        members: {
-          where: {
-            userId,
-          },
-        },
-      },
-    });
-
-    if (!team) {
-      throw new NotFoundException('球队不存在');
-    }
-
-    const member = team.members[0];
-    if (!member || !['captain', 'coach'].includes(member.role)) {
-      throw new ForbiddenException('只有队长或教练可以修改球队信息');
-    }
+    // 新规则：只有球队管理员可以修改球队信息
+    await assertTeamAdmin(this.prisma, id, userId);
 
     const updatedTeam = await this.prisma.team.update({
       where: { id },
       data: updateTeamDto,
       include: {
+        admin: { select: { id: true, username: true, avatarUrl: true } },
         members: {
           include: {
             user: {
@@ -155,6 +149,7 @@ export class TeamsService {
                 id: true,
                 username: true,
                 email: true,
+                avatarUrl: true,
               },
             },
           },
@@ -166,26 +161,8 @@ export class TeamsService {
   }
 
   async remove(id: string, userId: string) {
-    // 检查用户是否是队长
-    const team = await this.prisma.team.findUnique({
-      where: { id },
-      include: {
-        members: {
-          where: {
-            userId,
-            role: 'captain',
-          },
-        },
-      },
-    });
-
-    if (!team) {
-      throw new NotFoundException('球队不存在');
-    }
-
-    if (team.members.length === 0) {
-      throw new ForbiddenException('只有队长可以删除球队');
-    }
+    // 新规则：只有球队管理员可以删除球队
+    await assertTeamAdmin(this.prisma, id, userId);
 
     await this.prisma.team.delete({
       where: { id },
@@ -195,26 +172,8 @@ export class TeamsService {
   }
 
   async addMember(teamId: string, userId: string, addMemberDto: AddMemberDto) {
-    // 检查用户是否有权限添加成员
-    const team = await this.prisma.team.findUnique({
-      where: { id: teamId },
-      include: {
-        members: {
-          where: {
-            userId,
-          },
-        },
-      },
-    });
-
-    if (!team) {
-      throw new NotFoundException('球队不存在');
-    }
-
-    const member = team.members[0];
-    if (!member || !['captain', 'coach'].includes(member.role)) {
-      throw new ForbiddenException('只有队长或教练可以添加成员');
-    }
+    // 新规则：只有球队管理员可以添加成员
+    await assertTeamAdmin(this.prisma, teamId, userId);
 
     // 检查成员是否已存在
     const existingMember = await this.prisma.teamMember.findUnique({
@@ -230,11 +189,21 @@ export class TeamsService {
       throw new ConflictException('该用户已经是球队成员');
     }
 
+    // 号码冲突（球队内唯一）
+    if (addMemberDto.number != null) {
+      const numberTaken = await this.prisma.teamMember.findFirst({
+        where: { teamId, number: addMemberDto.number },
+        select: { id: true },
+      });
+      if (numberTaken) throw new ConflictException('该号码已被占用');
+    }
+
     const newMember = await this.prisma.teamMember.create({
       data: {
         userId: addMemberDto.userId,
         teamId,
         role: addMemberDto.role || 'member',
+        number: addMemberDto.number,
       },
       include: {
         user: {
@@ -242,6 +211,7 @@ export class TeamsService {
             id: true,
             username: true,
             email: true,
+            avatarUrl: true,
           },
         },
       },
@@ -251,26 +221,8 @@ export class TeamsService {
   }
 
   async removeMember(teamId: string, userId: string, memberId: string) {
-    // 检查用户是否有权限移除成员
-    const team = await this.prisma.team.findUnique({
-      where: { id: teamId },
-      include: {
-        members: {
-          where: {
-            userId,
-          },
-        },
-      },
-    });
-
-    if (!team) {
-      throw new NotFoundException('球队不存在');
-    }
-
-    const member = team.members[0];
-    if (!member || !['captain', 'coach'].includes(member.role)) {
-      throw new ForbiddenException('只有队长或教练可以移除成员');
-    }
+    // 新规则：只有球队管理员可以移除成员
+    await assertTeamAdmin(this.prisma, teamId, userId);
 
     await this.prisma.teamMember.delete({
       where: {
@@ -282,5 +234,73 @@ export class TeamsService {
     });
 
     return { message: '成员已移除' };
+  }
+
+  async assignNumber(teamId: string, adminUserId: string, memberUserId: string, number: number) {
+    await assertTeamAdmin(this.prisma, teamId, adminUserId);
+
+    // ensure member exists
+    await assertTeamMember(this.prisma, teamId, memberUserId);
+
+    const taken = await this.prisma.teamMember.findFirst({
+      where: { teamId, number },
+      select: { userId: true },
+    });
+    if (taken && taken.userId !== memberUserId) {
+      throw new ConflictException('该号码已被占用');
+    }
+
+    return this.prisma.teamMember.update({
+      where: { userId_teamId: { userId: memberUserId, teamId } },
+      data: { number },
+      include: {
+        user: { select: { id: true, username: true, avatarUrl: true } },
+      },
+    });
+  }
+
+  async roster(teamId: string, userId: string) {
+    await assertTeamMember(this.prisma, teamId, userId);
+
+    const team = await this.prisma.team.findUnique({
+      where: { id: teamId },
+      select: { id: true, name: true, adminUserId: true },
+    });
+    if (!team) throw new NotFoundException('球队不存在');
+
+    const members = await this.prisma.teamMember.findMany({
+      where: { teamId },
+      orderBy: [{ number: 'asc' }, { joinedAt: 'asc' }],
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return {
+      team,
+      members,
+      canManage: team.adminUserId === userId,
+    };
+  }
+
+  async transferAdmin(teamId: string, currentAdminId: string, nextAdminUserId: string) {
+    await assertTeamAdmin(this.prisma, teamId, currentAdminId);
+    await assertTeamMember(this.prisma, teamId, nextAdminUserId);
+
+    return this.prisma.team.update({
+      where: { id: teamId },
+      data: { adminUserId: nextAdminUserId },
+      select: {
+        id: true,
+        name: true,
+        adminUserId: true,
+      },
+    });
   }
 }

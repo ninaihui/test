@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { TeamsModule } from './teams/teams.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { UsersModule } from './users/users.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -15,6 +16,7 @@ import { AppController } from './app.controller';
     }),
     PrismaModule,
     AuthModule,
+    UsersModule,
     TeamsModule,
     ActivitiesModule,
     AttendanceModule,
