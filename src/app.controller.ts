@@ -52,6 +52,11 @@ export class AppController {
     res.sendFile(join(__dirname, '..', 'public', 'attendance.html'));
   }
 
+  @Get('profile.html')
+  getProfile(@Res() res: Response) {
+    res.sendFile(join(__dirname, '..', 'public', 'profile.html'));
+  }
+
   @Get('health')
   healthCheck() {
     return {

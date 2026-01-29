@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人资料 - 业余球队管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .glass {
+      background: rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="container mx-auto px-4 py-8 max-w-xl">
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-bold text-white">个人资料</h1>
+          <p class="text-white/70 text-sm mt-1">上传头像（每个账号自己上传）</p>
+        </div>
+        <a href="/" class="text-sm text-white/80 hover:text-white underline underline-offset-4">返回首页</a>
+      </div>
+
+      <div class="mt-6 flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/20 bg-black/20">
+          <img id="avatarImg" alt="avatar" class="w-full h-full object-cover" src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%23111827%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2248%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E" />
+        </div>
+        <div class="flex-1">
+          <div class="text-white font-semibold" id="userTitle">未登录</div>
+          <div class="text-white/60 text-sm" id="userMeta">请先登录</div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <label class="block text-white/80 text-sm">选择头像图片（≤ 5MB）</label>
+        <input id="fileInput" type="file" accept="image/*" class="block w-full text-sm text-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/15 file:text-white hover:file:bg-white/20" />
+
+        <div class="flex items-center gap-2">
+          <button id="btnUpload" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm rounded-lg px-4 py-2">上传</button>
+          <button id="btnLogout" class="bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg px-4 py-2 border border-white/15">退出登录</button>
+        </div>
+
+        <div id="status" class="text-sm text-white/70"></div>
+      </div>
+
+      <div class="mt-6 text-xs text-white/50 leading-relaxed">
+        提示：头像先用于战术板展示；下一步会由球队管理员分配号码并在战术板里拖拽摆位。
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/fancy-background.js"></script>
+  <script>
+    const token = localStorage.getItem('authToken');
+    const statusEl = document.getElementById('status');
+    const avatarImg = document.getElementById('avatarImg');
+    const userTitle = document.getElementById('userTitle');
+    const userMeta = document.getElementById('userMeta');
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || '';
+    }
+
+    function requireLogin() {
+      setStatus('未登录：将跳转到登录页');
+      setTimeout(() => (window.location.href = '/login.html'), 800);
+    }
+
+    async function loadMe() {
+      if (!token) return requireLogin();
+      try {
+        const res = await fetch('/auth/me', {
+          headers: { Authorization: 'Bearer ' + token },
+        });
+        if (!res.ok) return requireLogin();
+        const me = await res.json();
+        userTitle.textContent = me.username || '用户';
+        userMeta.textContent = me.email || '';
+        if (me.avatarUrl) {
+          // cache-bust
+          avatarImg.src = me.avatarUrl + '?t=' + Date.now();
+        }
+      } catch (e) {
+        setStatus('加载用户信息失败');
+      }
+    }
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      // preview
+      const url = URL.createObjectURL(f);
+      avatarImg.src = url;
+    });
+
+    document.getElementById('btnUpload').addEventListener('click', async () => {
+      const input = document.getElementById('fileInput');
+      const f = input.files && input.files[0];
+      if (!f) return setStatus('请选择图片');
+      if (!token) return requireLogin();
+
+      setStatus('上传中...');
+      const fd = new FormData();
+      fd.append('file', f);
+
+      try {
+        const res = await fetch('/users/me/avatar', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token },
+          body: fd,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setStatus((data && data.message) ? ('上传失败：' + data.message) : '上传失败');
+          return;
+        }
+        setStatus('上传成功');
+        if (data.avatarUrl) {
+          avatarImg.src = data.avatarUrl + '?t=' + Date.now();
+          // keep local user cache in sync
+          const cached = JSON.parse(localStorage.getItem('user') || 'null');
+          if (cached) {
+            cached.avatarUrl = data.avatarUrl;
+            localStorage.setItem('user', JSON.stringify(cached));
+          }
+        }
+      } catch (e) {
+        setStatus('网络错误，稍后再试');
+      }
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    });
+
+    loadMe();
+  </script>
+</body>
+</html>
