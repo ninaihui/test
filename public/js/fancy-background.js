@@ -88,6 +88,16 @@
     body.appendChild(blob3);
   }
 
+  // 性能/无障碍：如果用户开启“减少动态效果”，或省流量模式，则不启用粒子动画
+  const reduceMotion =
+    (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ||
+    (navigator.connection && navigator.connection.saveData);
+
+  if (reduceMotion) {
+    // 只保留渐变 + 发光色块，不画粒子
+    return;
+  }
+
   // 粒子层
   let canvas = doc.getElementById('fancyParticles');
   if (!canvas) {
