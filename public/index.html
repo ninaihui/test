@@ -45,10 +45,18 @@
         .field-wrap {
             position: relative;
             width: 100%;
+            /* Desktop: wider field */
             aspect-ratio: 16 / 9;
             border-radius: 16px;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.15);
+        }
+        /* Mobile: make the pitch longer (taller) */
+        @media (max-width: 640px) {
+            .field-wrap {
+                aspect-ratio: 3 / 4;
+                max-height: 72vh;
+            }
         }
         .field {
             position: relative;
