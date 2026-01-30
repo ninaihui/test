@@ -9,7 +9,13 @@
 
 (function () {
   const BOARD_ID = 'tacticsBoard';
-  const STORAGE_KEY = 'team_management:tactics:v1';
+  const CURRENT_TEAM_KEY = 'team_management:currentTeamId';
+
+  function getStorageKey() {
+    const teamId = localStorage.getItem(CURRENT_TEAM_KEY) || 'default';
+    // keep per-team local saves isolated
+    return `team_management:tactics:v1:${teamId}`;
+  }
 
   const boardEl = document.getElementById(BOARD_ID);
   if (!boardEl) return;
@@ -247,15 +253,16 @@
     const payload = {
       v: 1,
       savedAt: Date.now(),
+      teamId: localStorage.getItem(CURRENT_TEAM_KEY) || 'default',
       formation: ui.formation?.value || 'custom',
       players: state.players,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(getStorageKey(), JSON.stringify(payload));
     flashStatus('已保存到浏览器', 1800);
   }
 
   function load() {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey());
     if (!raw) {
       flashStatus('没有找到已保存的阵型', 2000);
       return;
@@ -339,7 +346,7 @@
     wireUi();
 
     // load saved if exists, else apply default formation
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey());
     if (raw) {
       load();
     } else {
