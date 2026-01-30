@@ -92,12 +92,16 @@
     });
 
     document.getElementById('btnUpload').addEventListener('click', async () => {
+      const btn = document.getElementById('btnUpload');
       const input = document.getElementById('fileInput');
       const f = input.files && input.files[0];
       if (!f) return setStatus('请选择图片');
       if (!token) return requireLogin();
 
+      btn.disabled = true;
+      btn.classList.add('opacity-60');
       setStatus('上传中...');
+
       const fd = new FormData();
       fd.append('file', f);
 
@@ -107,15 +111,25 @@
           headers: { Authorization: 'Bearer ' + token },
           body: fd,
         });
+
+        // 401/403: token 失效或没登录
+        if (res.status === 401 || res.status === 403) {
+          setStatus('登录已失效，请重新登录');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          return setTimeout(() => (window.location.href = '/login.html'), 600);
+        }
+
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setStatus((data && data.message) ? ('上传失败：' + data.message) : '上传失败');
+          const msg = (data && (data.message || data.error)) ? (data.message || data.error) : `HTTP ${res.status}`;
+          setStatus('上传失败：' + msg);
           return;
         }
+
         setStatus('上传成功');
         if (data.avatarUrl) {
           avatarImg.src = data.avatarUrl + '?t=' + Date.now();
-          // keep local user cache in sync
           const cached = JSON.parse(localStorage.getItem('user') || 'null');
           if (cached) {
             cached.avatarUrl = data.avatarUrl;
@@ -124,6 +138,9 @@
         }
       } catch (e) {
         setStatus('网络错误，稍后再试');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60');
       }
     });
 
