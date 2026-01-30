@@ -33,27 +33,11 @@
   </style>
 </head>
 <body class="min-h-screen bg-fifa safe-bottom">
-<div class="sticky top-0 z-20 bg-black/20 backdrop-blur-xl border-b border-white/10">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <a href="/dashboard.html" class="text-white font-bold">球队管理系统</a>
-        <span class="text-white/40 text-sm">战术板</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <a href="/teams.html" class="btn-ghost">球队</a>
-        <a href="/profile.html" class="btn-ghost">头像</a>
-</div>
-    </div>
-  </div>
+<!-- Top menu removed: use bottom nav only -->
 
   <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="glass rounded-2xl p-6" id="tacticsBoard">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <div>
-          <h1 class="text-2xl font-bold text-white">战术板</h1>
-          <p class="text-white/70 text-sm">当前球队：<span id="teamTitle" class="text-white font-semibold">未选择</span></p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2 mb-4">
           <select id="formationSelect" class="input" style="max-width: 160px">
             <option value="4-4-2">4-4-2</option>
             <option value="4-3-3">4-3-3</option>
@@ -73,6 +57,7 @@
         </div>
       </div>
       <div id="saveStatus" class="save-status" aria-live="polite"></div>
+      <div class="text-white/60 text-xs mt-2">当前球队：<span id="teamTitle" class="text-white/80">未选择</span></div>
     </div>
   </div>
 

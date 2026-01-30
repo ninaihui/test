@@ -9,59 +9,31 @@
 <body class="min-h-screen bg-fifa">
 <div class="min-h-screen safe-bottom">
 
-    <!-- Top bar (simple horizontal menu) -->
-    <div class="sticky top-0 z-20 bg-black/25 backdrop-blur-xl border-b border-white/10">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-<!-- Center: current team -->
-        <div class="flex items-center gap-2">
-          <span class="text-white/60 text-xs">当前球队</span>
-          <select id="teamSelect" class="input !py-2 !px-3 !text-sm min-w-[200px]">
-            <option value="">加载中…</option>
-          </select>
-          <span id="teamHint" class="text-white/50 text-xs hidden sm:inline"></span>
-        </div>
-
-        <!-- Right: horizontal menu -->
-        <div class="flex items-center gap-2">
-          <a href="/teams.html" class="btn-ghost">球队</a>
-          <a href="/activities.html" class="btn-ghost">活动</a>
-          <a href="/attendance.html" class="btn-ghost">出勤</a>
-          <a href="/tactics.html" class="btn-ghost">战术板</a>
-          <a href="/profile.html" class="btn-ghost">头像</a>
-          <button id="btnLogout" class="btn bg-red-500/90 hover:bg-red-600 text-white">退出</button>
-        </div>
-      </div>
-    </div>
+    <!-- Top bar removed: use bottom nav only -->
 
     <div class="max-w-6xl mx-auto px-4 py-8">
 
-      <!-- Simple header -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/15 bg-black/30">
-            <img id="avatar" alt="avatar" class="w-full h-full object-cover" />
-          </div>
-          <div>
-            <div id="userName" class="text-white font-semibold">加载中…</div>
-            <div id="userEmail" class="text-white/60 text-sm"></div>
-          </div>
+      <!-- Minimal header -->
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/15 bg-black/30">
+          <img id="avatar" alt="avatar" class="w-full h-full object-cover" />
         </div>
-        <div class="text-white/50 text-sm">一个入口，所有操作走上面的横向菜单。</div>
+        <div>
+          <div id="userName" class="text-white font-semibold">加载中…</div>
+          <div id="userEmail" class="text-white/60 text-sm"></div>
+        </div>
       </div>
 
       <!-- Quick actions -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         <a href="/teams.html" class="glass rounded-2xl p-5 hover:bg-white/5 transition">
           <div class="text-white font-semibold">球队</div>
-          <div class="text-white/60 text-sm mt-1">创建球队、管理成员、分配号码</div>
         </a>
         <a href="/tactics.html" class="glass rounded-2xl p-5 hover:bg-white/5 transition">
           <div class="text-white font-semibold">战术板</div>
-          <div class="text-white/60 text-sm mt-1">拖拽摆位、保存阵型</div>
         </a>
         <a href="/profile.html" class="glass rounded-2xl p-5 hover:bg-white/5 transition">
-          <div class="text-white font-semibold">头像</div>
-          <div class="text-white/60 text-sm mt-1">上传/更换个人头像</div>
+          <div class="text-white font-semibold">我的</div>
         </a>
       </div>
 
@@ -116,6 +88,7 @@
     async function loadTeams() {
       const select = document.getElementById('teamSelect');
       const hint = document.getElementById('teamHint');
+      // Team selector removed from top bar; keep logic for future but no-op for now.
       if (!select) return;
       select.innerHTML = '<option value="">加载中…</option>';
       if (hint) hint.textContent = '';
@@ -177,11 +150,7 @@
       }
     }
 
-    document.getElementById('btnLogout').addEventListener('click', () => {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
-      window.location.href = '/login.html';
-    });
+    // Logout: handled from "我的" page; keep dashboard clean
 
     // Back buttons
       else window.location.href = '/login.html';
@@ -202,7 +171,6 @@
     }
 
     loadMe();
-    loadTeams();
     health();
     setBottomNavActive();
   </script>
