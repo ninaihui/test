@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { join } from 'path';
 import * as fs from 'fs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
@@ -17,6 +17,13 @@ import { UsersService } from './users.service';
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
+
+const ALLOWED_AVATAR_MIME: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -34,13 +41,14 @@ export class UsersController {
         },
         filename: (req: any, file, cb) => {
           const userId = req.user?.sub || 'unknown';
-          const safeExt = extname(file.originalname || '').toLowerCase() || '.jpg';
-          cb(null, `${userId}-${Date.now()}${safeExt}`);
+          const ext = ALLOWED_AVATAR_MIME[file.mimetype] || '.jpg';
+          cb(null, `${userId}-${Date.now()}${ext}`);
         },
       }),
       fileFilter: (req, file, cb) => {
-        if (!file.mimetype?.startsWith('image/')) {
-          return cb(new BadRequestException('只允许上传图片'), false);
+        // Security: block SVG and other scriptable image types
+        if (!file.mimetype || !(file.mimetype in ALLOWED_AVATAR_MIME)) {
+          return cb(new BadRequestException('只允许上传 jpg/png/webp/gif 图片'), false);
         }
         cb(null, true);
       },

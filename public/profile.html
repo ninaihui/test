@@ -4,16 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>个人资料 - 业余球队管理系统</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .glass {
-      background: rgba(255, 255, 255, 0.10);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-    }
-  </style>
+  <link rel="stylesheet" href="/assets/app.css" />
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-gradient-to-br from-pitch-900 via-slate-950 to-slate-900">
   <div class="container mx-auto px-4 py-8 max-w-xl">
     <div class="glass rounded-2xl p-6">
       <div class="flex items-center justify-between gap-3">
@@ -88,12 +81,14 @@
       }
     }
 
+    let previewUrl = null;
     document.getElementById('fileInput').addEventListener('change', (e) => {
       const f = e.target.files && e.target.files[0];
       if (!f) return;
       // preview
-      const url = URL.createObjectURL(f);
-      avatarImg.src = url;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(f);
+      avatarImg.src = previewUrl;
     });
 
     document.getElementById('btnUpload').addEventListener('click', async () => {

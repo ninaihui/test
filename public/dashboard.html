@@ -139,8 +139,15 @@
         const savedId = localStorage.getItem(CURRENT_TEAM_KEY);
         const selected = teams.find(t => t.id === savedId) || teams[0];
 
-        select.innerHTML = teams.map(t => `<option value="${t.id}">${t.name || '未命名球队'}</option>`).join('');
-        select.value = selected.id;
+        // XSS-safe: never use innerHTML for untrusted team names
+        select.innerHTML = '';
+        for (const t of teams) {
+          const opt = document.createElement('option');
+          opt.value = String(t.id || '');
+          opt.textContent = (t.name || '未命名球队');
+          select.appendChild(opt);
+        }
+        select.value = String(selected.id || '');
         localStorage.setItem(CURRENT_TEAM_KEY, selected.id);
         localStorage.setItem(CURRENT_TEAM_NAME_KEY, selected.name || '未命名球队');
         hint.textContent = `当前：${selected.name || '未命名球队'}`;
