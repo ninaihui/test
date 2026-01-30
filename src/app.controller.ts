@@ -25,6 +25,11 @@ export class AppController {
     res.sendFile(join(__dirname, '..', 'public', 'dashboard.html'));
   }
 
+  @Get('tactics.html')
+  getTactics(@Res() res: Response) {
+    res.sendFile(join(__dirname, '..', 'public', 'tactics.html'));
+  }
+
   // 管理员仪表板
   @Get('admin-dashboard.html')
   getAdminDashboard(@Res() res: Response) {

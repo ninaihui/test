@@ -1,299 +1,190 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户仪表板 - 业余球队管理系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .gradient-bg {
-            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        /* 背景显示区域样式 - 只显示在页面上方 */
-        #backgroundDisplayArea {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 40vh; /* 只显示在页面上方40%的区域 */
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        
-        /* 确保内容在背景之上 */
-        .content-wrapper {
-            position: relative;
-            z-index: 1;
-            background: transparent;
-        }
-        
-        /* 导航栏在背景之上 */
-        nav {
-            position: relative;
-            z-index: 10;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - 业余球队管理系统</title>
+  <link rel="stylesheet" href="/assets/app.css" />
 </head>
-<body class="min-h-screen gradient-bg">
-    <!-- 背景显示区域（由背景管理器动态创建） -->
-    
-    <div class="content-wrapper">
-    <!-- 导航栏 -->
-    <nav class="glass border-b border-white/20">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-8">
-                    <a href="/dashboard.html" class="text-white text-xl font-bold">球队管理系统</a>
-                    <div class="hidden md:flex space-x-4">
-                        <a href="/dashboard.html" class="text-white/90 hover:text-white px-3 py-2 rounded-lg bg-white/10">仪表板</a>
-                        <a href="/teams.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">球队管理</a>
-                        <a href="/activities.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">活动管理</a>
-                        <a href="/attendance.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">出勤管理</a>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <span id="userName" class="text-white/90"></span>
-                    <button onclick="showBackgroundSettings()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition" title="背景设置">
-                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </button>
-                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">退出登录</button>
-                </div>
-            </div>
+<body class="min-h-screen bg-gradient-to-br from-pitch-900 via-slate-950 to-slate-900">
+  <div class="min-h-screen">
+
+    <!-- Top bar -->
+    <div class="sticky top-0 z-20 bg-black/20 backdrop-blur-xl border-b border-white/10">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <a href="/dashboard.html" class="text-white font-bold">球队管理系统</a>
+          <span class="text-white/40 text-sm hidden sm:inline">Dashboard</span>
         </div>
-    </nav>
-
-    <!-- 主内容 -->
-    <div class="container mx-auto px-4 py-8">
-        <div class="mb-8">
-            <h1 class="text-4xl font-bold text-white mb-2">用户仪表板</h1>
-            <p class="text-white/80">欢迎回来，<span id="welcomeUserName"></span></p>
+        <div class="flex items-center gap-2">
+          <a href="/tactics.html" class="btn-ghost">战术板</a>
+          <a href="/teams.html" class="btn-ghost">球队</a>
+          <a href="/profile.html" class="btn-ghost">头像</a>
+          <button id="btnLogout" class="btn bg-red-500/90 hover:bg-red-600 text-white">退出</button>
         </div>
-
-        <!-- 统计卡片 -->
-        <div class="grid md:grid-cols-4 gap-6 mb-8">
-            <div class="glass rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-white/70 text-sm mb-1">我的球队</p>
-                        <p class="text-3xl font-bold text-white" id="teamCount">0</p>
-                    </div>
-                    <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-white/70 text-sm mb-1">活动数量</p>
-                        <p class="text-3xl font-bold text-white" id="activityCount">0</p>
-                    </div>
-                    <div class="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-white/70 text-sm mb-1">出勤率</p>
-                        <p class="text-3xl font-bold text-white" id="attendanceRate">0%</p>
-                    </div>
-                    <div class="w-12 h-12 rounded-lg bg-pink-500 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass rounded-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-white/70 text-sm mb-1">本月出勤</p>
-                        <p class="text-3xl font-bold text-white" id="monthAttendance">0</p>
-                    </div>
-                    <div class="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 用户信息卡片 -->
-        <div class="glass rounded-xl p-6 mb-8">
-            <h2 class="text-2xl font-bold text-white mb-4">个人信息</h2>
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                    <p class="text-white/70 text-sm mb-1">用户名</p>
-                    <p class="text-white font-medium" id="userInfoUsername">-</p>
-                </div>
-                <div>
-                    <p class="text-white/70 text-sm mb-1">邮箱</p>
-                    <p class="text-white font-medium" id="userInfoEmail">-</p>
-                </div>
-                <div>
-                    <p class="text-white/70 text-sm mb-1">注册时间</p>
-                    <p class="text-white font-medium" id="userInfoCreatedAt">-</p>
-                </div>
-                <div>
-                    <p class="text-white/70 text-sm mb-1">用户ID</p>
-                    <p class="text-white font-medium text-sm" id="userInfoId">-</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 快速操作 -->
-        <div class="glass rounded-xl p-6">
-            <h2 class="text-2xl font-bold text-white mb-4">快速操作</h2>
-            <div class="grid md:grid-cols-3 gap-4">
-                <a href="/teams.html" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-4 px-6 rounded-lg transition text-center">
-                    管理球队
-                </a>
-                <a href="/activities.html" class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-4 px-6 rounded-lg transition text-center">
-                    创建活动
-                </a>
-                <a href="/attendance.html" class="bg-pink-500 hover:bg-pink-600 text-white font-medium py-4 px-6 rounded-lg transition text-center">
-                    查看出勤
-                </a>
-            </div>
-        </div>
-    </div>
-    </div> <!-- 结束 content-wrapper -->
-
-    <!-- 炫酷背景效果 -->
-    <script src="/js/fancy-background.js"></script>
-
-    <!-- 背景设置模态框 -->
-    <div id="backgroundSettingsModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass rounded-2xl p-8 max-w-md w-full">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-white">背景设置</h3>
-                <button onclick="closeBackgroundSettings()" class="text-white/70 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <form id="backgroundUploadForm" onsubmit="handleBackgroundUpload(event)" class="space-y-4">
-                <div>
-                    <label class="block text-white/80 mb-2">
-                        选择背景图片（最多10张）
-                        <span class="text-white/60 text-sm ml-2" id="imageCount">0 / 10</span>
-                    </label>
-                    <input type="file" id="backgroundImageInput" accept="image/*" multiple onchange="onBackgroundFileChange(event)" 
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/20 file:text-white hover:file:bg-white/30">
-                    <p class="text-white/60 text-xs mt-1">支持 JPG、PNG、GIF 格式，每张最大 5MB，可多选</p>
-                </div>
-                
-                <!-- 预览区域 -->
-                <div id="backgroundPreviewContainer" class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto"></div>
-                
-                <!-- 已上传的图片列表 -->
-                <div>
-                    <label class="block text-white/80 mb-2">已上传的图片</label>
-                    <div id="backgroundImageList" class="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2 bg-white/5 rounded-lg">
-                        <div class="text-center py-8 text-white/60">暂无背景图片，请上传</div>
-                    </div>
-                </div>
-
-                <!-- 轮播间隔设置 -->
-                <div>
-                    <label class="block text-white/80 mb-2">
-                        轮播间隔
-                        <span class="text-white/60 text-sm ml-2" id="intervalDisplay">5 秒</span>
-                    </label>
-                    <div class="flex space-x-2">
-                        <input type="number" id="intervalInput" min="1" max="60" value="5" 
-                            class="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <button type="button" onclick="setBackgroundInterval()" 
-                            class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition">
-                            设置
-                        </button>
-                    </div>
-                    <p class="text-white/60 text-xs mt-1">设置背景图片自动切换的间隔时间（秒）</p>
-                </div>
-
-                <div id="backgroundError" class="hidden bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm"></div>
-                <div id="backgroundSuccess" class="hidden bg-green-500/20 border border-green-500/50 rounded-lg p-3 text-green-200 text-sm"></div>
-                
-                <div class="flex space-x-3">
-                    <button type="submit" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition">
-                        上传图片
-                    </button>
-                    <button type="button" onclick="resetBackground()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition">
-                        恢复默认
-                    </button>
-                </div>
-            </form>
-        </div>
+      </div>
     </div>
 
-    <!-- 引入背景管理器 -->
-    <script src="/js/background-manager.js"></script>
-    <script>
-        const authToken = localStorage.getItem('authToken');
-        if (!authToken) {
-            window.location.href = '/login.html';
+    <div class="max-w-6xl mx-auto px-4 py-8">
+
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white">Dashboard</h1>
+          <p class="text-white/70 mt-2">首发版本：登录 → Dashboard → 进入球队/战术板</p>
+        </div>
+
+        <div class="glass rounded-2xl px-4 py-3 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/15 bg-black/30">
+            <img id="avatar" alt="avatar" class="w-full h-full object-cover" />
+          </div>
+          <div>
+            <div id="userName" class="text-white font-semibold">加载中…</div>
+            <div id="userEmail" class="text-white/60 text-sm"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+        <div class="glass rounded-2xl p-5">
+          <div class="text-white font-semibold">我的球队</div>
+          <div class="text-white/60 text-sm mt-1">选择一个球队作为当前上下文</div>
+          <div class="mt-4">
+            <select id="teamSelect" class="input">
+              <option value="">加载中…</option>
+            </select>
+          </div>
+          <div id="teamHint" class="text-white/60 text-xs mt-2"></div>
+          <div class="mt-4 flex gap-2">
+            <a href="/teams.html" class="btn-primary">去球队管理</a>
+            <a href="/tactics.html" class="btn-ghost">打开战术板</a>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-5">
+          <div class="text-white font-semibold">头像上传</div>
+          <div class="text-white/60 text-sm mt-1">每个球员自己上传头像</div>
+          <div class="mt-4">
+            <a href="/profile.html" class="btn-primary w-full">上传/更换头像</a>
+          </div>
+          <div class="text-white/50 text-xs mt-2">上传后将用于球队名单与战术板显示</div>
+        </div>
+
+        <div class="glass rounded-2xl p-5">
+          <div class="text-white font-semibold">系统状态</div>
+          <div class="text-white/60 text-sm mt-1">服务健康检查</div>
+          <div class="mt-4 flex items-center gap-2">
+            <span id="healthDot" class="w-2.5 h-2.5 rounded-full bg-white/30"></span>
+            <span id="healthText" class="text-white/70 text-sm">检查中…</span>
+          </div>
+          <div class="text-white/50 text-xs mt-2" id="healthTime"></div>
+        </div>
+      </div>
+
+      <!-- Register entry (since you said 1要) -->
+      <div class="mt-8 text-white/70 text-sm">
+        没有账号？
+        <a href="/register.html" class="underline underline-offset-4 hover:text-white">去注册</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/js/fancy-background.js"></script>
+  <script>
+    const TOKEN_KEY = 'authToken';
+    const USER_KEY = 'user';
+    const CURRENT_TEAM_KEY = 'team_management:currentTeamId';
+    const CURRENT_TEAM_NAME_KEY = 'team_management:currentTeamName';
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    const avatarEl = document.getElementById('avatar');
+    const nameEl = document.getElementById('userName');
+    const emailEl = document.getElementById('userEmail');
+
+    function requireLogin() {
+      window.location.href = '/login.html';
+    }
+
+    async function loadMe() {
+      if (!token) return requireLogin();
+      const res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return requireLogin();
+      const me = await res.json();
+      nameEl.textContent = me.username || '用户';
+      emailEl.textContent = me.email || '';
+      avatarEl.src = (me.avatarUrl ? (me.avatarUrl + '?t=' + Date.now()) : 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%230b1220%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2246%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E');
+
+      // cache user for other pages
+      localStorage.setItem(USER_KEY, JSON.stringify(me));
+    }
+
+    async function loadTeams() {
+      const select = document.getElementById('teamSelect');
+      const hint = document.getElementById('teamHint');
+      if (!select) return;
+      select.innerHTML = '<option value="">加载中…</option>';
+
+      try {
+        const res = await fetch('/teams', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('teams');
+        const teams = await res.json();
+        if (!Array.isArray(teams) || teams.length === 0) {
+          select.innerHTML = '<option value="">还没有球队</option>';
+          hint.textContent = '你可以去「球队」页面创建一个球队。';
+          return;
         }
 
-        async function loadUserInfo() {
-            try {
-                const response = await fetch('/auth/me', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
+        const savedId = localStorage.getItem(CURRENT_TEAM_KEY);
+        const selected = teams.find(t => t.id === savedId) || teams[0];
 
-                if (response.status === 401) {
-                    localStorage.removeItem('authToken');
-                    window.location.href = '/login.html';
-                    return;
-                }
+        select.innerHTML = teams.map(t => `<option value="${t.id}">${t.name || '未命名球队'}</option>`).join('');
+        select.value = selected.id;
+        localStorage.setItem(CURRENT_TEAM_KEY, selected.id);
+        localStorage.setItem(CURRENT_TEAM_NAME_KEY, selected.name || '未命名球队');
+        hint.textContent = `当前：${selected.name || '未命名球队'}`;
 
-                const user = await response.json();
-                document.getElementById('userName').textContent = user.username;
-                document.getElementById('welcomeUserName').textContent = user.username;
-                document.getElementById('userInfoUsername').textContent = user.username;
-                document.getElementById('userInfoEmail').textContent = user.email;
-                document.getElementById('userInfoId').textContent = user.id;
-                document.getElementById('userInfoCreatedAt').textContent = new Date(user.createdAt).toLocaleString('zh-CN');
-            } catch (error) {
-                console.error('加载用户信息失败:', error);
-            }
-        }
+        select.addEventListener('change', () => {
+          const id = select.value;
+          const t = teams.find(x => x.id === id);
+          localStorage.setItem(CURRENT_TEAM_KEY, id);
+          localStorage.setItem(CURRENT_TEAM_NAME_KEY, (t && t.name) || '未命名球队');
+          hint.textContent = `当前：${(t && t.name) || '未命名球队'}`;
+        });
+      } catch (e) {
+        select.innerHTML = '<option value="">加载失败</option>';
+        hint.textContent = '加载球队失败，请刷新重试。';
+      }
+    }
 
-        function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
-        }
+    async function health() {
+      const dot = document.getElementById('healthDot');
+      const text = document.getElementById('healthText');
+      const time = document.getElementById('healthTime');
 
-        // 初始化
-        loadUserInfo();
-    </script>
+      try {
+        const res = await fetch('/health');
+        if (!res.ok) throw new Error('health');
+        const data = await res.json();
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        text.textContent = '正常';
+        time.textContent = data.timestamp || '';
+      } catch (e) {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-red-400';
+        text.textContent = '异常';
+      }
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      window.location.href = '/login.html';
+    });
+
+    loadMe();
+    loadTeams();
+    health();
+  </script>
 </body>
 </html>
