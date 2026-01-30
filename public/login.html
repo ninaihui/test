@@ -72,9 +72,7 @@
     </style>
 </head>
 <body class="relative flex items-center justify-center px-4 py-10 text-slate-100">
-    <button class="back-fab btn-ghost" data-back>返回</button>
-
-    <!-- 背景发光块 -->
+<!-- 背景发光块 -->
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
     <div class="blob blob-3"></div>
@@ -304,12 +302,6 @@
     </script>
     <script>
       (function(){
-        const backFab = document.querySelector('[data-back]');
-        if (!backFab) return;
-        backFab.addEventListener('click', () => {
-          if (window.history.length > 1) window.history.back();
-          else window.location.href = '/';
-        });
       })();
     </script>
 </body>

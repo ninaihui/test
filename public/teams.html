@@ -7,8 +7,7 @@
     <link rel="stylesheet" href="/assets/app.css" />
 </head>
 <body class="min-h-screen bg-fifa safe-bottom">
-    <button class="back-fab btn-ghost" data-back>返回</button>
-    <!-- 导航栏 (desktop) -->
+<!-- 导航栏 (desktop) -->
     <nav class="glass border-b border-white/20 hidden md:block">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
@@ -411,12 +410,6 @@
 
     <script>
       (function(){
-        const backFab = document.querySelector('[data-back]');
-        if (!backFab) return;
-        backFab.addEventListener('click', () => {
-          if (window.history.length > 1) window.history.back();
-          else window.location.href = '/dashboard.html';
-        });
       })();
     </script>
 

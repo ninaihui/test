@@ -7,17 +7,12 @@
   <link rel="stylesheet" href="/assets/app.css" />
 </head>
 <body class="min-h-screen bg-fifa">
-  <button class="back-fab btn-ghost" data-back>返回</button>
-  <div class="min-h-screen safe-bottom">
+<div class="min-h-screen safe-bottom">
 
     <!-- Top bar (simple horizontal menu) -->
     <div class="sticky top-0 z-20 bg-black/25 backdrop-blur-xl border-b border-white/10">
       <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2 min-w-[180px]">
-          <button id="btnBack" class="btn-ghost">返回</button>
-        </div>
-
-        <!-- Center: current team -->
+<!-- Center: current team -->
         <div class="flex items-center gap-2">
           <span class="text-white/60 text-xs">当前球队</span>
           <select id="teamSelect" class="input !py-2 !px-3 !text-sm min-w-[200px]">
@@ -189,14 +184,6 @@
     });
 
     // Back buttons
-    const backFab = document.querySelector('[data-back]');
-    if (backFab) backFab.addEventListener('click', () => {
-      if (window.history.length > 1) window.history.back();
-      else window.location.href = '/login.html';
-    });
-
-    document.getElementById('btnBack').addEventListener('click', () => {
-      if (window.history.length > 1) window.history.back();
       else window.location.href = '/login.html';
     });
 

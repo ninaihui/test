@@ -24,8 +24,7 @@
     </style>
 </head>
 <body class="min-h-screen gradient-bg flex items-center justify-center p-4">
-    <button class="back-fab btn-ghost" data-back>返回</button>
-    <div class="glass rounded-2xl p-8 max-w-md w-full shadow-2xl">
+<div class="glass rounded-2xl p-8 max-w-md w-full shadow-2xl">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-white mb-2">用户注册</h1>
             <p class="text-white/80">创建您的账户</p>
@@ -110,12 +109,6 @@
     </script>
     <script>
       (function(){
-        const backFab = document.querySelector('[data-back]');
-        if (!backFab) return;
-        backFab.addEventListener('click', () => {
-          if (window.history.length > 1) window.history.back();
-          else window.location.href = '/login.html';
-        });
       })();
     </script>
 </body>
