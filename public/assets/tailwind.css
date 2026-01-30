@@ -93,6 +93,14 @@
     padding-bottom: 88px; /* nav height + breathing room */
   }
 
+  /* Flat login background (minimal, cyan HUD glow) */
+  .bg-login-flat {
+    background:
+      radial-gradient(800px 520px at 50% 8%, rgba(var(--ui-accent), 0.14), transparent 58%),
+      radial-gradient(900px 560px at 85% 85%, rgba(var(--ui-accent2), 0.09), transparent 62%),
+      linear-gradient(180deg, rgb(var(--ui-bg-0)), rgb(var(--ui-bg-1)));
+  }
+
   .bg-fifa {
     background:
       radial-gradient(900px 520px at 18% 18%, rgba(var(--ui-accent2), 0.16), transparent 55%),
