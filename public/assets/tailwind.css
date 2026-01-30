@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Tailwind v4: explicitly include these files for class detection */
+@source "../**/*.html";
+@source "../**/*.js";
+
+/* Minimal base styles */
+html, body { height: 100%; }

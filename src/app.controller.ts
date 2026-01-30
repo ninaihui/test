@@ -6,8 +6,8 @@ import { join } from 'path';
 export class AppController {
   @Get()
   getHello(@Res() res: Response) {
-    // 返回首页 HTML 页面
-    res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+    // 首发：根路径直接进入登录页
+    res.sendFile(join(__dirname, '..', 'public', 'login.html'));
   }
 
   @Get('login.html')

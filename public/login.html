@@ -4,20 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>登录 - 业余球队管理系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#8b5cf6',
-                        accent: '#ec4899',
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="/assets/app.css" />
     <style>
         /* 动态渐变背景 */
         @keyframes gradientMove {
@@ -133,7 +120,7 @@
         </div>
 
         <!-- 右侧登录卡片 -->
-        <div class="glass rounded-3xl px-8 py-8 w-full lg:w-1/2">
+        <div class="glass rounded-3xl px-8 py-8 w-full lg:w-1/2 bg-white/5 border border-white/10">
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-2xl font-bold">欢迎登录</h2>
@@ -206,7 +193,7 @@
                            hover:from-blue-400 hover:via-purple-400 hover:to-pink-400 text-white font-medium
                            text-sm shadow-lg shadow-blue-500/25 transform hover:-translate-y-0.5 hover:shadow-xl
                            transition duration-200">
-                    登录到系统
+                    登录
                 </button>
             </form>
 
@@ -302,13 +289,8 @@
                     localStorage.setItem('user', JSON.stringify(result.user));
 
                     // 根据角色跳转（确保后端返回 user.role）
-                    if (result.user && result.user.role === 'super_admin') {
-                        window.location.href = '/admin-dashboard.html'; // 也可单独做 super-admin 页面
-                    } else if (result.user && result.user.role === 'admin') {
-                        window.location.href = '/admin-dashboard.html';
-                    } else {
-                        window.location.href = '/user-dashboard.html';
-                    }
+                    // 首发：统一跳转到 dashboard
+                    window.location.href = '/dashboard.html';
                 } else {
                     errorDiv.textContent = result.message || '登录失败，请检查用户名和密码';
                     errorDiv.classList.remove('hidden');
