@@ -33,6 +33,7 @@
   </style>
 </head>
 <body class="min-h-screen bg-fifa safe-bottom">
+  <button class="back-fab btn-ghost" data-back>返回</button>
   <div class="sticky top-0 z-20 bg-black/20 backdrop-blur-xl border-b border-white/10">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
@@ -106,6 +107,12 @@
     const TOKEN_KEY='authToken';
     if(!localStorage.getItem(TOKEN_KEY)) window.location.href='/login.html';
     document.getElementById('btnBack').addEventListener('click',()=>window.location.href='/dashboard.html');
+    const backFab = document.querySelector('[data-back]');
+    if (backFab) backFab.addEventListener('click', () => {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = '/dashboard.html';
+    });
+
     document.getElementById('teamTitle').textContent = localStorage.getItem('team_management:currentTeamName') || '未选择';
   </script>
 </body>

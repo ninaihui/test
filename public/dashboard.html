@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/assets/app.css" />
 </head>
 <body class="min-h-screen bg-fifa">
+  <button class="back-fab btn-ghost" data-back>返回</button>
   <div class="min-h-screen safe-bottom">
 
     <!-- Top bar (simple horizontal menu) -->
@@ -187,8 +188,14 @@
       window.location.href = '/login.html';
     });
 
+    // Back buttons
+    const backFab = document.querySelector('[data-back]');
+    if (backFab) backFab.addEventListener('click', () => {
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = '/login.html';
+    });
+
     document.getElementById('btnBack').addEventListener('click', () => {
-      // Prefer browser back; fallback to dashboard itself
       if (window.history.length > 1) window.history.back();
       else window.location.href = '/login.html';
     });

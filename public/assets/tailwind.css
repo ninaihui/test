@@ -58,6 +58,16 @@
     border-color: rgba(var(--ui-accent2), 0.35);
   }
 
+  /* Back button (all pages) */
+  .back-fab {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 60;
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
   /* Active tab look */
   .tab-active {
     color: rgb(var(--ui-accent));

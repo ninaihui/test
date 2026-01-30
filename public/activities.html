@@ -24,6 +24,7 @@
     </style>
 </head>
 <body class="min-h-screen gradient-bg">
+    <button class="back-fab btn-ghost" data-back>返回</button>
     <!-- 导航栏 -->
     <nav class="glass border-b border-white/20">
         <div class="container mx-auto px-4 py-4">
@@ -231,6 +232,17 @@
             </form>
         </div>
     </div>
+
+    <script>
+      (function(){
+        const backFab = document.querySelector('[data-back]');
+        if (!backFab) return;
+        backFab.addEventListener('click', () => {
+          if (window.history.length > 1) window.history.back();
+          else window.location.href = '/dashboard.html';
+        });
+      })();
+    </script>
 
     <!-- 引入背景管理器 -->
     <script src="/js/background-manager.js"></script>
