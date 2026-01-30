@@ -4,5 +4,73 @@
 @source "../**/*.html";
 @source "../**/*.js";
 
-/* Minimal base styles */
-html, body { height: 100%; }
+/* FIFA-like (neon modern) UI theme */
+@layer base {
+  :root {
+    --ui-bg-0: 8 13 23;       /* #080d17 */
+    --ui-bg-1: 2 6 23;        /* #020617 */
+    --ui-panel: 255 255 255;
+    --ui-line: 255 255 255;
+    --ui-accent: 60 255 160;  /* neon green */
+    --ui-accent2: 64 200 255; /* cyan */
+    --ui-danger: 255 68 90;
+  }
+
+  html, body { height: 100%; }
+}
+
+@layer components {
+  /* Panel */
+  .glass {
+    @apply bg-white/5 border border-white/10 backdrop-blur-xl;
+    box-shadow:
+      0 0 0 1px rgba(var(--ui-line), 0.06),
+      0 14px 40px rgba(0,0,0,0.45);
+  }
+
+  /* Input */
+  .input {
+    @apply w-full rounded-xl bg-black/30 border border-white/15 text-white/90 px-4 py-3 outline-none;
+  }
+  .input:focus {
+    border-color: rgba(var(--ui-accent2), 0.9);
+    box-shadow: 0 0 0 2px rgba(var(--ui-accent2), 0.25);
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-black;
+    background: linear-gradient(135deg, rgba(var(--ui-accent), 1), rgba(var(--ui-accent2), 1));
+    box-shadow: 0 0 18px rgba(var(--ui-accent2), 0.22);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 0 24px rgba(var(--ui-accent2), 0.32);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-white/80 border border-white/15 bg-white/5;
+  }
+  .btn-ghost:hover {
+    @apply text-white bg-white/10;
+    border-color: rgba(var(--ui-accent2), 0.35);
+  }
+
+  /* Active tab look (add class to current menu item later) */
+  .tab-active {
+    color: rgb(var(--ui-accent));
+    border-color: rgba(var(--ui-accent), 0.55);
+    box-shadow: 0 0 14px rgba(var(--ui-accent), 0.18);
+  }
+}
+
+@layer utilities {
+  .bg-fifa {
+    background:
+      radial-gradient(900px 520px at 18% 18%, rgba(var(--ui-accent2), 0.16), transparent 55%),
+      radial-gradient(720px 480px at 82% 68%, rgba(var(--ui-accent), 0.12), transparent 58%),
+      linear-gradient(180deg, rgb(var(--ui-bg-0)), rgb(var(--ui-bg-1)));
+  }
+}
