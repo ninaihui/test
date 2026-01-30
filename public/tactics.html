@@ -32,7 +32,7 @@
     .save-status.show{ opacity:1; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-pitch-900 via-slate-950 to-slate-900">
+<body class="min-h-screen bg-fifa safe-bottom">
   <div class="sticky top-0 z-20 bg-black/20 backdrop-blur-xl border-b border-white/10">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
@@ -77,9 +77,32 @@
     </div>
   </div>
 
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav" aria-label="底部导航">
+    <div class="bottom-nav-inner">
+      <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
+      <a class="bottom-nav-item" data-nav="teams" href="/teams.html">球队</a>
+      <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
+      <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
+    </div>
+  </nav>
+
   <script src="/js/fancy-background.js"></script>
   <script src="/js/tactics-board.js"></script>
   <script>
+    (function setBottomNavActive(){
+      const path = window.location.pathname;
+      const map = {
+        '/dashboard.html': 'dashboard',
+        '/teams.html': 'teams',
+        '/tactics.html': 'tactics',
+        '/profile.html': 'me',
+      };
+      const key = map[path] || 'tactics';
+      document.querySelectorAll('.bottom-nav-item').forEach(a => {
+        if (a.dataset.nav === key) a.classList.add('active');
+      });
+    })();
     const TOKEN_KEY='authToken';
     if(!localStorage.getItem(TOKEN_KEY)) window.location.href='/login.html';
     document.getElementById('btnBack').addEventListener('click',()=>window.location.href='/dashboard.html');

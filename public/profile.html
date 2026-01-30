@@ -6,7 +6,7 @@
   <title>个人资料 - 业余球队管理系统</title>
   <link rel="stylesheet" href="/assets/app.css" />
 </head>
-<body class="min-h-screen bg-fifa">
+<body class="min-h-screen bg-fifa safe-bottom">
   <div class="container mx-auto px-4 py-8 max-w-xl">
     <div class="glass rounded-2xl p-6">
       <div class="flex items-center justify-between gap-3">
@@ -45,8 +45,31 @@
     </div>
   </div>
 
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav" aria-label="底部导航">
+    <div class="bottom-nav-inner">
+      <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
+      <a class="bottom-nav-item" data-nav="teams" href="/teams.html">球队</a>
+      <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
+      <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
+    </div>
+  </nav>
+
   <script src="/js/fancy-background.js"></script>
   <script>
+    (function setBottomNavActive(){
+      const path = window.location.pathname;
+      const map = {
+        '/dashboard.html': 'dashboard',
+        '/teams.html': 'teams',
+        '/tactics.html': 'tactics',
+        '/profile.html': 'me',
+      };
+      const key = map[path] || 'me';
+      document.querySelectorAll('.bottom-nav-item').forEach(a => {
+        if (a.dataset.nav === key) a.classList.add('active');
+      });
+    })();
     const token = localStorage.getItem('authToken');
     const statusEl = document.getElementById('status');
     const avatarImg = document.getElementById('avatarImg');

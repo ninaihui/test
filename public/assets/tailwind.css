@@ -58,8 +58,29 @@
     border-color: rgba(var(--ui-accent2), 0.35);
   }
 
-  /* Active tab look (add class to current menu item later) */
+  /* Active tab look */
   .tab-active {
+    color: rgb(var(--ui-accent));
+    border-color: rgba(var(--ui-accent), 0.55);
+    box-shadow: 0 0 14px rgba(var(--ui-accent), 0.18);
+  }
+
+  /* Mobile bottom nav */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 md:hidden;
+    background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.55));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid rgba(255,255,255,0.10);
+  }
+  .bottom-nav-inner {
+    @apply max-w-6xl mx-auto px-3 py-2 grid grid-cols-4 gap-2;
+  }
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs text-white/70 border border-white/10 bg-white/5;
+    min-height: 48px; /* tap target */
+  }
+  .bottom-nav-item.active {
     color: rgb(var(--ui-accent));
     border-color: rgba(var(--ui-accent), 0.55);
     box-shadow: 0 0 14px rgba(var(--ui-accent), 0.18);
@@ -67,6 +88,11 @@
 }
 
 @layer utilities {
+  /* Add this to a page wrapper to avoid being covered by bottom nav */
+  .safe-bottom {
+    padding-bottom: 88px; /* nav height + breathing room */
+  }
+
   .bg-fifa {
     background:
       radial-gradient(900px 520px at 18% 18%, rgba(var(--ui-accent2), 0.16), transparent 55%),
