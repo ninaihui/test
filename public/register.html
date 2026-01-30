@@ -6,25 +6,20 @@
     <title>注册 - 业余球队管理系统</title>
     <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
     <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 1rem;
+            background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+                url('/assets/login-bg.png') no-repeat center center fixed;
+            background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+        .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+        .glass input[type="text"], .glass input[type="email"], .glass input[type="password"] {
+            width: 100%; border-radius: 12px; background: rgba(0,0,0,.28) !important;
+            border: 1px solid rgba(255,255,255,.2); padding: 12px 16px; color: #e2e8f0 !important;
         }
-        .gradient-bg {
-            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        .glass input::placeholder { color: rgba(226,232,240,.55); }
     </style>
 </head>
-<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
-<div class="glass rounded-2xl p-8 max-w-md w-full shadow-2xl">
+<body class="min-h-screen flex items-center justify-center p-4">
+<div class="glass rounded-2xl p-8 max-w-md w-full">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-white mb-2">用户注册</h1>
             <p class="text-white/80">创建您的账户</p>

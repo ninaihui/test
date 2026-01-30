@@ -6,6 +6,11 @@
   <title>战术板 - 业余球队管理系统</title>
   <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
   <style>
+    body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
+      background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+        url('/assets/login-bg.png') no-repeat center center fixed;
+      background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
     /* Keep the existing field styles from old index (minimal copy) */
     .field-wrap { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); }
     @media (max-width: 640px){ .field-wrap { aspect-ratio: 3/4; max-height: 72vh; } }
@@ -32,7 +37,7 @@
     .save-status.show{ opacity:1; }
   </style>
 </head>
-<body class="min-h-screen bg-fifa safe-bottom">
+<body class="min-h-screen text-slate-100 safe-bottom">
 <!-- Top menu removed: use bottom nav only -->
 
   <div class="max-w-6xl mx-auto px-4 py-8">

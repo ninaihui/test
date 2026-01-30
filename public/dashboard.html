@@ -6,12 +6,16 @@
   <title>首页 - 业余球队管理系统</title>
   <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
   <style>
-    .card { background: rgba(0,0,0,.25); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.1); }
+    body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
+      background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+        url('/assets/login-bg.png') no-repeat center center fixed;
+      background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+    .card, .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
     .card-hover:hover { background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
     .stat-num { font-variant-numeric: tabular-nums; }
   </style>
 </head>
-<body class="min-h-screen bg-fifa">
+<body class="min-h-screen text-slate-100">
 <div class="min-h-screen safe-bottom pb-20">
 
   <div class="max-w-2xl mx-auto px-4 py-6">

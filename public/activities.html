@@ -4,26 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>活动管理 - 业余球队管理系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
     <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .gradient-bg {
-            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
+            background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+                url('/assets/login-bg.png') no-repeat center center fixed;
+            background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+        .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+        .glass input, .glass select, .glass textarea { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
     </style>
 </head>
-<body class="min-h-screen gradient-bg">
+<body class="min-h-screen text-slate-100">
 <!-- 导航栏 -->
     <nav class="glass border-b border-white/20">
         <div class="container mx-auto px-4 py-4">
