@@ -11,8 +11,8 @@
     --ui-bg-1: 2 6 23;        /* #020617 */
     --ui-panel: 255 255 255;
     --ui-line: 255 255 255;
-    --ui-accent: 60 255 160;  /* neon green */
-    --ui-accent2: 64 200 255; /* cyan */
+    --ui-accent: 64 200 255; /* cyan (primary) */
+    --ui-accent2: 60 255 160; /* neon green (secondary) */
     --ui-danger: 255 68 90;
   }
 
