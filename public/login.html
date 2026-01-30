@@ -5,17 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>登录 - 业余球队管理系统</title>
     <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
-    <!-- Fallback styles: ensure mobile UI isn't "white" even if CSS cache/network hiccups -->
+    <!-- 登录页背景：梅西图片 + 遮罩保证表单可读 -->
     <style>
-      body{background:radial-gradient(800px 520px at 50% 8%, rgba(64,200,255,.14), transparent 58%),radial-gradient(900px 560px at 85% 85%, rgba(60,255,160,.09), transparent 62%),linear-gradient(180deg,#080d17,#020617);color:#e2e8f0}
-      .input{width:100%;border-radius:12px;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.15);padding:12px 16px}
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 1.25rem 2.5rem;
+        box-sizing: border-box;
+        background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+          url('/assets/login-bg.png') no-repeat center center fixed;
+        background-size: cover;
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+      }
+      .login-box {
+        background: rgba(0,0,0,.18);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 1rem;
+        padding: 1.5rem;
+      }
+      /* 输入框透明，覆盖全局样式和浏览器自动填充白底 */
+      .login-box input[type="text"],
+      .login-box input[type="password"],
+      .login-box .input {
+        width: 100%;
+        border-radius: 12px;
+        background: rgba(0,0,0,.28) !important;
+        -webkit-box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+        box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+        border: 1px solid rgba(255,255,255,.2);
+        padding: 12px 16px;
+        color: #e2e8f0 !important;
+      }
+      .login-box input::placeholder { color: rgba(226,232,240,.55); }
+      .login-box input:focus {
+        outline: none;
+        border-color: rgba(255,255,255,.4);
+        background: rgba(0,0,0,.35) !important;
+        -webkit-box-shadow: 0 0 0 1000px rgba(0,0,0,.35) inset !important;
+        box-shadow: 0 0 0 1000px rgba(0,0,0,.35) inset !important;
+      }
+      /* 覆盖浏览器自动填充（黄/白底）为透明深色 */
+      .login-box input:-webkit-autofill,
+      .login-box input:-webkit-autofill:hover,
+      .login-box input:-webkit-autofill:focus,
+      .login-box input:-webkit-autofill:active {
+        -webkit-text-fill-color: #e2e8f0 !important;
+        -webkit-box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+        box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+        transition: background-color 5000s ease-in-out 0s;
+      }
       .btn-primary{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:12px 16px;font-weight:700;color:#001018;background:linear-gradient(135deg,rgba(64,200,255,1),rgba(60,255,160,1))}
     </style>
 </head>
-<body class="min-h-screen bg-login-flat flex items-center justify-center px-4 py-10 text-slate-100">
+<body class="min-h-screen flex items-center justify-center px-4 py-10 text-slate-100">
 
     <div class="w-full max-w-md">
-        <div class="border border-white/10 bg-black/20 rounded-2xl p-6">
+        <div class="login-box">
 
             <form id="loginForm" class="space-y-4">
                 <div>
@@ -43,7 +96,7 @@
                             placeholder="密码"
                             autocomplete="current-password"
                         />
-                        <button id="togglePwd" type="button" class="absolute inset-y-0 right-2 my-2 px-3 rounded-lg border border-white/10 bg-white/5 text-white/70 text-xs">
+                        <button id="togglePwd" type="button" class="absolute inset-y-0 right-2 my-2 px-3 rounded-lg border border-white/15 bg-black/20 text-white/80 text-xs">
                             显示
                         </button>
                     </div>
