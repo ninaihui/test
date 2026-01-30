@@ -3,7 +3,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -64,12 +63,25 @@ model TeamMember {
   @@map("team_members")
 }
 
+model Venue {
+  id        String   @id @default(uuid())
+  name      String   // 场地名称，如「XX足球公园A场」
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activities Activity[]
+
+  @@map("venues")
+}
+
 model Activity {
   id          String   @id @default(uuid())
   name        String
   description String?
   date        DateTime
-  location    String?
+  location    String?  // 兼容旧数据或手填地点
+  venueId     String?  // 关联场地（优先展示场地名）
   createdById String
   teamId      String?
   createdAt   DateTime @default(now())
@@ -77,6 +89,7 @@ model Activity {
 
   createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
   team        Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  venue       Venue?       @relation(fields: [venueId], references: [id], onDelete: SetNull)
   attendances Attendance[]
 
   @@map("activities")
@@ -86,7 +99,8 @@ model Attendance {
   id         String   @id @default(uuid())
   userId     String
   activityId String
-  status     String   @default("present") // present, absent, late
+  status     String   @default("present") // registered=已报名, present=到场, absent=缺席, late=迟到
+  position   String?  // 出场位置（管理员安排），如 前锋、左后卫
   notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

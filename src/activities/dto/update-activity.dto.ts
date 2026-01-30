@@ -17,4 +17,8 @@ export class UpdateActivityDto {
   @IsString({ message: '活动地点必须是字符串' })
   @IsOptional()
   location?: string;
+
+  @IsString({ message: '场地ID必须是字符串' })
+  @IsOptional()
+  venueId?: string;
 }

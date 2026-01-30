@@ -2,64 +2,59 @@ import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { join } from 'path';
 
+// 编译后文件在 dist/src/，需上两级到项目根再找 public
+const PUBLIC_DIR = join(__dirname, '..', '..', 'public');
+
 @Controller()
 export class AppController {
   @Get()
   getHello(@Res() res: Response) {
-    // 首发：根路径直接进入登录页
-    res.sendFile(join(__dirname, '..', 'public', 'login.html'));
+    res.sendFile(join(PUBLIC_DIR, 'login.html'));
   }
 
   @Get('login.html')
   getLogin(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'login.html'));
+    res.sendFile(join(PUBLIC_DIR, 'login.html'));
   }
 
   @Get('register.html')
   getRegister(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'register.html'));
+    res.sendFile(join(PUBLIC_DIR, 'register.html'));
   }
 
   @Get('dashboard.html')
   getDashboard(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'dashboard.html'));
+    res.sendFile(join(PUBLIC_DIR, 'dashboard.html'));
   }
 
   @Get('tactics.html')
   getTactics(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'tactics.html'));
+    res.sendFile(join(PUBLIC_DIR, 'tactics.html'));
   }
 
-  // 管理员仪表板
   @Get('admin-dashboard.html')
   getAdminDashboard(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'admin-dashboard.html'));
+    res.sendFile(join(PUBLIC_DIR, 'admin-dashboard.html'));
   }
 
-  // 普通用户仪表板
   @Get('user-dashboard.html')
   getUserDashboard(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'user-dashboard.html'));
+    res.sendFile(join(PUBLIC_DIR, 'user-dashboard.html'));
   }
 
   @Get('teams.html')
   getTeams(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'teams.html'));
+    res.sendFile(join(PUBLIC_DIR, 'teams.html'));
   }
 
   @Get('activities.html')
   getActivities(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'activities.html'));
-  }
-
-  @Get('attendance.html')
-  getAttendance(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'attendance.html'));
+    res.sendFile(join(PUBLIC_DIR, 'activities.html'));
   }
 
   @Get('profile.html')
   getProfile(@Res() res: Response) {
-    res.sendFile(join(__dirname, '..', 'public', 'profile.html'));
+    res.sendFile(join(PUBLIC_DIR, 'profile.html'));
   }
 
   @Get('health')

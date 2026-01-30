@@ -21,4 +21,8 @@ export class CreateActivityDto {
   @IsString({ message: '球队ID必须是字符串' })
   @IsOptional()
   teamId?: string;
+
+  @IsString({ message: '场地ID必须是字符串' })
+  @IsOptional()
+  venueId?: string;
 }

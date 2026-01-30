@@ -49,6 +49,27 @@
       </a>
     </section>
 
+    <!-- 本周末活动（场地 + 时间 + 报名） -->
+    <section class="mb-6" id="weekendSection">
+      <h2 class="text-white/80 text-sm font-medium mb-3">本周末活动</h2>
+      <div id="weekendCard" class="card rounded-2xl p-4">
+        <div id="weekendEmpty" class="text-white/50 text-sm text-center py-4">暂无即将举行的活动</div>
+        <div id="weekendContent" class="hidden">
+          <div class="flex justify-between items-start gap-2 mb-3">
+            <div>
+              <div id="weekendName" class="text-white font-semibold">—</div>
+              <div id="weekendVenue" class="text-white/70 text-sm mt-0.5">—</div>
+              <div id="weekendTime" class="text-white/50 text-xs mt-1">—</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span id="weekendStatus" class="text-white/60 text-sm">—</span>
+            <button type="button" id="weekendRegisterBtn" class="hidden rounded-xl px-4 py-2 text-sm font-medium text-[#001018] bg-gradient-to-r from-cyan-400 to-emerald-400 hover:opacity-90 transition">报名</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 即将到来的活动 -->
     <section class="mb-6">
       <div class="flex items-center justify-between mb-3">
@@ -72,29 +93,10 @@
       </div>
     </section>
 
-    <!-- 出勤概览（有当前球队时显示） -->
-    <section class="mb-6" id="attendanceSection">
-      <h2 class="text-white/80 text-sm font-medium mb-3">出勤概览</h2>
-      <div id="attendanceCard" class="card rounded-2xl p-4">
-        <div id="attendanceEmpty" class="hidden text-white/50 text-sm">选择球队后可看出勤统计</div>
-        <div id="attendanceContent" class="hidden flex items-center justify-between gap-4">
-          <div>
-            <div class="text-2xl font-bold text-white stat-num" id="attendanceRate">—</div>
-            <div class="text-white/50 text-xs">出勤率</div>
-          </div>
-          <div class="flex gap-4 text-xs text-white/60">
-            <span>到场 <span id="attPresent" class="text-emerald-400/90 stat-num">0</span></span>
-            <span>缺席 <span id="attAbsent" class="text-red-400/90 stat-num">0</span></span>
-            <span>迟到 <span id="attLate" class="text-amber-400/90 stat-num">0</span></span>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- 快捷入口 -->
     <section class="mb-6">
       <h2 class="text-white/80 text-sm font-medium mb-3">快捷入口</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <a href="/teams.html" class="card card-hover rounded-xl p-4 text-center transition">
           <div class="text-white font-medium text-sm">球队</div>
           <div class="text-white/50 text-xs mt-1">管理与加入</div>
@@ -102,10 +104,6 @@
         <a href="/activities.html" class="card card-hover rounded-xl p-4 text-center transition">
           <div class="text-white font-medium text-sm">活动</div>
           <div class="text-white/50 text-xs mt-1">训练与比赛</div>
-        </a>
-        <a href="/attendance.html" class="card card-hover rounded-xl p-4 text-center transition">
-          <div class="text-white font-medium text-sm">考勤</div>
-          <div class="text-white/50 text-xs mt-1">签到与统计</div>
         </a>
         <a href="/tactics.html" class="card card-hover rounded-xl p-4 text-center transition">
           <div class="text-white font-medium text-sm">战术板</div>
@@ -229,20 +227,100 @@
     return new Date(iso).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
+  function getVenueDisplay(activity) {
+    if (activity.venue && activity.venue.name) return activity.venue.name;
+    return activity.location || '—';
+  }
+
+  async function loadWeekendActivity() {
+    const emptyEl = document.getElementById('weekendEmpty');
+    const contentEl = document.getElementById('weekendContent');
+    const nameEl = document.getElementById('weekendName');
+    const venueEl = document.getElementById('weekendVenue');
+    const timeEl = document.getElementById('weekendTime');
+    const statusEl = document.getElementById('weekendStatus');
+    const btnEl = document.getElementById('weekendRegisterBtn');
+
+    try {
+      const res = await fetch('/activities?upcoming=1', { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const activities = await res.json();
+      const list = Array.isArray(activities) ? activities : [];
+      const first = list[0];
+      if (!first || !first.id) {
+        emptyEl.hidden = false;
+        contentEl.hidden = true;
+        emptyEl.classList.remove('hidden');
+        contentEl.classList.add('hidden');
+        return;
+      }
+      const detailRes = await fetch('/activities/' + first.id, { headers: { Authorization: 'Bearer ' + token } });
+      if (!detailRes.ok) {
+        emptyEl.hidden = false;
+        contentEl.hidden = true;
+        emptyEl.classList.remove('hidden');
+        contentEl.classList.add('hidden');
+        return;
+      }
+      const activity = await detailRes.json();
+      const userStr = localStorage.getItem(USER_KEY);
+      const me = userStr ? JSON.parse(userStr) : null;
+      const myAtt = (activity.attendances || []).find(a => a.user && a.user.id === (me && me.id));
+      const venueDisplay = getVenueDisplay(activity);
+
+      // 有活动时只显示活动内容，彻底隐藏「暂无」提示（避免与 class 冲突）
+      emptyEl.hidden = true;
+      contentEl.hidden = false;
+      emptyEl.classList.add('hidden');
+      contentEl.classList.remove('hidden');
+      nameEl.textContent = activity.name || '未命名活动';
+      venueEl.textContent = '场地：' + venueDisplay;
+      timeEl.textContent = formatActivityDate(activity.date);
+
+      if (myAtt) {
+        statusEl.textContent = '已报名' + (myAtt.position ? ' · ' + myAtt.position : ' · 待安排');
+        statusEl.classList.remove('hidden');
+        btnEl.classList.add('hidden');
+      } else {
+        statusEl.classList.add('hidden');
+        btnEl.classList.remove('hidden');
+        btnEl.textContent = '报名';
+        btnEl.onclick = async () => {
+          btnEl.disabled = true;
+          try {
+            const r = await fetch('/activities/' + activity.id + '/register', {
+              method: 'POST',
+              headers: { Authorization: 'Bearer ' + token },
+            });
+            if (r.ok) loadWeekendActivity();
+            else {
+              const err = await r.json().catch(() => ({}));
+              alert(err.message || '报名失败');
+            }
+          } finally {
+            btnEl.disabled = false;
+          }
+        };
+      }
+    } catch (e) {
+      emptyEl.hidden = false;
+      contentEl.hidden = true;
+      emptyEl.classList.remove('hidden');
+      contentEl.classList.add('hidden');
+    }
+  }
+
   async function loadUpcomingActivities() {
     const emptyEl = document.getElementById('activitiesEmpty');
     const itemsEl = document.getElementById('activityItems');
     const tpl = document.getElementById('activityItemTpl');
 
     try {
-      const res = await fetch('/activities', { headers: { Authorization: 'Bearer ' + token } });
+      const res = await fetch('/activities?upcoming=1', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) return;
       const activities = await res.json();
-      const now = new Date().toISOString();
-      const upcoming = (Array.isArray(activities) ? activities : [])
-        .filter(a => a.date && a.date >= now)
-        .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-        .slice(0, 5);
+      const list = Array.isArray(activities) ? activities : [];
+      const upcoming = list.slice(0, 5);
 
       emptyEl.classList.toggle('hidden', upcoming.length > 0);
       itemsEl.classList.toggle('hidden', upcoming.length === 0);
@@ -250,44 +328,15 @@
       upcoming.forEach(a => {
         const node = tpl.content.cloneNode(true);
         node.querySelector('[data-name]').textContent = a.name || '未命名活动';
-        node.querySelector('[data-location]').textContent = a.location || '—';
+        node.querySelector('[data-location]').textContent = getVenueDisplay(a);
         node.querySelector('[data-date]').textContent = formatActivityDate(a.date);
+        const link = node.querySelector('a');
+        if (link) link.href = '/activities.html?id=' + (a.id || '');
         itemsEl.appendChild(node);
       });
     } catch (e) {
       emptyEl.classList.remove('hidden');
       itemsEl.classList.add('hidden');
-    }
-  }
-
-  async function loadAttendanceStats() {
-    const currentTeamId = localStorage.getItem(CURRENT_TEAM_KEY);
-    const emptyEl = document.getElementById('attendanceEmpty');
-    const contentEl = document.getElementById('attendanceContent');
-    const rateEl = document.getElementById('attendanceRate');
-    const presentEl = document.getElementById('attPresent');
-    const absentEl = document.getElementById('attAbsent');
-    const lateEl = document.getElementById('attLate');
-
-    if (!currentTeamId) {
-      emptyEl.classList.remove('hidden');
-      contentEl.classList.add('hidden');
-      return;
-    }
-    try {
-      const url = '/attendance/statistics?teamId=' + encodeURIComponent(currentTeamId);
-      const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
-      if (!res.ok) throw new Error('stats');
-      const stats = await res.json();
-      emptyEl.classList.add('hidden');
-      contentEl.classList.remove('hidden');
-      rateEl.textContent = stats.rate != null ? String(stats.rate) : '—';
-      presentEl.textContent = stats.present != null ? stats.present : 0;
-      absentEl.textContent = stats.absent != null ? stats.absent : 0;
-      lateEl.textContent = stats.late != null ? stats.late : 0;
-    } catch (e) {
-      emptyEl.classList.remove('hidden');
-      contentEl.classList.add('hidden');
     }
   }
 
@@ -317,8 +366,8 @@
   (async function init() {
     await loadMe();
     await loadTeams();
+    loadWeekendActivity();
     loadUpcomingActivities();
-    loadAttendanceStats();
     health();
     setBottomNavActive();
   })();

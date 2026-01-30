@@ -11,54 +11,76 @@
                 url('/assets/login-bg.png') no-repeat center center fixed;
             background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
         .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
-        .glass input, .glass textarea, .glass select { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
+        .glass input, .glass textarea, .glass select { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; border-radius: 12px; padding: 12px 16px; }
+        .glass input::placeholder, .glass textarea::placeholder { color: rgba(226,232,240,.5); }
+        .glass input:focus, .glass textarea:focus { outline: none; border-color: rgba(255,255,255,.4); background: rgba(0,0,0,.35); }
+        .btn-create { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; border-radius: 14px; font-weight: 600; color: #001018; background: linear-gradient(135deg, rgba(64,200,255,1), rgba(60,255,160,1)); border: none; cursor: pointer; transition: transform .15s, box-shadow .2s; }
+        .btn-create:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(64,200,255,.35); }
+        .btn-create svg { width: 20px; height: 20px; }
+        .team-card { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 20px; transition: border-color .2s, background .2s; }
+        .team-card:hover { border-color: rgba(255,255,255,.2); background: rgba(0,0,0,.24); }
+        .btn-edit { padding: 8px 16px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); cursor: pointer; transition: background .2s, border-color .2s; }
+        .btn-edit:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.3); }
+        .btn-del { padding: 8px 16px; border-radius: 10px; font-size: 13px; color: rgba(255,230,230,.95); background: rgba(239,68,68,.25); border: 1px solid rgba(239,68,68,.4); cursor: pointer; transition: background .2s, border-color .2s; }
+        .btn-del:hover { background: rgba(239,68,68,.4); border-color: rgba(239,68,68,.6); }
+        .modal-overlay { background: rgba(0,4,16,.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .modal-box { border-radius: 20px; border: 1px solid rgba(255,255,255,.14); box-shadow: 0 24px 48px rgba(0,0,0,.4); }
+        .modal-close { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); transition: color .2s, background .2s; }
+        .modal-close:hover { color: #fff; background: rgba(255,255,255,.12); }
+        .btn-submit { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; color: #001018; background: linear-gradient(135deg, rgba(64,200,255,1), rgba(60,255,160,1)); border: none; cursor: pointer; transition: transform .05s, box-shadow .2s; }
+        .btn-submit:hover { box-shadow: 0 6px 20px rgba(64,200,255,.35); }
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 8px; font-size: 12px; color: rgba(255,255,255,.85); background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
-<body class="min-h-screen text-slate-100 safe-bottom">
-<!-- Top menu removed: use bottom nav only -->
+<body class="min-h-screen text-slate-100 safe-bottom pb-20">
 
-    <!-- 主内容 -->
-    <div class="container mx-auto px-4 py-6">
-        <div class="flex justify-end mb-4">
-            <button onclick="showCreateTeamModal()" class="btn-primary">+ 创建球队</button>
+    <div class="max-w-2xl mx-auto px-4 py-6">
+        <!-- 页头 -->
+        <header class="mb-6">
+            <h1 class="text-xl font-bold text-white mb-1">球队</h1>
+            <p class="text-white/60 text-sm">创建或加入球队，管理成员与活动</p>
+        </header>
+
+        <!-- 创建球队入口 -->
+        <div class="mb-6">
+            <button type="button" onclick="showCreateTeamModal()" class="btn-create w-full sm:w-auto">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>创建球队</span>
+            </button>
         </div>
 
         <!-- 球队列表 -->
-        <div class="glass rounded-xl p-6">
-            <div id="teamsList" class="space-y-4">
-                <div class="text-center py-12 text-white/70">
-                    <p>加载中...</p>
-                </div>
+        <section>
+            <h2 class="text-white/70 text-sm font-medium mb-3">我的球队</h2>
+            <div id="teamsList" class="space-y-3">
+                <div class="text-center py-12 text-white/50 text-sm">加载中...</div>
             </div>
-        </div>
+        </section>
     </div>
 
-    <!-- 创建/编辑球队模态框 -->
-    <div id="teamModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass rounded-2xl p-8 max-w-md w-full">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-white" id="modalTitle">创建球队</h3>
-                <button onclick="closeTeamModal()" class="text-white/70 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+    <!-- 创建/编辑球队弹窗 -->
+    <div id="teamModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="glass modal-box p-6 sm:p-8 max-w-md w-full">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-white" id="modalTitle">创建球队</h3>
+                <button type="button" onclick="closeTeamModal()" class="modal-close" aria-label="关闭">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            <form id="teamForm" class="space-y-4">
+            <form id="teamForm" class="space-y-5">
                 <div>
-                    <label class="block text-white/80 mb-2">球队名称</label>
-                    <input type="text" id="teamName" required 
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-white/80 text-sm font-medium mb-2">球队名称</label>
+                    <input type="text" id="teamName" required maxlength="50" placeholder="例如：周末快乐足球队"
+                        class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition">
                 </div>
                 <div>
-                    <label class="block text-white/80 mb-2">球队描述</label>
-                    <textarea id="teamDescription" rows="3"
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <label class="block text-white/80 text-sm font-medium mb-2">球队描述 <span class="text-white/40 font-normal">（选填）</span></label>
+                    <textarea id="teamDescription" rows="3" maxlength="200" placeholder="简单介绍一下球队或活动安排"
+                        class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/30 transition resize-none"></textarea>
                 </div>
-                <div id="teamError" class="hidden bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm mb-4"></div>
-                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition">
-                    保存
-                </button>
+                <div id="teamError" class="hidden rounded-xl px-4 py-3 text-sm text-red-200 bg-red-500/15 border border-red-500/40"></div>
+                <button type="submit" class="btn-submit" id="modalSubmitBtn">保存</button>
             </form>
         </div>
     </div>
@@ -105,6 +127,7 @@
         function showCreateTeamModal() {
             currentTeamId = null;
             document.getElementById('modalTitle').textContent = '创建球队';
+            document.getElementById('modalSubmitBtn').textContent = '创建';
             document.getElementById('teamForm').reset();
             const errorDiv = document.getElementById('teamError');
             if (errorDiv) errorDiv.classList.add('hidden');
@@ -114,6 +137,7 @@
         function showEditTeamModal(team) {
             currentTeamId = team.id;
             document.getElementById('modalTitle').textContent = '编辑球队';
+            document.getElementById('modalSubmitBtn').textContent = '保存';
             document.getElementById('teamName').value = team.name;
             document.getElementById('teamDescription').value = team.description || '';
             const errorDiv = document.getElementById('teamError');
@@ -192,66 +216,62 @@
 
                 if (teams.length === 0) {
                     teamsList.innerHTML = `
-                        <div class="text-center py-12 text-white/70">
-                            <p>暂无球队数据</p>
-                            <p class="text-sm mt-2">点击"创建球队"按钮开始创建</p>
+                        <div class="glass rounded-2xl p-10 text-center">
+                            <p class="text-white/70 mb-1">还没有球队</p>
+                            <p class="text-white/50 text-sm mb-4">点击上方「创建球队」开始</p>
+                            <button type="button" onclick="showCreateTeamModal()" class="btn-create">创建球队</button>
                         </div>
                     `;
                     return;
                 }
 
-                // XSS-safe render: build DOM nodes instead of innerHTML templating
                 teamsList.innerHTML = '';
                 for (const team of teams) {
                     const card = document.createElement('div');
-                    card.className = 'glass rounded-lg p-6 hover:bg-white/5 transition';
+                    card.className = 'team-card';
 
                     const row = document.createElement('div');
-                    row.className = 'flex justify-between items-start';
+                    row.className = 'flex justify-between items-start gap-4';
 
                     const left = document.createElement('div');
-                    left.className = 'flex-1';
+                    left.className = 'min-w-0 flex-1';
 
                     const h3 = document.createElement('h3');
-                    h3.className = 'text-xl font-bold text-white mb-2';
+                    h3.className = 'text-lg font-semibold text-white mb-1 truncate';
                     h3.textContent = team.name || '未命名球队';
 
                     const desc = document.createElement('p');
-                    desc.className = 'text-white/70 mb-4';
+                    desc.className = 'text-white/60 text-sm mb-3 line-clamp-2';
                     desc.textContent = team.description || '暂无描述';
 
                     const meta = document.createElement('div');
-                    meta.className = 'flex items-center space-x-4 text-sm text-white/60';
-
-                    const members = document.createElement('span');
-                    members.textContent = `成员: ${team._count?.members || 0}`;
-
-                    const activities = document.createElement('span');
-                    activities.textContent = `活动: ${team._count?.activities || 0}`;
-
-                    const created = document.createElement('span');
-                    const dt = team.createdAt ? new Date(team.createdAt) : null;
-                    created.textContent = `创建于: ${dt ? dt.toLocaleDateString('zh-CN') : '-'}`;
-
-                    meta.appendChild(members);
-                    meta.appendChild(activities);
-                    meta.appendChild(created);
+                    meta.className = 'flex flex-wrap items-center gap-2';
+                    const mCount = team._count?.members ?? (team.members?.length ?? 0);
+                    const aCount = team._count?.activities ?? (team.activities?.length ?? 0);
+                    const badgeM = document.createElement('span');
+                    badgeM.className = 'badge';
+                    badgeM.textContent = mCount + ' 人';
+                    const badgeA = document.createElement('span');
+                    badgeA.className = 'badge';
+                    badgeA.textContent = aCount + ' 场活动';
+                    meta.appendChild(badgeM);
+                    meta.appendChild(badgeA);
 
                     left.appendChild(h3);
                     left.appendChild(desc);
                     left.appendChild(meta);
 
                     const right = document.createElement('div');
-                    right.className = 'flex space-x-2 ml-4';
+                    right.className = 'flex gap-2 shrink-0';
 
                     const btnEdit = document.createElement('button');
-                    btnEdit.className = 'bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition text-sm';
+                    btnEdit.className = 'btn-edit';
                     btnEdit.type = 'button';
                     btnEdit.textContent = '编辑';
                     btnEdit.addEventListener('click', () => showEditTeamModal(team));
 
                     const btnDel = document.createElement('button');
-                    btnDel.className = 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition text-sm';
+                    btnDel.className = 'btn-del';
                     btnDel.type = 'button';
                     btnDel.textContent = '删除';
                     btnDel.addEventListener('click', () => deleteTeam(team.id));

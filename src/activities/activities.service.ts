@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -34,6 +35,7 @@ export class ActivitiesService {
         description: createActivityDto.description,
         date: new Date(createActivityDto.date),
         location: createActivityDto.location,
+        venueId: createActivityDto.venueId,
         createdById: userId,
         teamId: createActivityDto.teamId,
       },
@@ -51,6 +53,13 @@ export class ActivitiesService {
             name: true,
           },
         },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
         _count: {
           select: {
             attendances: true,
@@ -62,8 +71,12 @@ export class ActivitiesService {
     return activity;
   }
 
-  async findAll(userId: string, teamId?: string) {
+  async findAll(userId: string, teamId?: string, upcoming?: boolean) {
     const where: any = {};
+
+    if (upcoming) {
+      where.date = { gte: new Date() };
+    }
 
     if (teamId) {
       // 检查用户是否是球队成员
@@ -113,6 +126,13 @@ export class ActivitiesService {
             name: true,
           },
         },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
         _count: {
           select: {
             attendances: true,
@@ -120,7 +140,7 @@ export class ActivitiesService {
         },
       },
       orderBy: {
-        date: 'desc',
+        date: upcoming ? 'asc' : 'desc',
       },
     });
 
@@ -144,6 +164,13 @@ export class ActivitiesService {
             name: true,
           },
         },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
         attendances: {
           include: {
             user: {
@@ -151,6 +178,7 @@ export class ActivitiesService {
                 id: true,
                 username: true,
                 email: true,
+                avatarUrl: true,
               },
             },
           },
@@ -202,6 +230,7 @@ export class ActivitiesService {
       data: {
         ...updateActivityDto,
         date: updateActivityDto.date ? new Date(updateActivityDto.date) : undefined,
+        venueId: updateActivityDto.venueId !== undefined ? updateActivityDto.venueId : undefined,
       },
       include: {
         createdBy: {
@@ -217,6 +246,13 @@ export class ActivitiesService {
             name: true,
           },
         },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
         _count: {
           select: {
             attendances: true,
@@ -226,6 +262,75 @@ export class ActivitiesService {
     });
 
     return updatedActivity;
+  }
+
+  /** 用户报名参加活动（创建出勤记录，状态为「已报名」） */
+  async register(activityId: string, userId: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      include: { team: true },
+    });
+
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+
+    // 若有球队，仅球队成员可报名
+    if (activity.teamId) {
+      const teamMember = await this.prisma.teamMember.findUnique({
+        where: {
+          userId_teamId: {
+            userId,
+            teamId: activity.teamId,
+          },
+        },
+      });
+      if (!teamMember && activity.createdById !== userId) {
+        throw new ForbiddenException('仅球队成员可报名此活动');
+      }
+    } else if (activity.createdById !== userId) {
+      throw new ForbiddenException('仅活动创建者或指定球队成员可报名');
+    }
+
+    const existing = await this.prisma.attendance.findUnique({
+      where: {
+        userId_activityId: {
+          userId,
+          activityId,
+        },
+      },
+    });
+    if (existing) {
+      throw new ConflictException('您已报名过该活动');
+    }
+
+    const attendance = await this.prisma.attendance.create({
+      data: {
+        userId,
+        activityId,
+        status: 'registered',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+        activity: {
+          select: {
+            id: true,
+            name: true,
+            date: true,
+            venue: { select: { id: true, name: true, address: true } },
+            location: true,
+          },
+        },
+      },
+    });
+    return attendance;
   }
 
   async remove(id: string, userId: string) {

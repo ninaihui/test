@@ -4,7 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TeamsModule } from './teams/teams.module';
 import { ActivitiesModule } from './activities/activities.module';
-import { AttendanceModule } from './attendance/attendance.module';
+import { VenuesModule } from './venues/venues.module';
 import { UsersModule } from './users/users.module';
 import { AppController } from './app.controller';
 
@@ -19,7 +19,7 @@ import { AppController } from './app.controller';
     UsersModule,
     TeamsModule,
     ActivitiesModule,
-    AttendanceModule,
+    VenuesModule,
   ],
   controllers: [AppController],
 })

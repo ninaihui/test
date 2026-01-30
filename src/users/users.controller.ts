@@ -23,6 +23,8 @@ const ALLOWED_AVATAR_MIME: Record<string, string> = {
   'image/png': '.png',
   'image/webp': '.webp',
   'image/gif': '.gif',
+  'image/heic': '.heic',
+  'image/heif': '.heic',
 };
 
 @Controller('users')
@@ -48,12 +50,12 @@ export class UsersController {
       fileFilter: (req, file, cb) => {
         // Security: block SVG and other scriptable image types
         if (!file.mimetype || !(file.mimetype in ALLOWED_AVATAR_MIME)) {
-          return cb(new BadRequestException('只允许上传 jpg/png/webp/gif 图片'), false);
+          return cb(new BadRequestException('只允许上传 jpg/jpeg/png/webp/gif/heic 图片（含苹果手机照片）'), false);
         }
         cb(null, true);
       },
       limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
+        fileSize: 10 * 1024 * 1024, // 10MB
       },
     }),
   )

@@ -12,6 +12,8 @@
             background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
         .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
         .glass input, .glass select, .glass textarea { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
+        .btn-view { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 10px; font-size: 14px; font-weight: 500; color: #fff; background: rgba(34,211,238,.35); border: 1px solid rgba(34,211,238,.6); transition: background .2s, border-color .2s; }
+        .btn-view:hover { background: rgba(34,211,238,.5); border-color: rgba(34,211,238,.8); }
     </style>
 </head>
 <body class="min-h-screen text-slate-100">
@@ -25,7 +27,6 @@
                         <a href="/dashboard.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">仪表板</a>
                         <a href="/teams.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">球队管理</a>
                         <a href="/activities.html" class="text-white/90 hover:text-white px-3 py-2 rounded-lg bg-white/10">活动管理</a>
-                        <a href="/attendance.html" class="text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">出勤管理</a>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -64,6 +65,21 @@
         </div>
     </div>
 
+    <!-- 活动详情弹窗 -->
+    <div id="activityDetailModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white">活动详情</h3>
+                <button type="button" onclick="closeActivityDetailModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white bg-white/10 hover:bg-white/20 transition" aria-label="关闭">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div id="activityDetailContent" class="space-y-4">
+                <div class="text-center py-8 text-white/50 text-sm">加载中…</div>
+            </div>
+        </div>
+    </div>
+
     <!-- 创建/编辑活动模态框 -->
     <div id="activityModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="glass rounded-2xl p-8 max-w-md w-full">
@@ -77,31 +93,34 @@
             </div>
             <form id="activityForm" class="space-y-4">
                 <div>
-                    <label class="block text-white/80 mb-2">活动名称</label>
-                    <input type="text" id="activityName" required 
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                </div>
-                <div>
                     <label class="block text-white/80 mb-2">活动日期</label>
                     <input type="date" id="activityDate" required 
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
                 </div>
                 <div>
                     <label class="block text-white/80 mb-2">活动时间</label>
                     <input type="time" id="activityTime" required 
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
                 </div>
                 <div>
                     <label class="block text-white/80 mb-2">活动地点</label>
-                    <input type="text" id="activityLocation" required 
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <input type="text" id="activityLocation" required placeholder="输入场地名称或地址，或从地图选好后粘贴"
+                        class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <a id="activityMapLink" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" class="text-sm text-cyan-400/90 hover:underline">在 Google 地图中选位置</a>
+                        <span id="activityMapHint" class="text-white/50 text-xs">选好位置后，将地址复制回上方输入框</span>
+                    </div>
+                    <div class="mt-2 rounded-xl overflow-hidden border border-white/10 bg-black/20" id="activityMapWrap" style="display: none;">
+                        <iframe id="activityMapEmbed" title="Google 地图" width="100%" height="200" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-white/80 mb-2">活动描述</label>
-                    <textarea id="activityDescription" rows="3"
-                        class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                    <label class="block text-white/80 mb-2">活动描述 <span class="text-white/40 text-sm">（选填）</span></label>
+                    <textarea id="activityDescription" rows="2" placeholder="可选备注"
+                        class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 resize-none"></textarea>
                 </div>
-                <button type="submit" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition">
+                <div id="activityError" class="hidden rounded-xl px-4 py-3 text-sm text-red-200 bg-red-500/15 border border-red-500/40"></div>
+                <button type="submit" id="activitySubmitBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition">
                     保存
                 </button>
             </form>
@@ -112,6 +131,7 @@
     <script src="/js/fancy-background.js"></script>
     <script>
         const authToken = localStorage.getItem('authToken');
+        const LAST_LOCATION_KEY = 'team_management:lastActivityLocation';
         if (!authToken) {
             window.location.href = '/login.html';
         }
@@ -122,11 +142,51 @@
             window.location.href = '/login.html';
         }
 
+        /** 取当前周的周六（若今天是周六则取今天） */
+        function getThisWeekSaturday() {
+            var d = new Date();
+            var day = d.getDay();
+            var daysToSat = (6 - day + 7) % 7;
+            d.setDate(d.getDate() + daysToSat);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
         function showCreateActivityModal() {
             document.getElementById('modalTitle').textContent = '创建活动';
             document.getElementById('activityForm').reset();
+            document.getElementById('activityError').classList.add('hidden');
+            document.getElementById('activityDate').value = getThisWeekSaturday();
+            document.getElementById('activityTime').value = '19:00';
+            var locInput = document.getElementById('activityLocation');
+            var lastLoc = localStorage.getItem(LAST_LOCATION_KEY);
+            if (lastLoc && lastLoc.trim()) {
+                locInput.value = lastLoc.trim();
+                locInput.dispatchEvent(new Event('input', { bubbles: true }));
+            } else {
+                document.getElementById('activityMapLink').href = 'https://www.google.com/maps';
+                document.getElementById('activityMapLink').textContent = '在 Google 地图中选位置';
+                document.getElementById('activityMapWrap').style.display = 'none';
+            }
             document.getElementById('activityModal').classList.remove('hidden');
         }
+
+        document.getElementById('activityLocation').addEventListener('input', function() {
+            var loc = this.value.trim();
+            var linkEl = document.getElementById('activityMapLink');
+            var wrapEl = document.getElementById('activityMapWrap');
+            var iframeEl = document.getElementById('activityMapEmbed');
+            if (loc) {
+                linkEl.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(loc);
+                linkEl.textContent = '在 Google 地图中查看';
+                iframeEl.src = 'https://www.google.com/maps?q=' + encodeURIComponent(loc) + '&output=embed';
+                wrapEl.style.display = 'block';
+            } else {
+                linkEl.href = 'https://www.google.com/maps';
+                linkEl.textContent = '在 Google 地图中选位置';
+                wrapEl.style.display = 'none';
+                iframeEl.src = '';
+            }
+        });
 
         function closeActivityModal() {
             document.getElementById('activityModal').classList.add('hidden');
@@ -134,10 +194,95 @@
 
         document.getElementById('activityForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            // 这里应该调用后端 API 创建活动
-            alert('活动创建功能需要后端 API 支持');
-            closeActivityModal();
+            const errorEl = document.getElementById('activityError');
+            const btn = document.getElementById('activitySubmitBtn');
+            errorEl.classList.add('hidden');
+
+            const activityDate = document.getElementById('activityDate').value;
+            const activityTime = document.getElementById('activityTime').value;
+            const location = document.getElementById('activityLocation').value.trim();
+            const description = document.getElementById('activityDescription').value.trim() || undefined;
+
+            if (!activityDate || !activityTime || !location) {
+                errorEl.textContent = '请填写日期、时间和地点';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            // 活动名称自动生成为「周末踢球」
+            const name = '周末踢球';
+            const dateStr = activityDate + 'T' + activityTime + ':00';
+
+            btn.disabled = true;
+            try {
+                const res = await fetch('/activities', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken,
+                    },
+                    body: JSON.stringify({
+                        name,
+                        date: dateStr,
+                        location: location || undefined,
+                        description,
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    localStorage.setItem(LAST_LOCATION_KEY, location);
+                    closeActivityModal();
+                    loadActivities();
+                } else {
+                    errorEl.textContent = data.message || '创建失败（' + res.status + '）';
+                    errorEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorEl.textContent = err.message || '网络错误，请稍后重试';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+            }
         });
+
+        function getVenueDisplay(activity) {
+            if (activity.venue && activity.venue.name) return activity.venue.name;
+            return activity.location || '—';
+        }
+
+        function formatActivityDate(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function loadActivities() {
+            const listEl = document.getElementById('activitiesList');
+            try {
+                const res = await fetch('/activities', {
+                    headers: { 'Authorization': 'Bearer ' + authToken },
+                });
+                if (res.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const activities = await res.json();
+                const list = Array.isArray(activities) ? activities : [];
+                if (list.length === 0) {
+                    listEl.innerHTML = '<div class="text-center py-12 text-white/70"><p>暂无活动数据</p><p class="text-sm mt-2">点击「创建活动」开始创建</p></div>';
+                    return;
+                }
+                listEl.innerHTML = list.map(function(a) {
+                    const venueDisplay = getVenueDisplay(a);
+                    return '<div class="flex justify-between items-center gap-4 py-4 border-b border-white/10 last:border-0">' +
+                        '<div class="min-w-0 flex-1"><div class="text-white font-medium">' + (a.name || '未命名') + '</div>' +
+                        '<div class="text-white/60 text-sm mt-1">' + venueDisplay + ' · ' + formatActivityDate(a.date) + '</div></div>' +
+                        '<a href="/activities.html?id=' + (a.id || '') + '" class="btn-view shrink-0">查看</a></div>';
+                }).join('');
+            } catch (err) {
+                listEl.innerHTML = '<div class="text-center py-12 text-red-300 text-sm">加载失败，请刷新重试</div>';
+            }
+        }
 
         async function loadUserInfo() {
             try {
@@ -155,7 +300,74 @@
             }
         }
 
+        function closeActivityDetailModal() {
+            document.getElementById('activityDetailModal').classList.add('hidden');
+            if (window.history && window.history.replaceState) {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('id');
+                window.history.replaceState({}, '', url.pathname + (url.search || ''));
+            }
+        }
+
+        async function openActivityDetail(id) {
+            var modal = document.getElementById('activityDetailModal');
+            var content = document.getElementById('activityDetailContent');
+            modal.classList.remove('hidden');
+            content.innerHTML = '<div class="text-center py-8 text-white/50 text-sm">加载中…</div>';
+            try {
+                var res = await fetch('/activities/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } });
+                if (!res.ok) {
+                    content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">加载失败</div>';
+                    return;
+                }
+                var activity = await res.json();
+                var venueDisplay = getVenueDisplay(activity);
+                var html = '<div class="text-white font-semibold text-lg">' + (activity.name || '未命名') + '</div>' +
+                    '<div class="text-white/70 text-sm">' + venueDisplay + '</div>' +
+                    '<div class="text-white/60 text-sm">' + formatActivityDate(activity.date) + '</div>';
+                if (venueDisplay && venueDisplay !== '—') {
+                    var mapQuery = encodeURIComponent(venueDisplay);
+                    html += '<div class="pt-3"><div class="text-white/60 text-xs mb-2">地图</div>' +
+                        '<div class="rounded-xl overflow-hidden border border-white/10 bg-black/20">' +
+                        '<iframe title="Google 地图" width="100%" height="200" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=' + mapQuery + '&output=embed"></iframe></div>' +
+                        '<a href="https://www.google.com/maps/search/?api=1&query=' + mapQuery + '" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 text-sm text-cyan-400/90 hover:underline">在 Google 地图中查看</a></div>';
+                }
+                if (activity.description && activity.description.trim()) {
+                    html += '<div class="text-white/60 text-sm pt-2 border-t border-white/10">' + activity.description.trim() + '</div>';
+                }
+                html += '<div class="pt-4 border-t border-white/10"><div class="text-white/80 text-sm font-medium mb-2">报名名单</div>';
+                var attendances = activity.attendances || [];
+                if (attendances.length === 0) {
+                    html += '<div class="text-white/50 text-sm">暂无报名</div>';
+                } else {
+                    html += '<ul class="space-y-2">';
+                    attendances.forEach(function(att) {
+                        var statusText = att.status === 'registered' ? '已报名' : (att.status === 'present' ? '到场' : (att.status === 'absent' ? '缺席' : '迟到'));
+                        var pos = (att.position && att.position.trim()) ? att.position : '待安排';
+                        html += '<li class="flex justify-between items-center text-sm py-2 px-3 rounded-lg bg-white/5">' +
+                            '<span class="text-white/90">' + (att.user && att.user.username ? att.user.username : '—') + '</span>' +
+                            '<span class="text-white/60">' + statusText + ' · ' + pos + '</span></li>';
+                    });
+                    html += '</ul>';
+                }
+                html += '</div>';
+                content.innerHTML = html;
+            } catch (err) {
+                content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">网络错误</div>';
+            }
+        }
+
+        function checkOpenDetailFromUrl() {
+            var params = new URLSearchParams(window.location.search);
+            var id = params.get('id');
+            if (id && id.trim()) {
+                openActivityDetail(id.trim());
+            }
+        }
+
         loadUserInfo();
+        loadActivities();
+        checkOpenDetailFromUrl();
     </script>
 
     <!-- 背景设置模态框 -->

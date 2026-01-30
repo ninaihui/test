@@ -248,6 +248,7 @@
 
 **查询参数：**
 - `teamId` (可选): 筛选特定球队的活动
+- `upcoming` (可选): 传 `1` 或 `true` 时只返回未开始的活动，按日期升序
 
 **响应：**
 ```json
@@ -267,7 +268,7 @@
 ```
 
 ### GET /activities/:id
-获取单个活动详情（需要鉴权）
+获取单个活动详情（需要鉴权）。响应含 `venue`（若有关联场地）、`attendances`（含每条记录的 `status`、`position`）。
 
 **响应：**
 ```json
@@ -277,6 +278,7 @@
   "description": "每周训练",
   "date": "2026-01-30T18:00:00Z",
   "location": "体育馆",
+  "venue": { "id": "uuid", "name": "XX足球公园A场", "address": "..." },
   "createdBy": {...},
   "team": {...},
   "attendances": [
@@ -284,12 +286,18 @@
       "id": "uuid",
       "userId": "uuid",
       "activityId": "uuid",
-      "status": "present",
+      "status": "registered",
+      "position": "前锋",
       "user": {...}
     }
   ]
 }
 ```
+
+### POST /activities/:id/register
+当前用户报名参加该活动（需要鉴权，且需为活动所属球队成员或创建者）。创建一条出勤记录，状态为 `registered`（已报名）。
+
+**响应：** 返回创建的出勤记录（含 `user`、`activity`）。
 
 ### PATCH /activities/:id
 更新活动（需要鉴权，必须是创建者）
@@ -312,6 +320,34 @@
   "message": "活动已删除"
 }
 ```
+
+---
+
+## 场地接口 (Venues)
+
+### GET /venues
+获取场地列表（需要鉴权）。用于创建活动时选择场地。
+
+**响应：**
+```json
+[
+  { "id": "uuid", "name": "XX足球公园A场", "address": "...", "createdAt": "...", "updatedAt": "..." }
+]
+```
+
+### POST /venues
+新增场地（需要鉴权）。
+
+**请求体：**
+```json
+{ "name": "XX足球公园A场", "address": "可选地址" }
+```
+
+### PATCH /venues/:id
+更新场地（需要鉴权）。
+
+### DELETE /venues/:id
+删除场地（需要鉴权）。
 
 ---
 
@@ -394,13 +430,14 @@
 获取单个出勤记录（需要鉴权）
 
 ### PATCH /attendance/:id
-更新出勤记录（需要鉴权，必须是记录所有者或活动创建者）
+更新出勤记录（需要鉴权）。记录所有者或活动创建者/球队管理员可修改。**出场位置**仅活动创建者或球队管理员可设置。
 
 **请求体：**
 ```json
 {
-  "status": "late",
-  "notes": "迟到10分钟"
+  "status": "registered | present | absent | late",
+  "position": "出场位置，如 前锋、左后卫",
+  "notes": "备注"
 }
 ```
 

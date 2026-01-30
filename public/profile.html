@@ -29,8 +29,8 @@
       </div>
 
       <div class="mt-6 space-y-3">
-        <label class="block text-white/80 text-sm">选择头像图片（≤ 5MB）</label>
-        <input id="fileInput" type="file" accept="image/*" class="block w-full text-sm text-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/15 file:text-white hover:file:bg-white/20" />
+        <label class="block text-white/80 text-sm">选择头像图片（≤ 10MB，支持 jpg/jpeg/png/webp/gif/heic（苹果手机照片））</label>
+        <input id="fileInput" type="file" accept="image/*,image/heic,image/heif" class="block w-full text-sm text-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/15 file:text-white hover:file:bg-white/20" />
 
         <div class="flex items-center gap-2">
           <button id="btnUpload" class="btn-primary">上传</button>
@@ -115,11 +115,13 @@
       avatarImg.src = previewUrl;
     });
 
+    const MAX_AVATAR_SIZE = 10 * 1024 * 1024; // 10MB
     document.getElementById('btnUpload').addEventListener('click', async () => {
       const btn = document.getElementById('btnUpload');
       const input = document.getElementById('fileInput');
       const f = input.files && input.files[0];
       if (!f) return setStatus('请选择图片');
+      if (f.size > MAX_AVATAR_SIZE) return setStatus('图片不能超过 10MB，当前约 ' + (f.size / 1024 / 1024).toFixed(1) + 'MB');
       if (!token) return requireLogin();
 
       btn.disabled = true;

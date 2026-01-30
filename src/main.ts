@@ -6,10 +6,10 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
-  // 配置静态文件服务
-  // 首发：根路径由 Controller 接管（返回 login.html），避免 express static 自动返回 index.html
-  app.useStaticAssets(join(__dirname, '..', 'public'), { index: false });
+
+  // 静态资源：从项目根目录的 public 提供（与运行 dist 时的 cwd 一致，避免 __dirname 导致路径错误）
+  const publicDir = join(process.cwd(), 'public');
+  app.useStaticAssets(publicDir, { index: false });
   
   // 启用全局验证管道
   app.useGlobalPipes(
