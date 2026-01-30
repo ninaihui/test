@@ -12,8 +12,8 @@
     <!-- Top bar (simple horizontal menu) -->
     <div class="sticky top-0 z-20 bg-black/25 backdrop-blur-xl border-b border-white/10">
       <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-[180px]">
-          <a href="/dashboard.html" class="text-white font-bold tracking-wide">球队管理</a>
+        <div class="flex items-center gap-2 min-w-[180px]">
+          <button id="btnBack" class="btn-ghost">返回</button>
         </div>
 
         <!-- Center: current team -->
@@ -175,6 +175,12 @@
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       window.location.href = '/login.html';
+    });
+
+    document.getElementById('btnBack').addEventListener('click', () => {
+      // Prefer browser back; fallback to dashboard itself
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = '/login.html';
     });
 
     loadMe();
