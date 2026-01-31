@@ -1,29 +1,25 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" style="background:#080d17">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#080d17">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>我的主页 - 业余球队管理系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/app.css?v=20260130-2" />
     <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .gradient-bg {
-            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+      html,body{background:#080d17;color:#e2e8f0;min-height:100%;margin:0}
+      body{
+        background:
+          radial-gradient(900px 520px at 18% 18%, rgba(60,255,160,.16), transparent 55%),
+          radial-gradient(720px 480px at 82% 68%, rgba(64,200,255,.12), transparent 58%),
+          linear-gradient(180deg,#080d17,#020617);
+        background-attachment:fixed;
+      }
     </style>
 </head>
-<body class="min-h-screen gradient-bg">
+<body class="min-h-screen bg-fifa safe-bottom text-slate-100">
     <!-- 导航栏 -->
     <nav class="glass border-b border-white/20">
         <div class="container mx-auto px-4 py-4">

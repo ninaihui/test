@@ -1,38 +1,27 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" style="background:#080d17">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#080d17">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>业余球队管理系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#8b5cf6',
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="/assets/app.css?v=20260130-2" />
     <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .gradient-bg {
-            background: linear-gradient(-45deg, #134e4a, #166534, #14532d, #052e16);
-            background-size: 400% 400%;
-            animation: gradient 18s ease infinite;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.10);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
+      /* Inline fallback for Safari white-flash prevention */
+      html,body{background:#080d17;color:#e2e8f0;min-height:100%;margin:0}
+      /* Animated gradient for homepage */
+      @keyframes gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+      }
+      .gradient-bg {
+          background: linear-gradient(-45deg, #134e4a, #166534, #14532d, #052e16);
+          background-size: 400% 400%;
+          animation: gradient 18s ease infinite;
+      }
         .card-hover {
             transition: all 0.25s ease;
         }

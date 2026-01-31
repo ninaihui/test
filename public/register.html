@@ -1,29 +1,31 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" style="background:#080d17">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#080d17">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>注册 - 业余球队管理系统</title>
-    <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
+    <link rel="stylesheet" href="/assets/app.css?v=20260130-2" />
+    <!--
+      Critical inline styles for Safari/iOS: prevent white flash before CSS loads.
+    -->
     <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .gradient-bg {
-            background: linear-gradient(-45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+      html,body{background:#080d17;color:#e2e8f0;min-height:100%;margin:0}
+      body{
+        background:
+          radial-gradient(800px 520px at 50% 8%, rgba(64,200,255,.14), transparent 58%),
+          radial-gradient(900px 560px at 85% 85%, rgba(60,255,160,.09), transparent 62%),
+          linear-gradient(180deg,#080d17,#020617);
+        background-attachment:fixed;
+      }
+      .glass{background:rgba(255,255,255,.05);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.1)}
+      .input{width:100%;border-radius:12px;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.15);padding:12px 16px;color:#e2e8f0;font-size:16px;-webkit-appearance:none}
+      .input:focus{outline:none;border-color:rgba(60,255,160,.9);box-shadow:0 0 0 2px rgba(60,255,160,.25)}
     </style>
 </head>
-<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
+<body class="min-h-screen bg-login-flat flex items-center justify-center p-4 text-slate-100">
 <div class="glass rounded-2xl p-8 max-w-md w-full shadow-2xl">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-white mb-2">用户注册</h1>

@@ -1,15 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" style="background:#080d17">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#080d17" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>登录 - 业余球队管理系统</title>
-    <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
-    <!-- Fallback styles: ensure mobile UI isn't "white" even if CSS cache/network hiccups -->
+    <link rel="stylesheet" href="/assets/app.css?v=20260130-2" />
+    <!--
+      Critical inline styles for Safari/iOS: prevent white flash before CSS loads.
+      Duplicates key styles from app.css to ensure immediate dark rendering.
+    -->
     <style>
-      body{background:radial-gradient(800px 520px at 50% 8%, rgba(64,200,255,.14), transparent 58%),radial-gradient(900px 560px at 85% 85%, rgba(60,255,160,.09), transparent 62%),linear-gradient(180deg,#080d17,#020617);color:#e2e8f0}
-      .input{width:100%;border-radius:12px;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.15);padding:12px 16px}
-      .btn-primary{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:12px 16px;font-weight:700;color:#001018;background:linear-gradient(135deg,rgba(64,200,255,1),rgba(60,255,160,1))}
+      /* Immediate dark background on html/body - loads before external CSS */
+      html,body{background:#080d17;color:#e2e8f0;min-height:100%;margin:0}
+      /* Flat dark + cyan/green glow gradient */
+      body{
+        background:
+          radial-gradient(800px 520px at 50% 8%, rgba(64,200,255,.14), transparent 58%),
+          radial-gradient(900px 560px at 85% 85%, rgba(60,255,160,.09), transparent 62%),
+          linear-gradient(180deg,#080d17,#020617);
+        background-attachment:fixed;
+      }
+      /* Fallback component styles */
+      .input{width:100%;border-radius:12px;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.15);padding:12px 16px;color:#e2e8f0;font-size:16px;-webkit-appearance:none}
+      .input:focus{outline:none;border-color:rgba(60,255,160,.9);box-shadow:0 0 0 2px rgba(60,255,160,.25)}
+      .btn-primary{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:12px 16px;font-weight:700;color:#001018;background:linear-gradient(135deg,rgba(64,200,255,1),rgba(60,255,160,1));border:none;cursor:pointer;box-shadow:0 0 18px rgba(60,255,160,.22)}
+      .btn-primary:active{transform:scale(.98)}
     </style>
 </head>
 <body class="min-h-screen bg-login-flat flex items-center justify-center px-4 py-10 text-slate-100">
