@@ -62,24 +62,23 @@
         box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
         transition: background-color 5000s ease-in-out 0s;
       }
-      .btn-primary{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:12px 16px;font-weight:700;color:#001018;background:linear-gradient(135deg,rgba(64,200,255,1),rgba(60,255,160,1))}
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center px-4 py-10 text-slate-100">
+<body class="min-h-screen flex items-center justify-center px-4 py-10 text-slate-100 safe-bottom">
 
     <div class="w-full max-w-md">
         <div class="login-box">
 
             <form id="loginForm" class="space-y-4">
                 <div>
-                    <label class="block text-xs mb-2 font-medium text-white/70">用户名 / 邮箱</label>
+                    <label class="block text-xs mb-2 font-medium text-white/70">账号</label>
                     <input
                         type="text"
                         id="usernameOrEmail"
                         name="usernameOrEmail"
                         required
                         class="input"
-                        placeholder="用户名或邮箱"
+                        placeholder="请输入账号（任意用户名）"
                         autocomplete="username"
                     />
                 </div>
@@ -107,7 +106,7 @@
                 <div id="errorMessage"
                      class="hidden bg-red-500/15 border border-red-500/60 text-red-100 text-xs rounded-xl px-3 py-2"></div>
 
-                <button id="btnLogin" type="submit" class="btn-primary w-full py-3">
+                <button id="btnLogin" type="submit" class="btn btn-primary w-full py-3">
                     登录
                 </button>
             </form>
@@ -115,6 +114,9 @@
             <div class="mt-5 text-center text-xs text-white/60">
                 <span>还没有账号？</span>
                 <a href="/register.html" class="underline underline-offset-4 hover:text-white">立即注册</a>
+            </div>
+            <div class="mt-3 text-center">
+                <a href="/dashboard.html" class="text-white/50 hover:text-white/70 text-xs">返回首页</a>
             </div>
         </div>
     </div>
@@ -133,51 +135,112 @@
         })();
 
         // 登录逻辑（mobile-first: disable button while submitting）
-        document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const errorDiv = document.getElementById('errorMessage');
-            const btnLogin = document.getElementById('btnLogin');
-            errorDiv.classList.add('hidden');
+        (function () {
+            var form = document.getElementById('loginForm');
+            var errorDiv = document.getElementById('errorMessage');
+            var btnLogin = document.getElementById('btnLogin');
+            if (!form || !errorDiv || !btnLogin) return;
 
-            const usernameOrEmail = document.getElementById('usernameOrEmail').value.trim();
-            const password = document.getElementById('password').value;
-
-            if (!usernameOrEmail || !password) {
-                errorDiv.textContent = '请输入用户名/邮箱和密码';
+            // 通过 file:// 打开时无法请求接口，给出提示
+            if (window.location.protocol === 'file:') {
+                errorDiv.textContent = '请通过浏览器访问 http://localhost:3000/login.html 再登录（不要直接打开本地文件）';
                 errorDiv.classList.remove('hidden');
-                return;
             }
 
-            btnLogin.disabled = true;
-            btnLogin.classList.add('opacity-60');
-            btnLogin.textContent = '登录中...';
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                errorDiv.classList.add('hidden');
+                // #region agent log
+                (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'login.html:submit',message:'submit start',data:{origin:window.location.origin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3'});
+                // #endregion
 
-            try {
-                const response = await fetch('/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usernameOrEmail, password })
-                });
+                var usernameOrEmail = document.getElementById('usernameOrEmail').value.trim();
+                var password = document.getElementById('password').value;
 
-                const result = await response.json().catch(() => ({}));
-
-                if (response.ok) {
-                    localStorage.setItem('authToken', result.accessToken);
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                    window.location.href = '/dashboard.html';
-                } else {
-                    errorDiv.textContent = result.message || `登录失败（HTTP ${response.status}）`;
+                if (!usernameOrEmail || !password) {
+                    errorDiv.textContent = '请输入账号和密码';
                     errorDiv.classList.remove('hidden');
+                    return;
                 }
-            } catch (error) {
-                errorDiv.textContent = '网络错误，请稍后重试';
-                errorDiv.classList.remove('hidden');
-            } finally {
-                btnLogin.disabled = false;
-                btnLogin.classList.remove('opacity-60');
-                btnLogin.textContent = '登录';
-            }
-        });
+
+                btnLogin.disabled = true;
+                btnLogin.classList.add('opacity-60');
+                btnLogin.textContent = '登录中...';
+
+                var apiBase = window.location.origin;
+                var controller = new AbortController();
+                var timeoutId = setTimeout(function () { controller.abort(); }, 15000);
+
+                var redirecting = false;
+                try {
+                    var response = await fetch(apiBase + '/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usernameOrEmail: usernameOrEmail, password: password }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+
+                    var result = {};
+                    try {
+                        var text = await response.text();
+                        if (text) result = JSON.parse(text);
+                    } catch (parseErr) {
+                        console.warn('登录响应解析失败', parseErr);
+                    }
+                    // #region agent log
+                    (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'login.html:afterFetch',message:'login response',data:{status:response.status,ok:response.ok,hasAccessToken:!!(result.accessToken||result.access_token),hasUser:!!result.user},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H2'});
+                    // #endregion
+
+                    if (response.ok) {
+                        // #region agent log
+                        (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'login.html:successBranch',message:'entered response.ok branch',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3'});
+                        // #endregion
+                        var token = result.accessToken || result.access_token;
+                        try {
+                            if (token) localStorage.setItem('authToken', token);
+                            if (result.user) localStorage.setItem('user', JSON.stringify(result.user));
+                        } catch (storageErr) {
+                            console.warn('localStorage 写入失败', storageErr);
+                        }
+                        var goUrl = apiBase + '/dashboard.html';
+                        console.log('登录成功，即将跳转到', goUrl);
+                        redirecting = true;
+                        btnLogin.textContent = '登录成功，正在跳转…';
+                        setTimeout(function () {
+                            // #region agent log
+                            (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'login.html:setTimeout',message:'about to location.replace',data:{goUrl:goUrl},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'});
+                            // #endregion
+                            window.location.replace(goUrl);
+                        }, 200);
+                        return;
+                    }
+                    var errMsg = result.message || result.error || '';
+                    if (response.status >= 500) errMsg = '服务器错误，请稍后重试或联系管理员';
+                    else if (!errMsg) errMsg = '登录失败（' + response.status + '）';
+                    errorDiv.textContent = errMsg;
+                    errorDiv.classList.remove('hidden');
+                } catch (err) {
+                    clearTimeout(timeoutId);
+                    // #region agent log
+                    (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'login.html:catch',message:'login fetch threw',data:{errName:err&&err.name,errMessage:err&&err.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H3'});
+                    // #endregion
+                    if (err && err.name === 'AbortError') {
+                        errorDiv.textContent = '请求超时，请检查网络或稍后重试';
+                    } else {
+                        errorDiv.textContent = '网络错误，请确认服务已启动（npm run start）并访问 http://localhost:3000/login.html';
+                    }
+                    errorDiv.classList.remove('hidden');
+                    console.error('登录请求失败', err);
+                } finally {
+                    if (!redirecting) {
+                        btnLogin.disabled = false;
+                        btnLogin.classList.remove('opacity-60');
+                        btnLogin.textContent = '登录';
+                    }
+                }
+            });
+        })();
     </script>
 </body>
 </html>

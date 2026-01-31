@@ -16,51 +16,17 @@ model User {
   username  String   @unique
   password  String
   /// 系统角色：user（普通用户） / admin（管理员）
-  /// 注意：球队管理员是“每个球队一个”的概念，走 Team.adminUserId。
   role      String   @default("user")
   avatarUrl String?
+  /// 用户自选上场位置（如 守门员、中后卫、前锋 等）
+  playingPosition String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  teams        TeamMember[]
   activities   Activity[]
   attendances  Attendance[]
-  adminTeams   Team[]       @relation("TeamAdmin")
 
   @@map("users")
-}
-
-model Team {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  /// 每个球队一个管理员（球员号码分配 / 战术板拖拽等）
-  adminUserId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  admin       User?       @relation("TeamAdmin", fields: [adminUserId], references: [id], onDelete: SetNull)
-  members     TeamMember[]
-  activities  Activity[]
-
-  @@map("teams")
-}
-
-model TeamMember {
-  id        String   @id @default(uuid())
-  userId    String
-  teamId    String
-  role      String   @default("member") // member, captain, coach
-  /// 球衣号码（由球队管理员分配），球队内唯一
-  number    Int?
-  joinedAt  DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, teamId])
-  @@unique([teamId, number])
-  @@map("team_members")
 }
 
 model Venue {
@@ -83,12 +49,10 @@ model Activity {
   location    String?  // 兼容旧数据或手填地点
   venueId     String?  // 关联场地（优先展示场地名）
   createdById String
-  teamId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  team        Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
   venue       Venue?       @relation(fields: [venueId], references: [id], onDelete: SetNull)
   attendances Attendance[]
 

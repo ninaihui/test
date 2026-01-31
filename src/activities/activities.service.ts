@@ -13,22 +13,6 @@ export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, createActivityDto: CreateActivityDto) {
-    // 如果指定了球队，检查用户是否是球队成员
-    if (createActivityDto.teamId) {
-      const teamMember = await this.prisma.teamMember.findUnique({
-        where: {
-          userId_teamId: {
-            userId,
-            teamId: createActivityDto.teamId,
-          },
-        },
-      });
-
-      if (!teamMember) {
-        throw new ForbiddenException('您不是该球队的成员');
-      }
-    }
-
     const activity = await this.prisma.activity.create({
       data: {
         name: createActivityDto.name,
@@ -37,7 +21,6 @@ export class ActivitiesService {
         location: createActivityDto.location,
         venueId: createActivityDto.venueId,
         createdById: userId,
-        teamId: createActivityDto.teamId,
       },
       include: {
         createdBy: {
@@ -45,12 +28,6 @@ export class ActivitiesService {
             id: true,
             username: true,
             email: true,
-          },
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
           },
         },
         venue: {
@@ -71,43 +48,11 @@ export class ActivitiesService {
     return activity;
   }
 
-  async findAll(userId: string, teamId?: string, upcoming?: boolean) {
+  async findAll(userId: string, upcoming?: boolean) {
     const where: any = {};
 
     if (upcoming) {
       where.date = { gte: new Date() };
-    }
-
-    if (teamId) {
-      // 检查用户是否是球队成员
-      const teamMember = await this.prisma.teamMember.findUnique({
-        where: {
-          userId_teamId: {
-            userId,
-            teamId,
-          },
-        },
-      });
-
-      if (!teamMember) {
-        throw new ForbiddenException('您不是该球队的成员');
-      }
-
-      where.teamId = teamId;
-    } else {
-      // 只返回用户创建的活动或用户所在球队的活动
-      where.OR = [
-        { createdById: userId },
-        {
-          team: {
-            members: {
-              some: {
-                userId,
-              },
-            },
-          },
-        },
-      ];
     }
 
     const activities = await this.prisma.activity.findMany({
@@ -118,12 +63,6 @@ export class ActivitiesService {
             id: true,
             username: true,
             email: true,
-          },
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
           },
         },
         venue: {
@@ -147,7 +86,7 @@ export class ActivitiesService {
     return activities;
   }
 
-  async findOne(id: string, userId: string) {
+  async findOne(id: string, _userId: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id },
       include: {
@@ -156,12 +95,6 @@ export class ActivitiesService {
             id: true,
             username: true,
             email: true,
-          },
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
           },
         },
         venue: {
@@ -190,28 +123,10 @@ export class ActivitiesService {
       throw new NotFoundException('活动不存在');
     }
 
-    // 检查用户是否有权限查看
-    if (activity.teamId) {
-      const teamMember = await this.prisma.teamMember.findUnique({
-        where: {
-          userId_teamId: {
-            userId,
-            teamId: activity.teamId,
-          },
-        },
-      });
-
-      if (!teamMember && activity.createdById !== userId) {
-        throw new ForbiddenException('您没有权限查看此活动');
-      }
-    } else if (activity.createdById !== userId) {
-      throw new ForbiddenException('您没有权限查看此活动');
-    }
-
     return activity;
   }
 
-  async update(id: string, userId: string, updateActivityDto: UpdateActivityDto) {
+  async update(id: string, userId: string, updateActivityDto: UpdateActivityDto, userRole?: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id },
     });
@@ -220,9 +135,9 @@ export class ActivitiesService {
       throw new NotFoundException('活动不存在');
     }
 
-    // 只有创建者可以修改
-    if (activity.createdById !== userId) {
-      throw new ForbiddenException('只有活动创建者可以修改活动');
+    const isSystemAdmin = userRole === 'admin' || userRole === 'super_admin';
+    if (activity.createdById !== userId && !isSystemAdmin) {
+      throw new ForbiddenException('只有活动创建者或管理员可以修改活动');
     }
 
     const updatedActivity = await this.prisma.activity.update({
@@ -238,12 +153,6 @@ export class ActivitiesService {
             id: true,
             username: true,
             email: true,
-          },
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
           },
         },
         venue: {
@@ -268,28 +177,10 @@ export class ActivitiesService {
   async register(activityId: string, userId: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
-      include: { team: true },
     });
 
     if (!activity) {
       throw new NotFoundException('活动不存在');
-    }
-
-    // 若有球队，仅球队成员可报名
-    if (activity.teamId) {
-      const teamMember = await this.prisma.teamMember.findUnique({
-        where: {
-          userId_teamId: {
-            userId,
-            teamId: activity.teamId,
-          },
-        },
-      });
-      if (!teamMember && activity.createdById !== userId) {
-        throw new ForbiddenException('仅球队成员可报名此活动');
-      }
-    } else if (activity.createdById !== userId) {
-      throw new ForbiddenException('仅活动创建者或指定球队成员可报名');
     }
 
     const existing = await this.prisma.attendance.findUnique({
@@ -333,18 +224,45 @@ export class ActivitiesService {
     return attendance;
   }
 
-  async remove(id: string, userId: string) {
+  /** 用户取消报名（删除自己的出勤记录） */
+  async unregister(activityId: string, userId: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+    });
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+
+    const attendance = await this.prisma.attendance.findUnique({
+      where: {
+        userId_activityId: {
+          userId,
+          activityId,
+        },
+      },
+    });
+    if (!attendance) {
+      throw new NotFoundException('您未报名该活动');
+    }
+
+    await this.prisma.attendance.delete({
+      where: {
+        userId_activityId: {
+          userId,
+          activityId,
+        },
+      },
+    });
+    return { message: '已取消报名' };
+  }
+
+  async remove(id: string, _userId: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id },
     });
 
     if (!activity) {
       throw new NotFoundException('活动不存在');
-    }
-
-    // 只有创建者可以删除
-    if (activity.createdById !== userId) {
-      throw new ForbiddenException('只有活动创建者可以删除活动');
     }
 
     await this.prisma.activity.delete({

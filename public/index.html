@@ -4,19 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>业余球队管理系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#8b5cf6',
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
     <style>
         body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
             background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
@@ -122,7 +110,7 @@
         .save-status.show { opacity: 1; }
     </style>
 </head>
-<body class="min-h-screen text-slate-100">
+<body class="min-h-screen text-slate-100 safe-bottom">
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
         <div class="mb-10">
@@ -136,26 +124,15 @@
 
                 <!-- 未登录：显示登录/注册 -->
                 <div id="authButtons" class="flex gap-3">
-                    <a href="/login.html" class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-6 rounded-lg transition">
-                        登录
-                    </a>
-                    <a href="/register.html" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition">
-                        注册
-                    </a>
+                    <a href="/login.html" class="btn btn-ghost">登录</a>
+                    <a href="/register.html" class="btn btn-primary">注册</a>
                 </div>
 
-                <!-- 已登录：显示导航 + 选择球队 -->
+                <!-- 已登录：显示导航 -->
                 <div id="appNav" class="hidden flex-col sm:flex-row items-start sm:items-center gap-3">
-                    <div class="glass rounded-xl px-3 py-2 flex items-center gap-2">
-                        <span class="text-white/70 text-sm">球队</span>
-                        <select id="teamSelect" class="bg-black/30 text-white text-sm rounded-lg px-3 py-2 border border-white/15">
-                            <option value="">加载中...</option>
-                        </select>
-                    </div>
                     <div class="flex items-center gap-2">
-                        <a href="/teams.html" class="bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg px-3 py-2 border border-white/15">球队管理</a>
-                        <a href="/activities.html" class="bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg px-3 py-2 border border-white/15">活动</a>
-                        <a href="/profile.html" class="bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg px-3 py-2 border border-white/15">个人资料</a>
+                        <a href="/activities.html" class="btn btn-ghost">活动</a>
+                        <a href="/profile.html" class="btn btn-ghost">个人资料</a>
                     </div>
                 </div>
             </div>
@@ -169,10 +146,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                     <div>
                         <h2 class="text-2xl font-bold text-white">战术板</h2>
-                        <p class="text-sm text-white/80">
-                            当前球队：<span id="teamTitle" class="font-semibold text-white">未选择</span>
-                            <span class="text-white/60">（拖拽调整站位，先保存在浏览器）</span>
-                        </p>
+                        <p class="text-sm text-white/80 text-white/60">拖拽调整站位，数据保存在浏览器</p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
@@ -182,18 +156,10 @@
                             <option value="3-5-2">3-5-2</option>
                         </select>
 
-                        <button id="btnEditPlayer" class="bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg px-3 py-2 border border-white/15">
-                            编辑球员
-                        </button>
-                        <button id="btnReset" class="bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg px-3 py-2 border border-white/15">
-                            重置
-                        </button>
-                        <button id="btnLoad" class="bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg px-3 py-2 border border-white/15">
-                            加载
-                        </button>
-                        <button id="btnSave" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm rounded-lg px-3 py-2">
-                            保存
-                        </button>
+                        <button id="btnEditPlayer" class="btn btn-ghost">编辑球员</button>
+                        <button id="btnReset" class="btn btn-ghost">重置</button>
+                        <button id="btnLoad" class="btn btn-ghost">加载</button>
+                        <button id="btnSave" class="btn btn-primary">保存</button>
                     </div>
                 </div>
 
@@ -230,89 +196,19 @@
     <script src="/js/tactics-board.js"></script>
 
     <script>
-      // Homepage shell: login-aware nav + team selector (no DB changes)
       (function () {
         const TOKEN_KEY = 'authToken';
-        const USER_KEY = 'user';
-        const CURRENT_TEAM_KEY = 'team_management:currentTeamId';
-        const CURRENT_TEAM_NAME_KEY = 'team_management:currentTeamName';
-
         const token = localStorage.getItem(TOKEN_KEY);
         const authButtons = document.getElementById('authButtons');
         const appNav = document.getElementById('appNav');
-        const teamSelect = document.getElementById('teamSelect');
-        const teamTitle = document.getElementById('teamTitle');
-
-        function setTeamTitle(name) {
-          if (teamTitle) teamTitle.textContent = name || '未选择';
-        }
-
-        // show last selected immediately
-        setTeamTitle(localStorage.getItem(CURRENT_TEAM_NAME_KEY) || '未选择');
 
         if (!token) {
-          // not logged in
           authButtons && (authButtons.style.display = 'flex');
           appNav && appNav.classList.add('hidden');
           return;
         }
-
-        // logged in
         authButtons && (authButtons.style.display = 'none');
         appNav && appNav.classList.remove('hidden');
-
-        async function loadTeams() {
-          if (!teamSelect) return;
-          teamSelect.innerHTML = '<option value="">加载中...</option>';
-
-          try {
-            const res = await fetch('/teams', {
-              headers: { Authorization: 'Bearer ' + token },
-            });
-            if (!res.ok) throw new Error('not ok');
-            const teams = await res.json();
-            if (!Array.isArray(teams)) throw new Error('bad response');
-
-            if (teams.length === 0) {
-              teamSelect.innerHTML = '<option value="">还没有球队</option>';
-              setTeamTitle('还没有球队');
-              return;
-            }
-
-            const savedId = localStorage.getItem(CURRENT_TEAM_KEY);
-            let selected = teams.find((t) => t.id === savedId) || teams[0];
-
-            teamSelect.innerHTML = teams
-              .map((t) => `<option value="${t.id}">${(t.name || '未命名球队')}</option>`)
-              .join('');
-
-            teamSelect.value = selected.id;
-            localStorage.setItem(CURRENT_TEAM_KEY, selected.id);
-            localStorage.setItem(CURRENT_TEAM_NAME_KEY, selected.name || '未命名球队');
-            setTeamTitle(selected.name || '未命名球队');
-
-            teamSelect.addEventListener('change', () => {
-              const id = teamSelect.value;
-              const t = teams.find((x) => x.id === id);
-              localStorage.setItem(CURRENT_TEAM_KEY, id);
-              localStorage.setItem(CURRENT_TEAM_NAME_KEY, (t && t.name) || '未命名球队');
-              setTeamTitle((t && t.name) || '未命名球队');
-              // tactics-board.js uses currentTeamId to isolate local saves
-              // For now we just prompt user to Load if needed
-              const status = document.getElementById('saveStatus');
-              if (status) {
-                status.textContent = '已切换球队（可点击“加载”读取该队本地保存）';
-                status.classList.add('show');
-                setTimeout(() => status.classList.remove('show'), 2000);
-              }
-            });
-          } catch (e) {
-            teamSelect.innerHTML = '<option value="">加载失败</option>';
-            setTeamTitle('加载失败');
-          }
-        }
-
-        loadTeams();
       })();
     </script>
 
@@ -372,9 +268,7 @@
                         <input type="password" name="password" required 
                             class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition">
-                        注册
-                    </button>
+                    <button type="submit" class="btn btn-primary w-full">注册</button>
                 </form>
             `;
             document.getElementById('modal').classList.remove('hidden');
@@ -408,9 +302,7 @@
                                 class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 placeholder="请输入密码">
                         </div>
-                        <button type="submit" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition">
-                            登录
-                        </button>
+                        <button type="submit" class="btn btn-primary w-full">登录</button>
                     </form>
                 `;
                 

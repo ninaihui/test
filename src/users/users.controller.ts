@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   Controller,
+  Patch,
   Post,
+  Body,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -13,6 +15,7 @@ import { join } from 'path';
 import * as fs from 'fs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
+import { UpdateMeDto } from './dto/update-me.dto';
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -65,5 +68,10 @@ export class UsersController {
     // Served by useStaticAssets(public)
     const avatarUrl = `/uploads/avatars/${file.filename}`;
     return this.usersService.setAvatarUrl(req.user.sub, avatarUrl);
+  }
+
+  @Patch('me')
+  async updateMe(@Request() req, @Body() dto: UpdateMeDto) {
+    return this.usersService.updateMe(req.user.sub, dto);
   }
 }

@@ -9,27 +9,29 @@
 
 (function () {
   const BOARD_ID = 'tacticsBoard';
-  const CURRENT_TEAM_KEY = 'team_management:currentTeamId';
+  const TACTICS_STORAGE_KEY = 'team_management:tactics:v1';
 
   function getStorageKey() {
-    const teamId = localStorage.getItem(CURRENT_TEAM_KEY) || 'default';
-    // keep per-team local saves isolated
-    return `team_management:tactics:v1:${teamId}`;
+    return TACTICS_STORAGE_KEY;
   }
 
   const boardEl = document.getElementById(BOARD_ID);
   if (!boardEl) return;
 
+  let isReadOnly = false;
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user && user.role === 'user') isReadOnly = true;
+    }
+  } catch (e) {}
+
   const fieldEl = boardEl.querySelector('.field');
   const playersLayer = boardEl.querySelector('.players');
 
   const ui = {
-    formation: document.getElementById('formationSelect'),
-    reset: document.getElementById('btnReset'),
-    save: document.getElementById('btnSave'),
-    load: document.getElementById('btnLoad'),
-    edit: document.getElementById('btnEditPlayer'),
-    status: document.getElementById('saveStatus'),
+    formation: boardEl.querySelector('#formationSelect'),
   };
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
@@ -137,10 +139,42 @@
         number,
         name: `球员${number}`,
         color,
+        avatarUrl: null,
         xPct: 50,
         yPct: 50,
       };
     });
+  }
+
+  /** 从球队名单 API 加载成员，admin 可见已加入的普通用户 */
+  function buildStateFromRoster(roster) {
+    const members = roster.members || [];
+    const saved = (function () {
+      try {
+        const raw = localStorage.getItem(getStorageKey());
+        if (!raw) return null;
+        const payload = JSON.parse(raw);
+        return payload.players || null;
+      } catch (e) { return null; }
+    })();
+    const formationName = ui.formation?.value || '4-4-2';
+    const preset = formations[formationName];
+    state.players = [];
+    for (let i = 0; i < 11; i++) {
+      const member = members[i];
+      const savedPos = saved && saved[i];
+      const pos = preset && preset[i] ? preset[i] : { x: 50, y: 50 };
+      const color = palette[i % palette.length];
+      state.players.push({
+        id: member ? (member.userId || member.user?.id || `p${i + 1}`) : `p${i + 1}`,
+        number: member?.number ?? (i + 1),
+        name: member?.user?.username ?? (member ? '成员' : `空位${i + 1}`),
+        color,
+        avatarUrl: member?.user?.avatarUrl || null,
+        xPct: savedPos?.xPct ?? pos.x,
+        yPct: savedPos?.yPct ?? pos.y,
+      });
+    }
   }
 
   function applyFormation(name) {
@@ -168,7 +202,8 @@
       const avatar = document.createElement('img');
       avatar.alt = '';
       avatar.className = 'player-avatar';
-      avatar.src = defaultAvatarSvg(p.number, p.color);
+      avatar.src = p.avatarUrl || defaultAvatarSvg(p.number, p.color);
+      avatar.onerror = function () { this.src = defaultAvatarSvg(p.number, p.color); };
 
       const label = document.createElement('div');
       label.className = 'player-label';
@@ -181,8 +216,8 @@
       el.style.left = `${p.xPct}%`;
       el.style.top = `${p.yPct}%`;
 
-      // Drag
-      attachDrag(el);
+      // Drag（普通用户仅可查看，不启用拖拽）
+      if (!isReadOnly) attachDrag(el);
 
       playersLayer.appendChild(el);
     }
@@ -249,18 +284,6 @@
     window.addEventListener('pointercancel', onUp);
   }
 
-  function save() {
-    const payload = {
-      v: 1,
-      savedAt: Date.now(),
-      teamId: localStorage.getItem(CURRENT_TEAM_KEY) || 'default',
-      formation: ui.formation?.value || 'custom',
-      players: state.players,
-    };
-    localStorage.setItem(getStorageKey(), JSON.stringify(payload));
-    flashStatus('已保存到浏览器', 1800);
-  }
-
   function load() {
     const raw = localStorage.getItem(getStorageKey());
     if (!raw) {
@@ -274,6 +297,7 @@
       renderPlayers();
       if (ui.formation && payload.formation && formations[payload.formation]) {
         ui.formation.value = payload.formation;
+        syncFormationPills(payload.formation);
       }
       flashStatus('已从浏览器加载', 1800);
     } catch {
@@ -281,57 +305,51 @@
     }
   }
 
-  function reset() {
-    createDefaultPlayers();
-    applyFormation(ui.formation?.value || '4-4-2');
-    flashStatus('已重置', 1200);
-  }
-
-  function editSelectedPlayer() {
-    const selected = boardEl.querySelector('.player.selected');
-    if (!selected) {
-      flashStatus('先点选一个球员', 1600);
-      return;
-    }
-    const id = selected.dataset.playerId;
-    const p = state.players.find((pp) => pp.id === id);
-    if (!p) return;
-
-    const newName = prompt('球员名字（用于显示）', p.name);
-    if (newName === null) return;
-    p.name = (newName || '').trim() || p.name;
-
-    const newColor = prompt('球员颜色（HEX，如 #22c55e）', p.color);
-    if (newColor !== null && newColor.trim()) {
-      p.color = newColor.trim();
-    }
-
-    renderPlayers();
-    // keep selection
-    const after = boardEl.querySelector(`[data-player-id="${id}"]`);
-    if (after) after.classList.add('selected');
-    flashStatus('已更新球员信息', 1500);
-  }
-
+  const statusEl = boardEl.querySelector('#saveStatus');
   function flashStatus(text, ms) {
-    if (!ui.status) return;
-    ui.status.textContent = text;
-    ui.status.classList.add('show');
+    if (!statusEl) return;
+    statusEl.textContent = text;
+    statusEl.classList.add('show');
     clearTimeout(flashStatus._t);
     flashStatus._t = setTimeout(() => {
-      ui.status.classList.remove('show');
+      statusEl.classList.remove('show');
     }, ms || 1500);
   }
 
-  function wireUi() {
-    if (ui.formation) {
-      ui.formation.addEventListener('change', () => applyFormation(ui.formation.value));
-    }
-    ui.reset?.addEventListener('click', reset);
-    ui.save?.addEventListener('click', save);
-    ui.load?.addEventListener('click', load);
-    ui.edit?.addEventListener('click', editSelectedPlayer);
+  function syncFormationPills(value) {
+    const pills = boardEl.querySelectorAll('.formation-pill');
+    pills.forEach((btn) => {
+      const active = (btn.getAttribute('data-formation') === value);
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
 
+  function wireUi() {
+    if (isReadOnly) {
+      const formationWrap = document.getElementById('formationWrap');
+      const readOnlyHint = document.getElementById('tacticsReadOnlyHint');
+      const hintEl = document.getElementById('tacticsHint');
+      if (formationWrap) formationWrap.style.display = 'none';
+      if (readOnlyHint) readOnlyHint.classList.remove('hidden');
+      if (hintEl) hintEl.textContent = '仅可查看，无编辑权限';
+      return;
+    }
+    if (ui.formation) {
+      ui.formation.addEventListener('change', () => {
+        applyFormation(ui.formation.value);
+        syncFormationPills(ui.formation.value);
+      });
+      boardEl.querySelectorAll('.formation-pill').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const v = btn.getAttribute('data-formation');
+          if (v && ui.formation) {
+            ui.formation.value = v;
+            ui.formation.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+    }
     // click to select player
     playersLayer.addEventListener('click', (e) => {
       const btn = e.target.closest('.player');
@@ -343,17 +361,20 @@
 
   function init() {
     createDefaultPlayers();
-    wireUi();
-
-    // load saved if exists, else apply default formation
     const raw = localStorage.getItem(getStorageKey());
-    if (raw) {
-      load();
-    } else {
+    if (raw) load();
+    else {
       if (ui.formation) ui.formation.value = '4-4-2';
       applyFormation('4-4-2');
     }
+    wireUi();
+    renderPlayers();
+    syncFormationPills(ui.formation?.value || '4-4-2');
   }
 
-  init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();

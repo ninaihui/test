@@ -5,6 +5,8 @@
 (function () {
   if (typeof window === 'undefined') return;
   if (window.__fancyBackgroundInitialized) return;
+  // 「我的」页面使用自定义背景图，不应用炫酷背景
+  if (window.location.pathname === '/profile.html') return;
   window.__fancyBackgroundInitialized = true;
 
   const doc = document;

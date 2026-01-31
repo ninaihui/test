@@ -37,25 +37,66 @@
     box-shadow: 0 0 0 2px rgba(var(--ui-accent2), 0.25);
   }
 
-  /* Buttons */
+  /* Buttons - 统一风格：更醒目、圆角 12px、字重 600、最小点击区域 44px、过渡 */
   .btn {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-semibold transition cursor-pointer border;
+    min-height: 44px;
   }
+  .btn:active {
+    transform: scale(0.98);
+  }
+  .btn:disabled {
+    @apply opacity-70 cursor-not-allowed;
+    transform: none;
+  }
+  /* 主操作：渐变青绿，更亮更醒目 */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-black;
-    background: linear-gradient(135deg, rgba(var(--ui-accent), 1), rgba(var(--ui-accent2), 1));
-    box-shadow: 0 0 18px rgba(var(--ui-accent2), 0.22);
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold transition cursor-pointer text-black border-0;
+    min-height: 44px;
+    background: linear-gradient(135deg, #22d3ee 0%, #2dd4bf 50%, #34d399 100%);
+    box-shadow: 0 0 24px rgba(45, 212, 191, 0.4), 0 4px 14px rgba(0, 0, 0, 0.25);
   }
-  .btn-primary:hover {
-    box-shadow: 0 0 24px rgba(var(--ui-accent2), 0.32);
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #67e8f9 0%, #5eead4 50%, #6ee7b7 100%);
+    box-shadow: 0 0 32px rgba(45, 212, 191, 0.5), 0 6px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+  }
+  /* 次要操作：白边+半透明底，更易辨认 */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-semibold transition cursor-pointer border-2 border-white/35 bg-white/12;
+    min-height: 44px;
+    color: rgba(255, 255, 255, 0.95);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    @apply text-white bg-white/20;
+    border-color: rgba(var(--ui-accent2), 0.5);
+    box-shadow: 0 0 16px rgba(var(--ui-accent2), 0.2);
+  }
+  /* 危险操作：删除、退出，红色更醒目 */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold transition cursor-pointer text-white border-2;
+    min-height: 44px;
+    background: rgba(239, 68, 68, 0.45);
+    border-color: rgba(239, 68, 68, 0.75);
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.25);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.6);
+    border-color: rgba(239, 68, 68, 0.95);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.35);
     transform: translateY(-1px);
   }
-  .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition text-white/80 border border-white/15 bg-white/5;
+  .btn-danger:active:not(:disabled) {
+    background: rgba(239, 68, 68, 0.55);
+    transform: scale(0.98);
   }
-  .btn-ghost:hover {
-    @apply text-white bg-white/10;
-    border-color: rgba(var(--ui-accent2), 0.35);
+  /* 小号按钮：列表行内、弹窗内次要操作 */
+  .btn-sm {
+    min-height: 0;
+    @apply px-3 py-1.5 text-sm font-semibold;
   }
 
   /* Active tab look */

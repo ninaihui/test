@@ -1,13 +1,14 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsNotEmpty } from 'class-validator';
 
 export class RegisterDto {
-  @IsEmail({}, { message: '邮箱格式不正确' })
-  @IsNotEmpty({ message: '邮箱不能为空' })
+  @IsString({ message: '账号必须是字符串' })
+  @IsNotEmpty({ message: '账号不能为空' })
   email: string;
 
   @IsString({ message: '用户名必须是字符串' })
   @IsNotEmpty({ message: '用户名不能为空' })
-  @MinLength(3, { message: '用户名至少需要3个字符' })
+  @MinLength(1, { message: '用户名至少1个字符' })
+  @MaxLength(10, { message: '用户名最多10个字符' })
   username: string;
 
   @IsString({ message: '密码必须是字符串' })

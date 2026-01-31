@@ -19,12 +19,12 @@ export class AuthService {
   private async createUserWithRole(registerDto: RegisterDto, role: string) {
     const { email, username, password } = registerDto;
 
-    // 检查邮箱是否已存在
+    // 检查账号是否已存在（账号不限于邮箱格式）
     const existingUserByEmail = await this.prisma.user.findUnique({
       where: { email },
     });
     if (existingUserByEmail) {
-      throw new ConflictException('该邮箱已被注册');
+      throw new ConflictException('该账号已被注册');
     }
 
     // 检查用户名是否已存在
@@ -88,13 +88,23 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { usernameOrEmail, password } = loginDto;
 
-    // 查找用户（通过邮箱或用户名）
+    // 查找用户（通过邮箱或用户名）；只 select 所需字段，避免未迁移 playingPosition 时 500
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [
           { email: usernameOrEmail },
           { username: usernameOrEmail },
         ],
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: true,
+        role: true,
+        avatarUrl: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -122,6 +132,7 @@ export class AuthService {
         email: user.email,
         username: user.username,
         role: user.role,
+        avatarUrl: user.avatarUrl,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -137,6 +148,8 @@ export class AuthService {
         email: true,
         username: true,
         role: true,
+        avatarUrl: true,
+        playingPosition: true,
         createdAt: true,
         updatedAt: true,
       },

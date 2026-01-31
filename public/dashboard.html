@@ -11,151 +11,144 @@
         url('/assets/login-bg.png') no-repeat center center fixed;
       background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
     .card, .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
-    .card-hover:hover { background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
+    .card-hover:hover { background: rgba(0,0,0,.28); border-color: rgba(255,255,255,.18); }
     .stat-num { font-variant-numeric: tabular-nums; }
+    /* 欢迎区 */
+    .welcome-card { padding: 1rem 1.25rem; }
+    .welcome-card a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem; }
+    .welcome-card a:hover { opacity: 0.95; }
+    /* 下一场活动主卡片：有活动时可点击进入详情 */
+    .next-card { padding: 1.25rem; }
+    #weekendCard[data-activity-id] { cursor: pointer; }
+    .next-card .venue-row { color: rgba(255,255,255,.7); font-size: 0.875rem; margin-top: 0.25rem; }
+    .next-card .time-row { color: rgba(255,255,255,.5); font-size: 0.8125rem; margin-top: 0.25rem; }
+    .next-card .cta { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .badge-today { background: rgba(34,197,94,.25); color: #86efac; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
+    .badge-tomorrow { background: rgba(59,130,246,.25); color: #93c5fd; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
+    .badge-date { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
+    /* 下一场活动 - 报名队员预览 */
+    .next-card .roster-label { font-size: 0.75rem; color: rgba(255,255,255,.5); margin-top: 0.75rem; margin-bottom: 0.25rem; }
+    .next-card .roster-names { font-size: 0.8125rem; color: rgba(255,255,255,.75); line-height: 1.4; }
+    .next-card .roster-names .name-tag { display: inline-block; margin: 0.125rem 0.25rem 0.125rem 0; padding: 0.125rem 0.5rem; background: rgba(255,255,255,.08); border-radius: 0.5rem; }
+    /* 活动列表项 */
+    .activity-row { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,.08); text-decoration: none; color: inherit; transition: background .15s; }
+    .activity-row:last-child { border-bottom: none; }
+    .activity-row:hover { background: rgba(255,255,255,.05); }
+    .activity-row .badge { flex-shrink: 0; min-width: 3rem; text-align: center; }
+    .activity-row .body { flex: 1; min-width: 0; }
+    .activity-row .body .name { font-weight: 500; color: #fff; }
+    .activity-row .body .meta { font-size: 0.8125rem; color: rgba(255,255,255,.5); margin-top: 0.125rem; }
+    .activity-row .arrow { color: rgba(255,255,255,.35); font-size: 0.875rem; flex-shrink: 0; }
+    /* 欢迎区头像：与「我的」页面一致 5rem × 5rem */
+    .welcome-avatar { width: 5rem; height: 5rem; min-width: 5rem; min-height: 5rem; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .welcome-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
   </style>
 </head>
 <body class="min-h-screen text-slate-100">
-<div class="min-h-screen safe-bottom pb-20">
+  <div class="min-h-screen safe-bottom pb-24">
+    <div class="max-w-2xl mx-auto px-4 py-6">
 
-  <div class="max-w-2xl mx-auto px-4 py-6">
-
-    <!-- 头部：用户信息 -->
-    <header class="flex items-center gap-3 mb-6">
-      <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/15 bg-black/30 shrink-0">
-        <img id="avatar" alt="头像" class="w-full h-full object-cover" />
-      </div>
-      <div class="min-w-0">
-        <div id="greeting" class="text-white/60 text-sm">加载中…</div>
-        <div id="userName" class="text-white font-semibold truncate">—</div>
-      </div>
-    </header>
-
-    <!-- 当前球队卡片 -->
-    <section class="mb-6" id="teamSection">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-white/80 text-sm font-medium">当前球队</h2>
-        <a href="/teams.html" class="text-cyan-400/90 text-xs hover:underline">管理</a>
-      </div>
-      <a href="/teams.html" id="teamCard" class="block card card-hover rounded-2xl p-4 transition">
-        <div id="teamEmpty" class="hidden text-white/50 text-sm">暂无球队，去创建或加入</div>
-        <div id="teamContent" class="hidden">
-          <div id="teamName" class="text-white font-semibold mb-2">—</div>
-          <div class="flex gap-4 text-xs text-white/60">
-            <span><span id="teamMembers" class="stat-num text-white/80">0</span> 人</span>
-            <span><span id="teamActivities" class="stat-num text-white/80">0</span> 场活动</span>
+      <!-- 欢迎区：头像 + 问候 + 副标题 -->
+      <section class="mb-6">
+        <a href="/profile.html" class="card rounded-2xl welcome-card card-hover transition block">
+          <div class="flex items-center gap-3">
+            <div class="welcome-avatar">
+              <img id="avatar" alt="头像" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <div id="greeting" class="text-white/70 text-sm">加载中…</div>
+              <div id="userName" class="text-white font-semibold truncate text-lg">—</div>
+              <div class="text-white/50 text-xs mt-0.5">点击进入个人中心</div>
+            </div>
+            <span class="text-white/40 text-xl shrink-0" aria-hidden="true">→</span>
           </div>
-        </div>
-      </a>
-    </section>
+        </a>
+      </section>
 
-    <!-- 本周末活动（场地 + 时间 + 报名） -->
-    <section class="mb-6" id="weekendSection">
-      <h2 class="text-white/80 text-sm font-medium mb-3">本周末活动</h2>
-      <div id="weekendCard" class="card rounded-2xl p-4">
-        <div id="weekendEmpty" class="text-white/50 text-sm text-center py-4">暂无即将举行的活动</div>
-        <div id="weekendContent" class="hidden">
-          <div class="flex justify-between items-start gap-2 mb-3">
-            <div>
-              <div id="weekendName" class="text-white font-semibold">—</div>
-              <div id="weekendVenue" class="text-white/70 text-sm mt-0.5">—</div>
-              <div id="weekendTime" class="text-white/50 text-xs mt-1">—</div>
+      <!-- 下一场活动（主卡片） -->
+      <section class="mb-6" id="weekendSection">
+        <h2 class="text-white/80 text-sm font-medium mb-3">下一场活动</h2>
+        <div id="weekendCard" class="card rounded-2xl next-card">
+          <div id="weekendEmpty" class="text-white/50 text-sm text-center py-6">
+            暂无即将举行的活动<br />
+            <a href="/activities.html" class="text-cyan-400/90 text-xs mt-2 inline-block underline">去活动页看看</a>
+          </div>
+          <div id="weekendContent" class="hidden">
+            <div id="weekendName" class="text-white font-semibold text-lg">—</div>
+            <div id="weekendVenue" class="venue-row">—</div>
+            <div id="weekendTime" class="time-row">—</div>
+            <div id="weekendRoster" class="hidden">
+              <div class="roster-label">已报名队员</div>
+              <div id="weekendRosterNames" class="roster-names"></div>
+            </div>
+            <div class="cta">
+              <span id="weekendStatus" class="text-white/60 text-sm">—</span>
+              <button type="button" id="weekendRegisterBtn" class="btn btn-primary hidden">报名</button>
             </div>
           </div>
-          <div class="flex items-center justify-between gap-3">
-            <span id="weekendStatus" class="text-white/60 text-sm">—</span>
-            <button type="button" id="weekendRegisterBtn" class="hidden rounded-xl px-4 py-2 text-sm font-medium text-[#001018] bg-gradient-to-r from-cyan-400 to-emerald-400 hover:opacity-90 transition">报名</button>
+        </div>
+      </section>
+
+      <!-- 全部活动（已创建的所有活动） -->
+      <section class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-white/80 text-sm font-medium">全部活动</h2>
+          <a href="/activities.html" class="text-cyan-400/90 text-xs hover:underline">活动页</a>
+        </div>
+        <div id="activitiesList" class="card rounded-2xl overflow-hidden">
+          <div id="activitiesEmpty" class="text-white/50 text-sm text-center py-6 px-4">
+            暂无活动<br />
+            <a href="/activities.html" class="text-cyan-400/90 text-xs mt-2 inline-block underline">去活动页</a>
+          </div>
+          <div id="activityItems" class="hidden">
+            <!-- 由 JS 填充 -->
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- 即将到来的活动 -->
-    <section class="mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-white/80 text-sm font-medium">即将到来</h2>
-        <a href="/activities.html" class="text-cyan-400/90 text-xs hover:underline">全部</a>
+      <!-- 服务状态（弱化） -->
+      <div class="text-white/35 text-xs flex items-center gap-2 pt-2">
+        <span id="healthText">检查中…</span>
+        <span id="healthTime"></span>
       </div>
-      <div id="activitiesList">
-        <div id="activitiesEmpty" class="card rounded-2xl p-4 text-center text-white/50 text-sm">暂无即将举行的活动</div>
-        <div id="activityItems" class="space-y-2 hidden"></div>
-        <template id="activityItemTpl">
-          <a href="/activities.html" class="block card card-hover rounded-xl p-3 transition">
-            <div class="flex justify-between items-start gap-2">
-              <div class="min-w-0">
-                <div class="text-white font-medium truncate" data-name></div>
-                <div class="text-white/50 text-xs mt-0.5" data-location></div>
-              </div>
-              <div class="text-right shrink-0 text-white/70 text-xs whitespace-nowrap" data-date></div>
-            </div>
-          </a>
-        </template>
-      </div>
-    </section>
-
-    <!-- 快捷入口 -->
-    <section class="mb-6">
-      <h2 class="text-white/80 text-sm font-medium mb-3">快捷入口</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <a href="/teams.html" class="card card-hover rounded-xl p-4 text-center transition">
-          <div class="text-white font-medium text-sm">球队</div>
-          <div class="text-white/50 text-xs mt-1">管理与加入</div>
-        </a>
-        <a href="/activities.html" class="card card-hover rounded-xl p-4 text-center transition">
-          <div class="text-white font-medium text-sm">活动</div>
-          <div class="text-white/50 text-xs mt-1">训练与比赛</div>
-        </a>
-        <a href="/tactics.html" class="card card-hover rounded-xl p-4 text-center transition">
-          <div class="text-white font-medium text-sm">战术板</div>
-          <div class="text-white/50 text-xs mt-1">阵容与战术</div>
-        </a>
-      </div>
-    </section>
-
-    <!-- 我的 -->
-    <section class="mb-4">
-      <a href="/profile.html" class="block card card-hover rounded-2xl p-4 transition">
-        <div class="flex items-center justify-between">
-          <span class="text-white font-medium">我的</span>
-          <span class="text-white/40 text-sm">个人资料与设置</span>
-        </div>
-      </a>
-    </section>
-
-    <!-- 服务状态 -->
-    <div class="text-white/40 text-xs flex items-center gap-2">
-      <span id="healthText">检查中…</span>
-      <span id="healthTime"></span>
     </div>
-
   </div>
-</div>
 
-<!-- 底部导航 -->
-<nav class="bottom-nav" aria-label="底部导航">
-  <div class="bottom-nav-inner">
-    <a class="bottom-nav-item active" data-nav="dashboard" href="/dashboard.html">首页</a>
-    <a class="bottom-nav-item" data-nav="teams" href="/teams.html">球队</a>
-    <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
-    <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
-  </div>
-</nav>
+  <!-- 底部导航 -->
+  <nav class="bottom-nav" aria-label="底部导航">
+    <div class="bottom-nav-inner">
+      <a class="bottom-nav-item active" data-nav="dashboard" href="/dashboard.html">首页</a>
+      <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
+      <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
+    </div>
+  </nav>
 
-<script src="/js/fancy-background.js"></script>
-<script>
+  <script src="/js/fancy-background.js"></script>
+  <script>
 (function () {
   const TOKEN_KEY = 'authToken';
   const USER_KEY = 'user';
-  const CURRENT_TEAM_KEY = 'team_management:currentTeamId';
-  const CURRENT_TEAM_NAME_KEY = 'team_management:currentTeamName';
 
-  const token = localStorage.getItem(TOKEN_KEY);
+  function escapeHtml(s) {
+    if (s == null) return '';
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  var token = null;
   const avatarEl = document.getElementById('avatar');
   const greetingEl = document.getElementById('greeting');
   const nameEl = document.getElementById('userName');
 
-  function requireLogin() {
-    window.location.href = '/login.html';
+  const defaultAvatar = 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%230b1220%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2246%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E';
+
+  function requireLogin(reason) {
+    // #region agent log
+    (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:requireLogin',message:'redirecting to login',data:{reason:reason||'',origin:window.location.origin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4,H5'});
+    // #endregion
+    console.warn('首页：跳转登录页 —', reason || '未登录或登录已失效');
+    window.location.href = window.location.origin + '/login.html';
   }
 
   function setGreeting(username) {
@@ -169,48 +162,28 @@
   }
 
   async function loadMe() {
-    if (!token) return requireLogin();
-    try {
-      const res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } });
-      if (!res.ok) return requireLogin();
-      const me = await res.json();
-      setGreeting(me.username);
-      avatarEl.src = (me.avatarUrl ? (me.avatarUrl + '?t=' + Date.now()) : 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%230b1220%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2246%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E');
-      localStorage.setItem(USER_KEY, JSON.stringify(me));
-    } catch (e) {
-      requireLogin();
+    var t = token || localStorage.getItem(TOKEN_KEY);
+    if (!t) {
+      requireLogin('无 token');
+      return;
     }
-  }
-
-  async function loadTeams() {
-    const teamEmpty = document.getElementById('teamEmpty');
-    const teamContent = document.getElementById('teamContent');
-    const teamName = document.getElementById('teamName');
-    const teamMembers = document.getElementById('teamMembers');
-    const teamActivities = document.getElementById('teamActivities');
-
     try {
-      const res = await fetch('/teams', { headers: { Authorization: 'Bearer ' + token } });
-      if (!res.ok) return;
-      const teams = await res.json();
-      if (!Array.isArray(teams) || teams.length === 0) {
-        teamEmpty.classList.remove('hidden');
-        teamContent.classList.add('hidden');
+      const res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + t } });
+      // #region agent log
+      (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:loadMe',message:'/auth/me response',data:{status:res.status,ok:res.ok},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H5'});
+      // #endregion
+      if (!res.ok) {
+        console.warn('首页：/auth/me 返回', res.status);
+        requireLogin('/auth/me 返回 ' + res.status);
         return;
       }
-      const savedId = localStorage.getItem(CURRENT_TEAM_KEY);
-      const current = teams.find(t => t.id === savedId) || teams[0];
-      localStorage.setItem(CURRENT_TEAM_KEY, current.id);
-      localStorage.setItem(CURRENT_TEAM_NAME_KEY, current.name || '未命名球队');
-
-      teamEmpty.classList.add('hidden');
-      teamContent.classList.remove('hidden');
-      teamName.textContent = current.name || '未命名球队';
-      teamMembers.textContent = (current._count && current._count.members) != null ? current._count.members : (current.members && current.members.length) || 0;
-      teamActivities.textContent = (current._count && current._count.activities) != null ? current._count.activities : (current.activities && current.activities.length) || 0;
+      const me = await res.json();
+      setGreeting(me.username);
+      avatarEl.src = (me.avatarUrl ? (me.avatarUrl + '?t=' + Date.now()) : defaultAvatar);
+      localStorage.setItem(USER_KEY, JSON.stringify(me));
     } catch (e) {
-      teamEmpty.classList.remove('hidden');
-      teamContent.classList.add('hidden');
+      console.warn('首页：/auth/me 请求失败', e);
+      requireLogin('请求 /auth/me 失败');
     }
   }
 
@@ -225,6 +198,20 @@
     if (d.getTime() === today.getTime()) return '今天 ' + new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
     if (d.getTime() === tomorrow.getTime()) return '明天 ' + new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
     return new Date(iso).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function getDateBadge(iso) {
+    if (!iso) return { text: '—', cls: 'badge-date' };
+    const d = new Date(iso);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    d.setHours(0, 0, 0, 0);
+    if (d.getTime() === today.getTime()) return { text: '今天', cls: 'badge-today' };
+    if (d.getTime() === tomorrow.getTime()) return { text: '明天', cls: 'badge-tomorrow' };
+    const week = ['日','一','二','三','四','五','六'][d.getDay()];
+    return { text: d.getMonth() + 1 + '/' + d.getDate() + ' 周' + week, cls: 'badge-date' };
   }
 
   function getVenueDisplay(activity) {
@@ -248,6 +235,8 @@
       const list = Array.isArray(activities) ? activities : [];
       const first = list[0];
       if (!first || !first.id) {
+        var cardEl = document.getElementById('weekendCard');
+        if (cardEl) delete cardEl.dataset.activityId;
         emptyEl.hidden = false;
         contentEl.hidden = true;
         emptyEl.classList.remove('hidden');
@@ -256,6 +245,8 @@
       }
       const detailRes = await fetch('/activities/' + first.id, { headers: { Authorization: 'Bearer ' + token } });
       if (!detailRes.ok) {
+        var cardEl = document.getElementById('weekendCard');
+        if (cardEl) delete cardEl.dataset.activityId;
         emptyEl.hidden = false;
         contentEl.hidden = true;
         emptyEl.classList.remove('hidden');
@@ -268,24 +259,61 @@
       const myAtt = (activity.attendances || []).find(a => a.user && a.user.id === (me && me.id));
       const venueDisplay = getVenueDisplay(activity);
 
-      // 有活动时只显示活动内容，彻底隐藏「暂无」提示（避免与 class 冲突）
       emptyEl.hidden = true;
       contentEl.hidden = false;
       emptyEl.classList.add('hidden');
       contentEl.classList.remove('hidden');
+      var weekendCard = document.getElementById('weekendCard');
+      if (weekendCard) weekendCard.dataset.activityId = activity.id;
       nameEl.textContent = activity.name || '未命名活动';
-      venueEl.textContent = '场地：' + venueDisplay;
-      timeEl.textContent = formatActivityDate(activity.date);
+      venueEl.textContent = '📍 ' + venueDisplay;
+      timeEl.textContent = '🕐 ' + formatActivityDate(activity.date);
+
+      var rosterWrap = document.getElementById('weekendRoster');
+      var rosterNamesEl = document.getElementById('weekendRosterNames');
+      var attendances = activity.attendances || [];
+      if (rosterWrap && rosterNamesEl) {
+        if (attendances.length > 0) {
+          rosterWrap.classList.remove('hidden');
+          rosterNamesEl.innerHTML = attendances.map(function (a) {
+            var name = (a.user && a.user.username) ? a.user.username : '—';
+            return '<span class="name-tag">' + escapeHtml(name) + '</span>';
+          }).join('');
+        } else {
+          rosterWrap.classList.add('hidden');
+          rosterNamesEl.innerHTML = '';
+        }
+      }
 
       if (myAtt) {
-        statusEl.textContent = '已报名' + (myAtt.position ? ' · ' + myAtt.position : ' · 待安排');
+        statusEl.textContent = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
         statusEl.classList.remove('hidden');
-        btnEl.classList.add('hidden');
+        btnEl.classList.remove('hidden');
+        btnEl.textContent = '取消报名';
+        btnEl.onclick = async (e) => {
+          e.preventDefault();
+          if (!confirm('确定取消报名？')) return;
+          btnEl.disabled = true;
+          try {
+            const r = await fetch('/activities/' + activity.id + '/register', {
+              method: 'DELETE',
+              headers: { Authorization: 'Bearer ' + token },
+            });
+            if (r.ok) loadWeekendActivity();
+            else {
+              const err = await r.json().catch(() => ({}));
+              alert(err.message || '取消失败');
+            }
+          } finally {
+            btnEl.disabled = false;
+          }
+        };
       } else {
         statusEl.classList.add('hidden');
         btnEl.classList.remove('hidden');
         btnEl.textContent = '报名';
-        btnEl.onclick = async () => {
+        btnEl.onclick = async (e) => {
+          e.preventDefault();
           btnEl.disabled = true;
           try {
             const r = await fetch('/activities/' + activity.id + '/register', {
@@ -310,29 +338,33 @@
     }
   }
 
-  async function loadUpcomingActivities() {
+  async function loadAllActivities() {
     const emptyEl = document.getElementById('activitiesEmpty');
     const itemsEl = document.getElementById('activityItems');
-    const tpl = document.getElementById('activityItemTpl');
 
     try {
-      const res = await fetch('/activities?upcoming=1', { headers: { Authorization: 'Bearer ' + token } });
+      const res = await fetch('/activities', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) return;
       const activities = await res.json();
       const list = Array.isArray(activities) ? activities : [];
-      const upcoming = list.slice(0, 5);
 
-      emptyEl.classList.toggle('hidden', upcoming.length > 0);
-      itemsEl.classList.toggle('hidden', upcoming.length === 0);
+      emptyEl.classList.toggle('hidden', list.length > 0);
+      itemsEl.classList.toggle('hidden', list.length === 0);
       itemsEl.innerHTML = '';
-      upcoming.forEach(a => {
-        const node = tpl.content.cloneNode(true);
-        node.querySelector('[data-name]').textContent = a.name || '未命名活动';
-        node.querySelector('[data-location]').textContent = getVenueDisplay(a);
-        node.querySelector('[data-date]').textContent = formatActivityDate(a.date);
-        const link = node.querySelector('a');
-        if (link) link.href = '/activities.html?id=' + (a.id || '');
-        itemsEl.appendChild(node);
+
+      list.forEach(a => {
+        const badge = getDateBadge(a.date);
+        const row = document.createElement('a');
+        row.href = '/activities.html?id=' + (a.id || '');
+        row.className = 'activity-row block px-4';
+        row.innerHTML =
+          '<span class="badge ' + badge.cls + '">' + badge.text + '</span>' +
+          '<div class="body">' +
+            '<div class="name">' + (a.name || '未命名活动') + '</div>' +
+            '<div class="meta">' + getVenueDisplay(a) + ' · ' + formatActivityDate(a.date) + '</div>' +
+          '</div>' +
+          '<span class="arrow">→</span>';
+        itemsEl.appendChild(row);
       });
     } catch (e) {
       emptyEl.classList.remove('hidden');
@@ -357,21 +389,43 @@
 
   function setBottomNavActive() {
     const path = window.location.pathname;
-    const key = path === '/dashboard.html' ? 'dashboard' : path === '/teams.html' ? 'teams' : path === '/tactics.html' ? 'tactics' : path === '/profile.html' ? 'me' : 'dashboard';
+    const key = path === '/dashboard.html' ? 'dashboard' : path === '/tactics.html' ? 'tactics' : path === '/profile.html' ? 'me' : 'dashboard';
     document.querySelectorAll('.bottom-nav-item').forEach(a => {
       a.classList.toggle('active', a.dataset.nav === key);
     });
   }
 
-  (async function init() {
-    await loadMe();
-    await loadTeams();
-    loadWeekendActivity();
-    loadUpcomingActivities();
-    health();
-    setBottomNavActive();
+  (function bindWeekendCardClick() {
+    var weekendCard = document.getElementById('weekendCard');
+    var btnEl = document.getElementById('weekendRegisterBtn');
+    if (!weekendCard) return;
+    weekendCard.addEventListener('click', function (e) {
+      if (btnEl && (e.target === btnEl || btnEl.contains(e.target))) return;
+      var id = weekendCard.dataset.activityId;
+      if (id) window.location.href = '/activities.html?id=' + id;
+    });
+  })();
+
+  (function init() {
+    setTimeout(function () {
+      token = localStorage.getItem(TOKEN_KEY);
+      // #region agent log
+      (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:init',message:'token read',data:{origin:window.location.origin,hasToken:!!token,tokenLen:token?token.length:0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'});
+      // #endregion
+      if (!token) {
+        requireLogin('无 token（请确保从登录页跳转且未清除缓存）');
+        return;
+      }
+      (async function () {
+        await loadMe();
+        loadWeekendActivity();
+        loadAllActivities();
+        health();
+        setBottomNavActive();
+      })();
+    }, 0);
   })();
 })();
-</script>
+  </script>
 </body>
 </html>

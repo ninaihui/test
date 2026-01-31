@@ -3,54 +3,114 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>个人资料 - 业余球队管理系统</title>
+  <title>个人中心 - 业余球队管理系统</title>
   <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
   <style>
     body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
       background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
-        url('/assets/login-bg.png') no-repeat center center fixed;
+        url('/assets/profile-bg.png') no-repeat center center fixed;
       background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
-    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+    .glass, .profile-card { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+    .profile-card:hover { border-color: rgba(255,255,255,.16); }
+    .profile-header { padding: 1.5rem 1.25rem; }
+    /* 头像框固定尺寸，不随图片变化 */
+    .avatar-wrap { position: relative; display: inline-block; width: 5rem; height: 5rem; flex-shrink: 0; }
+    .avatar-wrap .avatar-box { width: 5rem; height: 5rem; min-width: 5rem; min-height: 5rem; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; }
+    .avatar-wrap .avatar-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .avatar-wrap .edit-badge { position: absolute; right: 0; bottom: 0; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,.5); border: 2px solid rgba(255,255,255,.3); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; pointer-events: none; }
+    .status--success { color: #6ee7b7; }
+    .status--error { color: #fca5a5; }
+    /* 账号区：退出登录用危险样式，与主操作区分 */
+    .account-card { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); border-radius: 1rem; overflow: hidden; }
+    /* 上传按钮：主操作更醒目 */
   </style>
 </head>
 <body class="min-h-screen text-slate-100 safe-bottom">
-<div class="container mx-auto px-4 py-8 max-w-xl">
-    <div class="glass rounded-2xl p-6">
-      <!-- Title removed -->
+  <div class="container mx-auto px-4 py-6 max-w-xl">
 
-      <div class="mt-6 flex items-center gap-4">
-        <div class="w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/20 bg-black/20">
-          <img id="avatarImg" alt="avatar" class="w-full h-full object-cover" src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%23111827%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2248%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E" />
+    <!-- 页面标题 -->
+    <header class="mb-6">
+      <h1 class="text-xl font-semibold text-white">个人中心</h1>
+      <p class="text-sm text-white/50 mt-0.5">管理你的资料与账号</p>
+    </header>
+
+    <!-- 个人信息卡片：头像 + 昵称 + 邮箱 -->
+    <section class="glass rounded-2xl overflow-hidden mb-4">
+      <div class="profile-header flex items-center gap-4">
+        <div class="avatar-wrap">
+          <div class="avatar-box">
+            <img id="avatarImg" alt="头像" src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%23111827%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2248%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E" />
+          </div>
+          <span class="edit-badge" aria-hidden="true">📷</span>
         </div>
-        <div class="flex-1">
-          <div class="text-white font-semibold" id="userTitle">未登录</div>
-          <div class="text-white/60 text-sm" id="userMeta">请先登录</div>
+        <div class="min-w-0 flex-1">
+          <div class="text-white font-semibold text-lg truncate" id="userTitle">未登录</div>
+          <div class="text-white/60 text-sm truncate mt-0.5" id="userMeta">请先登录</div>
         </div>
       </div>
+    </section>
 
-      <div class="mt-6 space-y-3">
-        <label class="block text-white/80 text-sm">选择头像图片（≤ 10MB，支持 jpg/jpeg/png/webp/gif/heic（苹果手机照片））</label>
-        <input id="fileInput" type="file" accept="image/*,image/heic,image/heif" class="block w-full text-sm text-white/80 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/15 file:text-white hover:file:bg-white/20" />
-
-        <div class="flex items-center gap-2">
-          <button id="btnUpload" class="btn-primary">上传</button>
-          <button id="btnLogout" class="btn-ghost">退出</button>
-        </div>
-
-        <div id="status" class="text-sm text-white/70"></div>
+    <!-- 头像设置：简洁一行选择 + 上传 -->
+    <section class="glass rounded-2xl p-4 mb-4">
+      <h2 class="text-white/80 text-sm font-medium mb-2">头像设置</h2>
+      <p class="text-white/50 text-xs mb-3">用于战术板展示。</p>
+      <div class="flex items-center gap-2 flex-wrap">
+        <input id="fileInput" type="file" accept="image/*,image/heic,image/heif" class="flex-1 min-w-0 text-sm text-white/80 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-white/15 file:text-white hover:file:bg-white/20" />
+        <button type="button" id="btnUpload" class="btn btn-primary shrink-0">↑ 上传头像</button>
       </div>
+      <span id="status" class="text-sm text-white/60 mt-2 block"></span>
+    </section>
 
-      <div class="mt-6 text-xs text-white/50 leading-relaxed">
-        提示：头像先用于战术板展示；下一步会由球队管理员分配号码并在战术板里拖拽摆位。
+    <!-- 上场位置：用户自选常用位置（参考足球常见位置） -->
+    <section class="glass rounded-2xl p-4 mb-4">
+      <h2 class="text-white/80 text-sm font-medium mb-2">上场位置</h2>
+      <p class="text-white/50 text-xs mb-3">选择你常踢的位置，便于活动报名与战术安排时参考。</p>
+      <div class="flex items-center gap-2 flex-wrap">
+        <select id="playingPosition" class="flex-1 min-w-0 rounded-xl bg-black/30 border border-white/20 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
+          <option value="">未选择</option>
+          <optgroup label="守门员">
+            <option value="守门员">守门员 (GK)</option>
+          </optgroup>
+          <optgroup label="后卫">
+            <option value="中后卫">中后卫 (CB)</option>
+            <option value="右后卫">右后卫 (RB)</option>
+            <option value="左后卫">左后卫 (LB)</option>
+          </optgroup>
+          <optgroup label="中场">
+            <option value="后腰">后腰 (DM)</option>
+            <option value="中前卫">中前卫 (CM)</option>
+            <option value="前腰">前腰 (AM)</option>
+            <option value="右前卫">右前卫 (RM)</option>
+            <option value="左前卫">左前卫 (LM)</option>
+            <option value="右边锋">右边锋 (RW)</option>
+            <option value="左边锋">左边锋 (LW)</option>
+          </optgroup>
+          <optgroup label="前锋">
+            <option value="影锋">影锋 (SS)</option>
+            <option value="中锋">中锋 (CF)</option>
+            <option value="前锋">前锋 (ST)</option>
+          </optgroup>
+        </select>
+        <button type="button" id="btnSavePosition" class="btn btn-primary shrink-0">保存</button>
       </div>
-    </div>
+      <span id="positionStatus" class="text-sm text-white/60 mt-2 block"></span>
+    </section>
+
+    <!-- 账号：退出登录使用危险样式，与常规操作区分 -->
+    <section class="account-card mb-6">
+      <div class="px-4 pt-4 pb-2">
+        <h2 class="text-white/80 text-sm font-medium">账号</h2>
+      </div>
+      <div class="px-4 pb-4">
+        <button type="button" id="btnLogout" class="btn btn-danger w-full">退出登录</button>
+      </div>
+    </section>
   </div>
 
-  <!-- Mobile bottom nav -->
+  <!-- 底部导航 -->
   <nav class="bottom-nav" aria-label="底部导航">
     <div class="bottom-nav-inner">
       <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
-      <a class="bottom-nav-item" data-nav="teams" href="/teams.html">球队</a>
       <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
       <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
     </div>
@@ -60,48 +120,60 @@
   <script>
     (function setBottomNavActive(){
       const path = window.location.pathname;
-      const map = {
-        '/dashboard.html': 'dashboard',
-        '/teams.html': 'teams',
-        '/tactics.html': 'tactics',
-        '/profile.html': 'me',
-      };
+      const map = { '/dashboard.html': 'dashboard', '/tactics.html': 'tactics', '/profile.html': 'me' };
       const key = map[path] || 'me';
       document.querySelectorAll('.bottom-nav-item').forEach(a => {
         if (a.dataset.nav === key) a.classList.add('active');
       });
     })();
+
     const token = localStorage.getItem('authToken');
     const statusEl = document.getElementById('status');
     const avatarImg = document.getElementById('avatarImg');
     const userTitle = document.getElementById('userTitle');
     const userMeta = document.getElementById('userMeta');
 
-    function setStatus(msg) {
+    function setStatus(msg, type) {
       statusEl.textContent = msg || '';
+      statusEl.classList.remove('status--success', 'status--error');
+      if (type === 'success') statusEl.classList.add('status--success');
+      if (type === 'error') statusEl.classList.add('status--error');
     }
 
     function requireLogin() {
-      setStatus('未登录：将跳转到登录页');
+      setStatus('未登录，正在跳转登录页…', 'error');
       setTimeout(() => (window.location.href = '/login.html'), 800);
+    }
+
+    const positionStatusEl = document.getElementById('positionStatus');
+    const playingPositionEl = document.getElementById('playingPosition');
+    const btnSavePosition = document.getElementById('btnSavePosition');
+
+    function setPositionStatus(msg, type) {
+      if (!positionStatusEl) return;
+      positionStatusEl.textContent = msg || '';
+      positionStatusEl.classList.remove('status--success', 'status--error');
+      if (type === 'success') positionStatusEl.classList.add('status--success');
+      if (type === 'error') positionStatusEl.classList.add('status--error');
     }
 
     async function loadMe() {
       if (!token) return requireLogin();
       try {
-        const res = await fetch('/auth/me', {
-          headers: { Authorization: 'Bearer ' + token },
-        });
+        const res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } });
         if (!res.ok) return requireLogin();
         const me = await res.json();
         userTitle.textContent = me.username || '用户';
         userMeta.textContent = me.email || '';
         if (me.avatarUrl) {
-          // cache-bust
-          avatarImg.src = me.avatarUrl + '?t=' + Date.now();
+          var avatarSrc = me.avatarUrl.startsWith('http') ? me.avatarUrl : (window.location.origin + me.avatarUrl);
+          avatarImg.src = avatarSrc + (avatarSrc.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+        }
+        if (playingPositionEl && me.playingPosition !== undefined) {
+          playingPositionEl.value = me.playingPosition || '';
         }
       } catch (e) {
-        setStatus('加载用户信息失败');
+        setStatus('加载用户信息失败', 'error');
       }
     }
 
@@ -109,24 +181,24 @@
     document.getElementById('fileInput').addEventListener('change', (e) => {
       const f = e.target.files && e.target.files[0];
       if (!f) return;
-      // preview
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       previewUrl = URL.createObjectURL(f);
       avatarImg.src = previewUrl;
+      setStatus('');
     });
 
-    const MAX_AVATAR_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_AVATAR_SIZE = 10 * 1024 * 1024;
     document.getElementById('btnUpload').addEventListener('click', async () => {
       const btn = document.getElementById('btnUpload');
       const input = document.getElementById('fileInput');
       const f = input.files && input.files[0];
-      if (!f) return setStatus('请选择图片');
-      if (f.size > MAX_AVATAR_SIZE) return setStatus('图片不能超过 10MB，当前约 ' + (f.size / 1024 / 1024).toFixed(1) + 'MB');
+      if (!f) return setStatus('请先选择一张图片', 'error');
+      if (f.size > MAX_AVATAR_SIZE) return setStatus('图片不能超过 10MB（当前约 ' + (f.size / 1024 / 1024).toFixed(1) + 'MB）', 'error');
       if (!token) return requireLogin();
 
       btn.disabled = true;
       btn.classList.add('opacity-60');
-      setStatus('上传中...');
+      setStatus('上传中…');
 
       const fd = new FormData();
       fd.append('file', f);
@@ -138,9 +210,8 @@
           body: fd,
         });
 
-        // 401/403: token 失效或没登录
         if (res.status === 401 || res.status === 403) {
-          setStatus('登录已失效，请重新登录');
+          setStatus('登录已失效，请重新登录', 'error');
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
           return setTimeout(() => (window.location.href = '/login.html'), 600);
@@ -148,27 +219,58 @@
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const msg = (data && (data.message || data.error)) ? (data.message || data.error) : `HTTP ${res.status}`;
-          setStatus('上传失败：' + msg);
+          const msg = (data && (data.message || data.error)) ? (data.message || data.error) : 'HTTP ' + res.status;
+          setStatus('上传失败：' + msg, 'error');
           return;
         }
 
-        setStatus('上传成功');
+        setStatus('上传成功', 'success');
         if (data.avatarUrl) {
           avatarImg.src = data.avatarUrl + '?t=' + Date.now();
           const cached = JSON.parse(localStorage.getItem('user') || 'null');
-          if (cached) {
-            cached.avatarUrl = data.avatarUrl;
-            localStorage.setItem('user', JSON.stringify(cached));
-          }
+          if (cached) { cached.avatarUrl = data.avatarUrl; localStorage.setItem('user', JSON.stringify(cached)); }
         }
       } catch (e) {
-        setStatus('网络错误，稍后再试');
+        setStatus('网络错误，请稍后再试', 'error');
       } finally {
         btn.disabled = false;
         btn.classList.remove('opacity-60');
       }
     });
+
+    if (btnSavePosition && playingPositionEl) {
+      btnSavePosition.addEventListener('click', async () => {
+        if (!token) return requireLogin();
+        const value = (playingPositionEl.value || '').trim();
+        btnSavePosition.disabled = true;
+        setPositionStatus('保存中…');
+        try {
+          const res = await fetch('/users/me', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + token,
+            },
+            body: JSON.stringify({ playingPosition: value || '' }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            setPositionStatus('已保存', 'success');
+            const cached = JSON.parse(localStorage.getItem('user') || 'null');
+            if (cached) {
+              cached.playingPosition = data.playingPosition ?? value || null;
+              localStorage.setItem('user', JSON.stringify(cached));
+            }
+          } else {
+            setPositionStatus((data.message || data.error) || '保存失败', 'error');
+          }
+        } catch (e) {
+          setPositionStatus('网络错误，请稍后再试', 'error');
+        } finally {
+          btnSavePosition.disabled = false;
+        }
+      });
+    }
 
     document.getElementById('btnLogout').addEventListener('click', () => {
       localStorage.removeItem('authToken');

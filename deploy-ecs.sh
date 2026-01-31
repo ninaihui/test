@@ -26,6 +26,7 @@ SSH_OPTS="${SSH_KEY}"
 RSYNC_EXCLUDE="--exclude=node_modules --exclude=dist --exclude=.env --exclude=.git --exclude=public/uploads --exclude=coverage --exclude=.nyc_output"
 
 echo -e "${BLUE}📤 同步代码到 ECS ${ECS_USER}@${ECS_HOST}:${ECS_APP_PATH} ...${NC}"
+echo -e "${YELLOW}   （含 public/assets 如 login-bg.png、profile-bg.png）${NC}"
 rsync -avz --delete $RSYNC_EXCLUDE \
   -e "ssh $SSH_OPTS" \
   ./ "${ECS_USER}@${ECS_HOST}:${ECS_APP_PATH}/"

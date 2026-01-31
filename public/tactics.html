@@ -15,21 +15,56 @@
         url('/assets/login-bg.png') no-repeat center center fixed;
       background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
     .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
-    /* Keep the existing field styles from old index (minimal copy) */
-    .field-wrap { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); }
-    @media (max-width: 640px){ .field-wrap { aspect-ratio: 3/4; max-height: 72vh; } }
-    .field { position: relative; width: 100%; height: 100%; background:
-      linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 12.5%),
-      linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 12.5%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 8%, rgba(255,255,255,0.01) 8% 16%),
-      radial-gradient(circle at 50% 50%, rgba(34,197,94,0.25), transparent 55%),
-      linear-gradient(180deg, #14532d, #052e16);
+    .shadow-field { box-shadow: 0 8px 32px rgba(0,0,0,.35); }
+    /* 工具栏：阵型 + 操作按钮，参考战术板类应用 */
+    .tactics-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .tactics-toolbar-group { display: flex; align-items: center; gap: 0.5rem; }
+    .tactics-label { font-size: 0.8125rem; color: rgba(255,255,255,.7); white-space: nowrap; }
+    .tactics-select { min-width: 7rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.9375rem; font-weight: 600; color: #fff; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.2); cursor: pointer; }
+    .tactics-select:focus { outline: none; border-color: rgba(34,197,94,.6); }
+    .tactics-hint { margin-top: 0.75rem; font-size: 0.75rem; color: rgba(255,255,255,.5); }
+    /* 阵型：按钮组（非下拉） */
+    .formation-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .formation-pill { padding: 0.625rem 1.125rem; border-radius: 0.75rem; font-size: 1rem; font-weight: 700; border: 2px solid rgba(255,255,255,.4); background: rgba(0,0,0,.35); color: #fff; cursor: pointer; transition: background .15s, border-color .15s, box-shadow .15s; min-height: 44px; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+    .formation-pill:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.55); box-shadow: 0 0 16px rgba(34,197,94,.25); }
+    .formation-pill.active { background: linear-gradient(135deg, rgba(34,197,94,.5), rgba(45,212,191,.4)); border-color: rgba(34,197,94,.9); color: #fff; box-shadow: 0 0 20px rgba(34,197,94,.4); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    /* 球场：卡通风格，无白框，含球门 */
+    .field-wrap {
+      position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 1rem; overflow: hidden;
+      box-shadow: 0 10px 36px rgba(0,0,0,.4);
+      perspective: 1000px; perspective-origin: 50% 100%; transform-style: preserve-3d;
     }
-    .field-lines{ position:absolute; inset:0; pointer-events:none; opacity:.9; background:
-      linear-gradient(90deg, transparent 49.8%, rgba(255,255,255,0.55) 50%, transparent 50.2%),
-      radial-gradient(circle at 50% 50%, transparent 0 15%, rgba(255,255,255,0.55) 15% 15.4%, transparent 15.4% 100%),
-      linear-gradient(transparent 68%, rgba(255,255,255,0.55) 68% 68.4%, transparent 68.4%),
-      linear-gradient(transparent 31.6%, rgba(255,255,255,0.55) 31.6% 32%, transparent 32%);
+    @media (max-width: 640px){ .field-wrap { aspect-ratio: 3/4; max-height: 72vh; } }
+    .field {
+      position: relative; width: 100%; height: 100%;
+      transform: rotateX(10deg); transform-origin: center bottom;
+      transform-style: preserve-3d; backface-visibility: hidden;
+      border-radius: inherit;
+      /* 卡通草坪：扁平色块 + 条纹 */
+      background:
+        repeating-linear-gradient(180deg, #2d9d5a 0 20px, #258f4e 20px 40px),
+        linear-gradient(180deg, rgba(0,0,0,.08) 0%, transparent 30%, transparent 70%, rgba(0,0,0,.1) 100%);
+      background-color: #258f4e;
+    }
+    /* 卡通球门（上下各一个） */
+    .goal { position: absolute; left: 50%; transform: translateX(-50%); width: 42%; height: 12%; min-height: 28px; pointer-events: none; z-index: 1; }
+    .goal-top { top: 0; }
+    .goal-bottom { bottom: 0; }
+    .goal-frame { position: absolute; inset: 0; border: 3px solid #1e293b; border-radius: 4px; background: linear-gradient(180deg, rgba(15,23,42,.85) 0%, rgba(30,41,59,.9) 100%); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+    .goal-net { position: absolute; inset: 3px; border-radius: 2px; background: repeating-linear-gradient(90deg, transparent 0, transparent 4px, rgba(255,255,255,.12) 4px, rgba(255,255,255,.12) 5px), repeating-linear-gradient(0deg, transparent 0, transparent 4px, rgba(255,255,255,.12) 4px, rgba(255,255,255,.12) 5px); }
+    .goal-top .goal-frame { border-bottom: none; border-radius: 4px 4px 0 0; }
+    .goal-bottom .goal-frame { border-top: none; border-radius: 0 0 4px 4px; }
+    /* 标线：中线、中圈、禁区（无外框白线） */
+    .field-lines {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(90deg, transparent 49.5%, rgba(255,255,255,0.9) 50%, transparent 50.5%),
+        radial-gradient(circle at 50% 50%, transparent 0 14%, rgba(255,255,255,0.9) 14% 14.6%, transparent 14.6% 100%),
+        linear-gradient(0deg, transparent 67.2%, rgba(255,255,255,0.9) 68% 68.8%, transparent 68.8%),
+        linear-gradient(0deg, transparent 31.2%, rgba(255,255,255,0.9) 32% 32.8%, transparent 32.8%);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+      background-repeat: no-repeat;
     }
     .players{ position:absolute; inset:0; z-index:2; }
     .player{ position:absolute; transform:translate(-50%,-50%); display:grid; place-items:center; gap:6px; width:86px; background:transparent; border:none; cursor:grab; user-select:none; touch-action:none; }
@@ -39,34 +74,52 @@
     .player-label{ font-size:12px; color:rgba(255,255,255,0.85); text-shadow:0 2px 10px rgba(0,0,0,0.35); white-space:nowrap; max-width:86px; overflow:hidden; text-overflow:ellipsis; }
     .save-status{ margin-top:10px; font-size:12px; color:rgba(255,255,255,0.75); opacity:0; transition:opacity .2s ease; }
     .save-status.show{ opacity:1; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body class="min-h-screen text-slate-100 safe-bottom">
 <!-- Top menu removed: use bottom nav only -->
 
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    <div class="glass rounded-2xl p-6" id="tacticsBoard">
-      <div class="flex flex-wrap items-center gap-2 mb-4">
-          <select id="formationSelect" class="input" style="max-width: 160px">
+  <div class="max-w-6xl mx-auto px-4 py-6 pb-24">
+    <header class="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 class="text-xl font-bold text-white">战术板</h1>
+        <p class="text-white/60 text-sm mt-0.5">选择阵型、拖拽调整站位，保存到本地</p>
+      </div>
+    </header>
+
+    <div class="glass rounded-2xl p-4 sm:p-6 shadow-field" id="tacticsBoard">
+      <div class="tactics-toolbar">
+        <div class="tactics-toolbar-group formation-pills-wrap" id="formationWrap">
+          <span class="tactics-label">阵型</span>
+          <div class="formation-pills" role="group" aria-label="选择阵型">
+            <button type="button" class="formation-pill active" data-formation="4-4-2" aria-pressed="true">4-4-2</button>
+            <button type="button" class="formation-pill" data-formation="4-3-3" aria-pressed="false">4-3-3</button>
+            <button type="button" class="formation-pill" data-formation="3-5-2" aria-pressed="false">3-5-2</button>
+          </div>
+          <select id="formationSelect" class="sr-only" aria-hidden="true">
             <option value="4-4-2">4-4-2</option>
             <option value="4-3-3">4-3-3</option>
             <option value="3-5-2">3-5-2</option>
           </select>
-          <button id="btnEditPlayer" class="btn-ghost">编辑球员</button>
-          <button id="btnReset" class="btn-ghost">重置</button>
-          <button id="btnLoad" class="btn-ghost">加载</button>
-          <button id="btnSave" class="btn-primary">保存</button>
         </div>
+        <p id="tacticsReadOnlyHint" class="hidden text-white/50 text-sm">仅可查看，无编辑权限</p>
       </div>
 
       <div class="field-wrap">
         <div class="field" role="region" aria-label="足球场">
+          <div class="goal goal-top" aria-hidden="true">
+            <div class="goal-frame"><div class="goal-net"></div></div>
+          </div>
+          <div class="goal goal-bottom" aria-hidden="true">
+            <div class="goal-frame"><div class="goal-net"></div></div>
+          </div>
           <div class="field-lines"></div>
           <div class="players" aria-label="球员层"></div>
         </div>
       </div>
+      <p class="tactics-hint" id="tacticsHint">拖拽球员可调整站位</p>
       <div id="saveStatus" class="save-status" aria-live="polite"></div>
-      <div class="text-white/60 text-xs mt-2">当前球队：<span id="teamTitle" class="text-white/80">未选择</span></div>
     </div>
   </div>
 
@@ -74,7 +127,6 @@
   <nav class="bottom-nav" aria-label="底部导航">
     <div class="bottom-nav-inner">
       <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
-      <a class="bottom-nav-item" data-nav="teams" href="/teams.html">球队</a>
       <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
       <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
     </div>
@@ -87,7 +139,6 @@
       const path = window.location.pathname;
       const map = {
         '/dashboard.html': 'dashboard',
-        '/teams.html': 'teams',
         '/tactics.html': 'tactics',
         '/profile.html': 'me',
       };
@@ -98,8 +149,6 @@
     })();
     const TOKEN_KEY='authToken';
     if(!localStorage.getItem(TOKEN_KEY)) window.location.href='/login.html';
-
-    document.getElementById('teamTitle').textContent = localStorage.getItem('team_management:currentTeamName') || '未选择';
   </script>
 </body>
 </html>

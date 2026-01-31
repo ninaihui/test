@@ -1,110 +1,138 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>注册 - 业余球队管理系统</title>
-    <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
-    <style>
-        body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 1rem;
-            background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
-                url('/assets/login-bg.png') no-repeat center center fixed;
-            background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
-        .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
-        .glass input[type="text"], .glass input[type="email"], .glass input[type="password"] {
-            width: 100%; border-radius: 12px; background: rgba(0,0,0,.28) !important;
-            border: 1px solid rgba(255,255,255,.2); padding: 12px 16px; color: #e2e8f0 !important;
-        }
-        .glass input::placeholder { color: rgba(226,232,240,.55); }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>注册 - 业余球队管理系统</title>
+  <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
+  <style>
+    body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 1rem 1.25rem 2.5rem;
+      background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+        url('/assets/login-bg.png') no-repeat center center fixed;
+      background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+    .reg-box input[type="text"], .reg-box input[type="email"], .reg-box input[type="password"], .reg-box .input {
+      width: 100%; border-radius: 12px; background: rgba(0,0,0,.28) !important;
+      -webkit-box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+      box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+      border: 1px solid rgba(255,255,255,.2); padding: 12px 16px; color: #e2e8f0 !important;
+    }
+    .reg-box input::placeholder { color: rgba(226,232,240,.55); }
+    .reg-box input:focus { outline: none; border-color: rgba(255,255,255,.4); background: rgba(0,0,0,.35) !important;
+      -webkit-box-shadow: 0 0 0 1000px rgba(0,0,0,.35) inset !important;
+      box-shadow: 0 0 0 1000px rgba(0,0,0,.35) inset !important; }
+    .reg-box input:-webkit-autofill, .reg-box input:-webkit-autofill:hover, .reg-box input:-webkit-autofill:focus, .reg-box input:-webkit-autofill:active {
+      -webkit-text-fill-color: #e2e8f0 !important;
+      -webkit-box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+      box-shadow: 0 0 0 1000px rgba(0,0,0,.28) inset !important;
+    }
+    .reg-box input[type="email"] { /* 与 text 一致，兼容旧样式 */ }
+  </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-<div class="glass rounded-2xl p-8 max-w-md w-full">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-white mb-2">用户注册</h1>
-            <p class="text-white/80">创建您的账户</p>
-        </div>
+<body class="min-h-screen flex items-center justify-center px-4 py-10 text-slate-100 safe-bottom">
 
-        <form id="registerForm" class="space-y-6">
-            <div>
-                <label class="block text-white/90 mb-2 font-medium">邮箱</label>
-                <input type="email" id="email" name="email" required 
-                    class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    placeholder="请输入邮箱地址">
-            </div>
-            <div>
-                <label class="block text-white/90 mb-2 font-medium">用户名</label>
-                <input type="text" id="username" name="username" required 
-                    class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    placeholder="请输入用户名">
-            </div>
-            <div>
-                <label class="block text-white/90 mb-2 font-medium">密码</label>
-                <input type="password" id="password" name="password" required 
-                    class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    placeholder="请输入密码（至少6位）">
-            </div>
-            <div id="errorMessage" class="hidden bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm"></div>
-            <div id="successMessage" class="hidden bg-green-500/20 border border-green-500/50 rounded-lg p-3 text-green-200 text-sm"></div>
-            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition transform hover:scale-105">
-                注册
-            </button>
-        </form>
+  <div class="w-full max-w-md">
+    <div class="glass rounded-2xl p-6 reg-box">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-white mb-1">用户注册</h1>
+        <p class="text-white/60 text-sm">创建您的账户</p>
+      </div>
 
-        <div class="mt-6 text-center">
-            <p class="text-white/70">
-                已有账号？
-                <a href="/login.html" class="text-blue-300 hover:text-blue-200 font-medium underline">立即登录</a>
-            </p>
+      <form id="registerForm" class="space-y-4">
+        <div>
+          <label class="block text-xs mb-2 font-medium text-white/70">账号</label>
+          <input type="text" id="account" name="account" required class="input" placeholder="请输入账号（任意用户名）" autocomplete="username" />
         </div>
+        <div>
+          <label class="block text-xs mb-2 font-medium text-white/70">用户名</label>
+          <input type="text" id="username" name="username" required class="input" placeholder="1～10 个字符，用于显示" autocomplete="name" minlength="1" maxlength="10" />
+        </div>
+        <div>
+          <label class="block text-xs mb-2 font-medium text-white/70">密码</label>
+          <input type="password" id="password" name="password" required class="input" placeholder="至少 6 位" autocomplete="new-password" minlength="6" />
+        </div>
+        <div>
+          <label class="block text-xs mb-2 font-medium text-white/70">确认密码</label>
+          <input type="password" id="passwordConfirm" name="passwordConfirm" required class="input" placeholder="请再次输入密码" autocomplete="new-password" minlength="6" />
+        </div>
+        <div id="errorMessage" class="hidden rounded-xl px-3 py-2 text-sm text-red-200 bg-red-500/15 border border-red-500/50"></div>
+        <div id="successMessage" class="hidden rounded-xl px-3 py-2 text-sm text-green-200 bg-green-500/15 border border-green-500/50"></div>
+        <button type="submit" id="btnRegister" class="btn btn-primary w-full py-3">注册</button>
+      </form>
 
-        <div class="mt-4 text-center">
-            <a href="/" class="text-white/60 hover:text-white/80 text-sm">返回首页</a>
-        </div>
+      <div class="mt-5 text-center text-xs text-white/60">
+        <span>已有账号？</span>
+        <a href="/login.html" class="underline underline-offset-4 hover:text-white">立即登录</a>
+      </div>
+      <div class="mt-3 text-center">
+        <a href="/dashboard.html" class="text-white/50 hover:text-white/70 text-xs">返回首页</a>
+      </div>
     </div>
+  </div>
 
-    <script>
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const errorDiv = document.getElementById('errorMessage');
-            const successDiv = document.getElementById('successMessage');
-            errorDiv.classList.add('hidden');
-            successDiv.classList.add('hidden');
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const errorDiv = document.getElementById('errorMessage');
+      const successDiv = document.getElementById('successMessage');
+      const btnRegister = document.getElementById('btnRegister');
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
 
-            const email = document.getElementById('email').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+      const account = document.getElementById('account').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const passwordConfirm = document.getElementById('passwordConfirm').value;
 
-            try {
-                const response = await fetch('/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, username, password })
-                });
+      if (!account) {
+        errorDiv.textContent = '请输入账号';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      if (username.length < 1 || username.length > 10) {
+        errorDiv.textContent = '用户名长度为 1～10 个字符';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      if (password.length < 6) {
+        errorDiv.textContent = '密码至少 6 位';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      if (password !== passwordConfirm) {
+        errorDiv.textContent = '两次输入的密码不一致，请重新输入';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
 
-                const result = await response.json();
+      btnRegister.disabled = true;
+      btnRegister.textContent = '注册中...';
 
-                if (response.ok) {
-                    successDiv.textContent = '注册成功！正在跳转到登录页面...';
-                    successDiv.classList.remove('hidden');
-                    setTimeout(() => {
-                        window.location.href = '/login.html';
-                    }, 1500);
-                } else {
-                    errorDiv.textContent = result.message || '注册失败，请检查输入信息';
-                    errorDiv.classList.remove('hidden');
-                }
-            } catch (error) {
-                errorDiv.textContent = '网络错误，请稍后重试';
-                errorDiv.classList.remove('hidden');
-            }
+      try {
+        const response = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: account, username: username || account, password })
         });
-    </script>
-    <script>
-      (function(){
-      })();
-    </script>
+        const result = await response.json().catch(function() { return {}; });
+
+        if (response.ok) {
+          successDiv.textContent = '注册成功，正在跳转到登录页…';
+          successDiv.classList.remove('hidden');
+          setTimeout(function() { window.location.href = '/login.html'; }, 1500);
+        } else {
+          errorDiv.textContent = result.message || '注册失败，请检查输入';
+          errorDiv.classList.remove('hidden');
+          btnRegister.disabled = false;
+          btnRegister.textContent = '注册';
+        }
+      } catch (err) {
+        errorDiv.textContent = '网络错误，请稍后重试';
+        errorDiv.classList.remove('hidden');
+        btnRegister.disabled = false;
+        btnRegister.textContent = '注册';
+      }
+    });
+  </script>
 </body>
 </html>
