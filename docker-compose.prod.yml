@@ -34,7 +34,8 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "127.0.0.1:3000:3000"
+      # Blue/green: keep pm2 on 3000, run container on 3001 first
+      - "127.0.0.1:3001:3000"
 
 volumes:
   postgres_data:

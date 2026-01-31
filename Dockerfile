@@ -1,11 +1,13 @@
 # syntax=docker/dockerfile:1
 
 # --- build stage ---
-FROM node:20-alpine AS build
+FROM node:20-bookworm-slim AS build
 WORKDIR /app
 
 # Native deps for bcrypt (and friends)
-RUN apk add --no-cache python3 make g++
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install deps
 COPY package*.json ./
@@ -14,16 +16,22 @@ RUN npm ci
 # Copy source
 COPY . .
 
+# Generate Prisma Client for the target platform (linux in Docker)
+# This must happen before `nest build` because the code imports from ./generated/prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
 # Build
 RUN npm run build
 
 # --- runtime stage ---
-FROM node:20-alpine AS runtime
+FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
 # Native deps for bcrypt (runtime install step)
-RUN apk add --no-cache python3 make g++
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 # Only production deps
 COPY package*.json ./
