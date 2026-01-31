@@ -14,6 +14,10 @@ RUN npm ci
 # Copy source
 COPY . .
 
+# Generate Prisma Client for the target platform (linux in Docker)
+# This must happen before `nest build` because the code imports from ./generated/prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
 # Build
 RUN npm run build
 
