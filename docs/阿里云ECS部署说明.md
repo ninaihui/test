@@ -81,7 +81,91 @@ ssh root@你的ECSIP 'cd /opt/team-app && pm2 restart team-app'
 
 若希望通过 80/443 访问，可在 ECS 上安装 Nginx，并配置反向代理到 `http://127.0.0.1:3000`。
 
-## 7. 502 Bad Gateway 排查
+## 7. 在 ECS 上从 GitHub 拉取代码并部署
+
+若希望**直接在 ECS 上**从 GitHub 拉代码、构建并重启（不依赖本机 rsync），按下面做。
+
+### 7.1 首次在 ECS 上克隆仓库
+
+SSH 登录 ECS 后：
+
+```bash
+# 安装 Git（若未安装）
+# CentOS/Alibaba Linux: sudo yum install -y git
+# Ubuntu: sudo apt update && sudo apt install -y git
+
+# 若用 HTTPS 克隆（需输入 GitHub 用户名/密码或 Personal Access Token）
+sudo mkdir -p /opt/test
+sudo chown $USER:$USER /opt/test
+cd /opt/test
+git clone https://github.com/你的用户名/你的仓库名.git .
+
+# 若用 SSH 克隆（需先在 ECS 上配置 GitHub SSH 密钥）
+# 生成密钥： ssh-keygen -t ed25519 -C "ecs-deploy" -f ~/.ssh/id_ed25519_github -N ""
+# 把 ~/.ssh/id_ed25519_github.pub 内容加到 GitHub → Settings → SSH and GPG keys
+# git clone git@github.com:你的用户名/你的仓库名.git .
+```
+
+配置环境变量（与本地一致）：
+
+```bash
+cd /opt/test
+cp .env.example .env
+vim .env   # 填写 DATABASE_URL、JWT_SECRET 等
+```
+
+安装依赖、构建、跑迁移并启动：
+
+```bash
+npm install
+npm run build
+npx prisma generate
+npx prisma migrate deploy   # 按需，若数据库已在别处跑过可跳过
+./start-prod.sh
+# 或： nohup node dist/main.js > /tmp/team-app.log 2>&1 &
+# 或： pm2 start dist/main.js --name team-app
+```
+
+### 7.2 之后每次更新（拉取 + 部署）
+
+在 ECS 上执行，或从本机 SSH 过去执行：
+
+```bash
+cd /opt/test
+git pull origin main          # 或你的默认分支名
+npm install
+npm run build
+npx prisma migrate deploy    # 若有新迁移
+./stop.sh && ./start-prod.sh
+# 或： pm2 restart team-app
+```
+
+### 7.3 可选：写成一键部署脚本
+
+在 ECS 的 `/opt/test/deploy-from-git.sh` 里写：
+
+```bash
+#!/bin/bash
+set -e
+cd /opt/test
+git pull origin main
+npm install
+npm run build
+npx prisma migrate deploy
+./stop.sh 2>/dev/null; ./start-prod.sh
+echo "部署完成"
+```
+
+然后：`chmod +x deploy-from-git.sh`，以后更新只需执行 `./deploy-from-git.sh`。
+
+### 7.4 私有仓库注意
+
+- **HTTPS**：需在 ECS 上配置 GitHub Personal Access Token，或 `git config credential.helper store` 后输入一次账号/Token。
+- **SSH**：在 ECS 上生成密钥，把公钥加到 GitHub 仓库的 Deploy keys 或你的 SSH keys 中。
+
+---
+
+## 8. 502 Bad Gateway 排查
 
 出现 502 说明 Nginx 收到了请求，但背后的 Node 应用没有正常响应。在 ECS 上按顺序做：
 
@@ -115,7 +199,7 @@ grep -r "proxy_pass\|upstream" /etc/nginx/
 **⑤ 看应用日志**（若有）：  
 `/opt/test` 下是否有日志文件，或 `pm2 logs`。
 
-## 8. 504 Gateway Time-out 排查
+## 9. 504 Gateway Time-out 排查
 
 504 表示 Nginx 等上游（Node）响应超时。按顺序做：
 

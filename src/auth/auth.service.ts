@@ -149,7 +149,6 @@ export class AuthService {
         username: true,
         role: true,
         avatarUrl: true,
-        playingPosition: true,
         createdAt: true,
         updatedAt: true,
       },
