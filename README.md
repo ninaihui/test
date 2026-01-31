@@ -11,6 +11,31 @@
 
 ## 项目设置
 
+## 生产部署（推荐：Docker）
+
+> 目标：在 ECS 上稳定运行，不依赖本机 Node/pm2。
+
+1) 复制并填写环境变量（生产建议改强密码）：
+```bash
+cp .env.example .env
+```
+
+2) 启动（构建 + 运行）：
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+3) 查看日志：
+```bash
+docker compose -f docker-compose.prod.yml logs -f api
+```
+
+4) 更新代码后重新部署：
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+
 ### 1. 安装依赖
 
 ```bash
