@@ -7,7 +7,9 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
-describe('业余活动管理系统 E2E', () => {
+const describeE2E = process.env.SKIP_E2E ? describe.skip : describe;
+
+describeE2E('业余活动管理系统 E2E', () => {
   let app: INestApplication;
   let token: string;
   let createdActivityId: string;
@@ -36,7 +38,9 @@ describe('业余活动管理系统 E2E', () => {
   }, 30000);
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('1. 健康检查', () => {
