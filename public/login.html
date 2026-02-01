@@ -198,7 +198,10 @@
                         // #endregion
                         var token = result.accessToken || result.access_token;
                         try {
-                            if (token) localStorage.setItem('authToken', token);
+                            if (token) {
+                            try { localStorage.setItem('authToken', token); } catch (e) {}
+                            try { sessionStorage.setItem('authToken', token); } catch (e) {}
+                        }
                             if (result.user) localStorage.setItem('user', JSON.stringify(result.user));
                         } catch (storageErr) {
                             console.warn('localStorage 写入失败', storageErr);
