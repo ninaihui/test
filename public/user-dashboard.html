@@ -94,7 +94,7 @@
     <!-- 炫酷背景效果 -->
     <script src="/js/fancy-background.js"></script>
     <script>
-        const authToken = localStorage.getItem('authToken');
+        const authToken = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'));
         if (!authToken) {
             window.location.href = '/login.html';
         }
@@ -108,7 +108,7 @@
                 });
 
                 if (response.status === 401) {
-                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
                     window.location.href = '/login.html';
                     return;
                 }
@@ -133,7 +133,7 @@
         }
 
         function logout() {
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
             localStorage.removeItem('user');
             window.location.href = '/login.html';
         }
