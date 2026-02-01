@@ -41,6 +41,7 @@ lerna-debug.log*
 
 # Prisma
 /generated
+prisma/db-dump-ecs.sql
 
 # 用户上传的头像等静态资源（本地/服务器各自维护）
 /public/uploads

@@ -165,7 +165,29 @@ echo "部署完成"
 
 ---
 
-## 8. 502 Bad Gateway 排查
+## 8. 将本地数据库同步到 ECS
+
+若希望把**本地 PostgreSQL 的数据**完整同步到 ECS 上的数据库（覆盖 ECS 现有数据），在项目根目录执行：
+
+```bash
+chmod +x sync-db-to-ecs.sh
+./sync-db-to-ecs.sh
+```
+
+**前提：**
+
+1. 本机已安装 PostgreSQL 客户端（含 `pg_dump`），且 `.env` 中配置好本地 `DATABASE_URL`。
+2. ECS 信息与 `deploy-ecs.sh` 一致（或设置环境变量 `ECS_HOST`、`ECS_USER`、`ECS_APP_PATH`、`SSH_KEY`）。
+3. ECS 上项目目录已有 `.env`，且其中 `DATABASE_URL` 指向 ECS 上的 PostgreSQL（本机或 RDS）。
+4. ECS 上已安装 PostgreSQL 客户端（含 `psql`）。若 ECS 只用 Docker 跑 Postgres、宿主机未装 `psql`，可先安装：
+   - CentOS/Alibaba Linux: `sudo yum install -y postgresql15`
+   - Ubuntu: `sudo apt install -y postgresql-client`
+
+脚本会：导出本地库 → 上传 dump 到 ECS → 在 ECS 上用 `.env` 中的 `DATABASE_URL` 导入（会先执行 dump 中的 DROP，再重建表和数据）。同步完成后，本地会保留临时文件 `prisma/db-dump-ecs.sql`，无需可手动删除。
+
+---
+
+## 9. 502 Bad Gateway 排查
 
 出现 502 说明 Nginx 收到了请求，但背后的 Node 应用没有正常响应。在 ECS 上按顺序做：
 
@@ -198,7 +220,7 @@ grep -r "proxy_pass\|upstream" /etc/nginx/
 **⑤ 看应用日志**（若有）：  
 `/opt/test` 下是否有日志文件，或 `pm2 logs`。
 
-## 9. 504 Gateway Time-out 排查
+## 10. 504 Gateway Time-out 排查
 
 504 表示 Nginx 等上游（Node）响应超时。按顺序做：
 
