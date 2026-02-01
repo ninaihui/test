@@ -228,7 +228,7 @@
     </div>
 
     <script>
-        let authToken = localStorage.getItem('authToken') || '';
+        let authToken = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')) || '';
 
         // 检查系统状态
         async function checkStatus() {
@@ -416,7 +416,7 @@
                     showResponse(result, true);
                     if (response.status === 401) {
                         authToken = '';
-                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
                     }
                 }
             } catch (error) {

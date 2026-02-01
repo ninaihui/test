@@ -127,7 +127,7 @@
       });
     })();
 
-    const token = localStorage.getItem('authToken');
+    const token = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'));
     const statusEl = document.getElementById('status');
     const avatarImg = document.getElementById('avatarImg');
     const userTitle = document.getElementById('userTitle');
@@ -212,7 +212,7 @@
 
         if (res.status === 401 || res.status === 403) {
           setStatus('登录已失效，请重新登录', 'error');
-          localStorage.removeItem('authToken');
+          localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
           localStorage.removeItem('user');
           return setTimeout(() => (window.location.href = '/login.html'), 600);
         }
@@ -273,7 +273,7 @@
     }
 
     document.getElementById('btnLogout').addEventListener('click', () => {
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.href = '/login.html';
     });

@@ -136,7 +136,7 @@
     <!-- 炫酷背景效果 -->
     <script src="/js/fancy-background.js"></script>
     <script>
-        const authToken = localStorage.getItem('authToken');
+        const authToken = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'));
         const LAST_LOCATION_KEY = 'team_management:lastActivityLocation';
         var currentUser = null;
         try {
@@ -154,7 +154,7 @@
         }
 
         function logout() {
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
             localStorage.removeItem('user');
             window.location.href = '/login.html';
         }

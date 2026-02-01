@@ -162,7 +162,7 @@
   }
 
   async function loadMe() {
-    var t = token || localStorage.getItem(TOKEN_KEY);
+    var t = token || localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     if (!t) {
       requireLogin('无 token');
       return;
