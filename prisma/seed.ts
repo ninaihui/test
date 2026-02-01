@@ -2,7 +2,7 @@
  * 批量创建 100 个测试用户 + 3～4 个场地
  * 运行: npm run prisma:seed
  */
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -20,8 +21,26 @@ async function bootstrap() {
     }),
   );
 
-  // 启用 CORS（如果需要）
-  app.enableCors();
+  // Security headers
+  app.use(
+    helmet({
+      // Allow serving static assets from the same origin
+      crossOriginResourcePolicy: { policy: 'same-origin' },
+    }),
+  );
+
+  // CORS: default to no cross-origin; allowlist via env (comma-separated)
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (corsOrigins.length > 0) {
+    app.enableCors({
+      origin: corsOrigins,
+      credentials: true,
+    });
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
