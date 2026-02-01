@@ -258,7 +258,7 @@
             setPositionStatus('已保存', 'success');
             const cached = JSON.parse(localStorage.getItem('user') || 'null');
             if (cached) {
-              cached.playingPosition = data.playingPosition ?? value || null;
+              cached.playingPosition = (data.playingPosition ?? value) || null;
               localStorage.setItem('user', JSON.stringify(cached));
             }
           } else {
