@@ -13,6 +13,9 @@ import {
 import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
+import { RegisterActivityDto } from './dto/register-activity.dto';
+import { UpdatePositionsDto } from './dto/update-positions.dto';
+import { UpdateMyPositionDto } from './dto/update-my-position.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -44,16 +47,42 @@ export class ActivitiesController {
     return this.activitiesService.findOne(id, req.user.sub);
   }
 
-  /** 当前用户报名参加该活动 */
+  /** 当前用户报名参加该活动，可传 body.position 指定出场位置 */
   @Post(':id/register')
-  register(@Param('id') id: string, @Request() req) {
-    return this.activitiesService.register(id, req.user.sub);
+  register(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() dto: RegisterActivityDto,
+  ) {
+    return this.activitiesService.register(id, req.user.sub, dto?.position);
   }
 
   /** 当前用户取消报名 */
   @Delete(':id/register')
   unregister(@Param('id') id: string, @Request() req) {
     return this.activitiesService.unregister(id, req.user.sub);
+  }
+
+  /** 当前用户保存本场自己的出场位置（普通用户战术板用） */
+  @Patch(':id/my-position')
+  updateMyPosition(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() dto: UpdateMyPositionDto,
+  ) {
+    return this.activitiesService.updateMyPosition(id, req.user.sub, dto.position);
+  }
+
+  /** 仅管理员可按战术板槽位保存本活动的出场位置 */
+  @Patch(':id/positions')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
+  updatePositions(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() dto: UpdatePositionsDto,
+  ) {
+    return this.activitiesService.updatePositions(id, req.user.sub, dto.positions);
   }
 
   /** 仅管理员可编辑活动 */

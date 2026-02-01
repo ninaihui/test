@@ -25,7 +25,8 @@
     /* 上传按钮：主操作更醒目 */
   </style>
 </head>
-<body class="min-h-screen text-slate-100 safe-bottom">
+<body class="min-h-screen text-slate-100 safe-bottom-nav">
+  <a href="/login.html" class="top-nav-login" aria-label="登出" onclick="event.preventDefault(); localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken'); window.location.href='/login.html';">登出</a>
   <div class="container mx-auto px-4 py-6 max-w-xl">
 
     <!-- 页面标题 -->
@@ -111,174 +112,226 @@
   <nav class="bottom-nav" aria-label="底部导航">
     <div class="bottom-nav-inner">
       <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
-      <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
+      <a class="bottom-nav-item" data-nav="activities" href="/activities.html">活动</a>
       <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
     </div>
   </nav>
 
   <script src="/js/fancy-background.js"></script>
   <script>
-    (function setBottomNavActive(){
-      const path = window.location.pathname;
-      const map = { '/dashboard.html': 'dashboard', '/tactics.html': 'tactics', '/profile.html': 'me' };
-      const key = map[path] || 'me';
-      document.querySelectorAll('.bottom-nav-item').forEach(a => {
-        if (a.dataset.nav === key) a.classList.add('active');
-      });
-    })();
+    (function () {
+      'use strict';
+      var statusEl = document.getElementById('status');
+      var avatarImg = document.getElementById('avatarImg');
+      var userTitle = document.getElementById('userTitle');
+      var userMeta = document.getElementById('userMeta');
+      var fileInputEl = document.getElementById('fileInput');
+      var btnUploadEl = document.getElementById('btnUpload');
+      var btnSavePosition = document.getElementById('btnSavePosition');
+      var playingPositionEl = document.getElementById('playingPosition');
+      var positionStatusEl = document.getElementById('positionStatus');
+      var btnLogoutEl = document.getElementById('btnLogout');
 
-    const token = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'));
-    const statusEl = document.getElementById('status');
-    const avatarImg = document.getElementById('avatarImg');
-    const userTitle = document.getElementById('userTitle');
-    const userMeta = document.getElementById('userMeta');
+      if (!statusEl || !avatarImg || !userTitle || !userMeta) return;
 
-    function setStatus(msg, type) {
-      statusEl.textContent = msg || '';
-      statusEl.classList.remove('status--success', 'status--error');
-      if (type === 'success') statusEl.classList.add('status--success');
-      if (type === 'error') statusEl.classList.add('status--error');
-    }
-
-    function requireLogin() {
-      setStatus('未登录，正在跳转登录页…', 'error');
-      setTimeout(() => (window.location.href = '/login.html'), 800);
-    }
-
-    const positionStatusEl = document.getElementById('positionStatus');
-    const playingPositionEl = document.getElementById('playingPosition');
-    const btnSavePosition = document.getElementById('btnSavePosition');
-
-    function setPositionStatus(msg, type) {
-      if (!positionStatusEl) return;
-      positionStatusEl.textContent = msg || '';
-      positionStatusEl.classList.remove('status--success', 'status--error');
-      if (type === 'success') positionStatusEl.classList.add('status--success');
-      if (type === 'error') positionStatusEl.classList.add('status--error');
-    }
-
-    async function loadMe() {
-      if (!token) return requireLogin();
-      try {
-        const res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } });
-        if (!res.ok) return requireLogin();
-        const me = await res.json();
-        userTitle.textContent = me.username || '用户';
-        userMeta.textContent = me.email || '';
-        if (me.avatarUrl) {
-          var avatarSrc = me.avatarUrl.startsWith('http') ? me.avatarUrl : (window.location.origin + me.avatarUrl);
-          avatarImg.src = avatarSrc + (avatarSrc.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
-        }
-        if (playingPositionEl && me.playingPosition !== undefined) {
-          playingPositionEl.value = me.playingPosition || '';
-        }
-      } catch (e) {
-        setStatus('加载用户信息失败', 'error');
-      }
-    }
-
-    let previewUrl = null;
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-      const f = e.target.files && e.target.files[0];
-      if (!f) return;
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      previewUrl = URL.createObjectURL(f);
-      avatarImg.src = previewUrl;
-      setStatus('');
-    });
-
-    const MAX_AVATAR_SIZE = 10 * 1024 * 1024;
-    document.getElementById('btnUpload').addEventListener('click', async () => {
-      const btn = document.getElementById('btnUpload');
-      const input = document.getElementById('fileInput');
-      const f = input.files && input.files[0];
-      if (!f) return setStatus('请先选择一张图片', 'error');
-      if (f.size > MAX_AVATAR_SIZE) return setStatus('图片不能超过 10MB（当前约 ' + (f.size / 1024 / 1024).toFixed(1) + 'MB）', 'error');
-      if (!token) return requireLogin();
-
-      btn.disabled = true;
-      btn.classList.add('opacity-60');
-      setStatus('上传中…');
-
-      const fd = new FormData();
-      fd.append('file', f);
-
-      try {
-        const res = await fetch('/users/me/avatar', {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + token },
-          body: fd,
+      (function setBottomNavActive() {
+        var path = window.location.pathname;
+        var map = { '/dashboard.html': 'dashboard', '/activities.html': 'activities', '/profile.html': 'me' };
+        var key = map[path] || 'me';
+        document.querySelectorAll('.bottom-nav-item').forEach(function (a) {
+          a.classList.remove('active');
+          if (a.dataset.nav === key) a.classList.add('active');
         });
+      })();
 
-        if (res.status === 401 || res.status === 403) {
-          setStatus('登录已失效，请重新登录', 'error');
-          localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
-          localStorage.removeItem('user');
-          return setTimeout(() => (window.location.href = '/login.html'), 600);
-        }
+      function getToken() {
+        return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      }
+      var defaultAvatarSrc = avatarImg.src;
+      function toAbsoluteAvatarUrl(url) {
+        if (!url) return '';
+        if (url.indexOf('http://') === 0 || url.indexOf('https://') === 0) return url;
+        var path = url.indexOf('/') === 0 ? url : '/' + url;
+        return window.location.origin + path;
+      }
+      function setAvatarFromUrl(url) {
+        if (!avatarImg) return;
+        if (!url) { avatarImg.src = defaultAvatarSrc; return; }
+        var src = toAbsoluteAvatarUrl(url);
+        avatarImg.src = src + (src.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+      }
+      avatarImg.addEventListener('error', function () {
+        if (avatarImg && avatarImg.src !== defaultAvatarSrc) avatarImg.src = defaultAvatarSrc;
+      });
 
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const msg = (data && (data.message || data.error)) ? (data.message || data.error) : 'HTTP ' + res.status;
-          setStatus('上传失败：' + msg, 'error');
+      function setStatus(msg, type) {
+        if (!statusEl) return;
+        statusEl.textContent = msg || '';
+        statusEl.classList.remove('status--success', 'status--error');
+        if (type === 'success') statusEl.classList.add('status--success');
+        if (type === 'error') statusEl.classList.add('status--error');
+      }
+      function requireLogin() {
+        setStatus('未登录，正在跳转登录页…', 'error');
+        setTimeout(function () { window.location.href = window.location.origin + '/login.html'; }, 1200);
+      }
+      function setPositionStatus(msg, type) {
+        if (!positionStatusEl) return;
+        positionStatusEl.textContent = msg || '';
+        positionStatusEl.classList.remove('status--success', 'status--error');
+        if (type === 'success') positionStatusEl.classList.add('status--success');
+        if (type === 'error') positionStatusEl.classList.add('status--error');
+      }
+
+      async function loadMe() {
+        var t = getToken();
+        if (!t) {
+          setStatus('未登录。请用与首页相同的地址登录后再进个人中心（如都用 192.168.0.65:3000）', 'error');
+          setTimeout(function () { requireLogin(); }, 100);
           return;
         }
-
-        setStatus('上传成功', 'success');
-        if (data.avatarUrl) {
-          avatarImg.src = data.avatarUrl + '?t=' + Date.now();
-          const cached = JSON.parse(localStorage.getItem('user') || 'null');
-          if (cached) { cached.avatarUrl = data.avatarUrl; localStorage.setItem('user', JSON.stringify(cached)); }
-        }
-      } catch (e) {
-        setStatus('网络错误，请稍后再试', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove('opacity-60');
-      }
-    });
-
-    if (btnSavePosition && playingPositionEl) {
-      btnSavePosition.addEventListener('click', async () => {
-        if (!token) return requireLogin();
-        const value = (playingPositionEl.value || '').trim();
-        btnSavePosition.disabled = true;
-        setPositionStatus('保存中…');
+        if (userTitle) userTitle.textContent = '加载中…';
+        if (userMeta) userMeta.textContent = '';
         try {
-          const res = await fetch('/users/me', {
+          var res = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + t } });
+          if (!res.ok) { requireLogin(); return; }
+          var me = await res.json();
+          if (userTitle) userTitle.textContent = me.username || '用户';
+          if (userMeta) userMeta.textContent = me.email || '';
+          setAvatarFromUrl(me.avatarUrl);
+          try {
+            var profileRes = await fetch('/users/me', { headers: { Authorization: 'Bearer ' + t } });
+            if (profileRes.ok) {
+              var profile = await profileRes.json();
+              if (playingPositionEl && profile.playingPosition !== undefined) playingPositionEl.value = profile.playingPosition || '';
+              if (profile.avatarUrl) setAvatarFromUrl(profile.avatarUrl);
+            }
+          } catch (err) {}
+        } catch (e) {
+          setStatus('加载用户信息失败', 'error');
+          if (userTitle) userTitle.textContent = '未登录';
+          if (userMeta) userMeta.textContent = '请先登录';
+        }
+      }
+
+      var previewUrl = null;
+      if (fileInputEl) {
+        fileInputEl.addEventListener('change', function (e) {
+          var f = e.target.files && e.target.files[0];
+          if (!f) return;
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          previewUrl = URL.createObjectURL(f);
+          if (avatarImg) avatarImg.src = previewUrl;
+          setStatus('');
+        });
+      }
+
+      var MAX_AVATAR_SIZE = 10 * 1024 * 1024;
+      if (btnUploadEl) {
+        btnUploadEl.addEventListener('click', function () {
+          var input = document.getElementById('fileInput');
+          var f = input && input.files && input.files[0];
+          if (!f) {
+            setStatus('请先选择一张图片（或点「选取文件」）', 'error');
+            if (input) input.click();
+            return;
+          }
+          if (f.size > MAX_AVATAR_SIZE) {
+            setStatus('图片不能超过 10MB', 'error');
+            return;
+          }
+          if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
+          btnUploadEl.disabled = true;
+          btnUploadEl.classList.add('opacity-60');
+          setStatus('上传中…');
+          var fd = new FormData();
+          fd.append('file', f);
+          fetch('/users/me/avatar', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + getToken() },
+            body: fd,
+          }).then(function (r) {
+            if (r.status === 401 || r.status === 403) {
+              setStatus('登录已失效，请重新登录', 'error');
+              localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
+              localStorage.removeItem('user');
+              setTimeout(function () { window.location.href = window.location.origin + '/login.html'; }, 600);
+              return { _authFail: true };
+            }
+            return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+          }).then(function (result) {
+            if (result._authFail) return;
+            var data = result.data;
+            if (result.ok && data && data.avatarUrl) {
+              setStatus('上传成功', 'success');
+              setAvatarFromUrl(data.avatarUrl);
+              var cached = JSON.parse(localStorage.getItem('user') || 'null');
+              if (cached) { cached.avatarUrl = data.avatarUrl; localStorage.setItem('user', JSON.stringify(cached)); }
+              if (fileInputEl) fileInputEl.value = '';
+            } else if (data && (data.message || data.error)) {
+              setStatus('上传失败：' + (data.message || data.error), 'error');
+            } else if (!result.ok) {
+              setStatus('上传失败', 'error');
+            }
+          }).catch(function () {
+            setStatus('网络错误，请稍后再试', 'error');
+          }).then(function () {
+            btnUploadEl.disabled = false;
+            btnUploadEl.classList.remove('opacity-60');
+          });
+        });
+      }
+
+      if (btnSavePosition && playingPositionEl) {
+        btnSavePosition.addEventListener('click', function () {
+          if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
+          var value = (playingPositionEl.value || '').trim();
+          btnSavePosition.disabled = true;
+          setPositionStatus('保存中…');
+          fetch('/users/me', {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: 'Bearer ' + token,
+              Authorization: 'Bearer ' + getToken(),
             },
             body: JSON.stringify({ playingPosition: value || '' }),
-          });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok) {
-            setPositionStatus('已保存', 'success');
-            const cached = JSON.parse(localStorage.getItem('user') || 'null');
-            if (cached) {
-              cached.playingPosition = data.playingPosition ?? value || null;
-              localStorage.setItem('user', JSON.stringify(cached));
+          }).then(function (r) { return r.json().catch(function () { return {}; }); }).then(function (data) {
+            if (data && data.playingPosition !== undefined) {
+              setPositionStatus('已保存', 'success');
+              var cached = JSON.parse(localStorage.getItem('user') || 'null');
+              if (cached) { cached.playingPosition = data.playingPosition; localStorage.setItem('user', JSON.stringify(cached)); }
+              setTimeout(function () { setPositionStatus('', ''); }, 3000);
+            } else {
+              setPositionStatus((data && (data.message || data.error)) || '保存失败', 'error');
             }
-          } else {
-            setPositionStatus((data.message || data.error) || '保存失败', 'error');
-          }
-        } catch (e) {
-          setPositionStatus('网络错误，请稍后再试', 'error');
-        } finally {
-          btnSavePosition.disabled = false;
+          }).catch(function () {
+            setPositionStatus('网络错误，请稍后再试', 'error');
+          }).then(function () {
+            btnSavePosition.disabled = false;
+          });
+        });
+      }
+
+      if (btnLogoutEl) {
+        function doLogout() {
+          localStorage.removeItem('authToken');
+          sessionStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          window.location.href = window.location.origin + '/login.html';
         }
-      });
-    }
+        btnLogoutEl.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          doLogout();
+        });
+        btnLogoutEl.addEventListener('touchend', function (e) {
+          e.preventDefault();
+          doLogout();
+        });
+      }
 
-    document.getElementById('btnLogout').addEventListener('click', () => {
-      localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = '/login.html';
-    });
-
-    loadMe();
+      loadMe();
+    })();
   </script>
 </body>
 </html>

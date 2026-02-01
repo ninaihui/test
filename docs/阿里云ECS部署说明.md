@@ -61,7 +61,7 @@ chmod +x deploy-ecs.sh
 构建完成后，需要在 ECS 上**手动重启应用**，例如：
 
 ```bash
-ssh root@你的ECSIP 'cd /opt/team-app && ./stop.sh; ./start-prod.sh'
+ssh root@你的ECSIP 'cd /opt/team-app && npm run start:production &'
 ```
 
 若使用 pm2：
@@ -121,7 +121,7 @@ npm install
 npm run build
 npx prisma generate
 npx prisma migrate deploy   # 按需，若数据库已在别处跑过可跳过
-./start-prod.sh
+npm run start:production
 # 或： nohup node dist/main.js > /tmp/team-app.log 2>&1 &
 # 或： pm2 start dist/main.js --name team-app
 ```
@@ -136,7 +136,7 @@ git pull origin main          # 或你的默认分支名
 npm install
 npm run build
 npx prisma migrate deploy    # 若有新迁移
-./stop.sh && ./start-prod.sh
+npm run start:production
 # 或： pm2 restart team-app
 ```
 
@@ -152,7 +152,7 @@ git pull origin main
 npm install
 npm run build
 npx prisma migrate deploy
-./stop.sh 2>/dev/null; ./start-prod.sh
+npm run start:production
 echo "部署完成"
 ```
 
@@ -185,8 +185,7 @@ ps aux | grep node
 **③ 在项目目录重启应用：**
 ```bash
 cd /opt/test
-./stop.sh    # 若有
-./start-prod.sh
+npm run start:production
 # 或： nohup node dist/main.js &
 # 或： pm2 restart team-app
 ```

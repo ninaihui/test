@@ -17,35 +17,63 @@
     .welcome-card { padding: 1rem 1.25rem; }
     .welcome-card a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem; }
     .welcome-card a:hover { opacity: 0.95; }
-    /* 下一场活动主卡片：有活动时可点击进入详情 */
-    .next-card { padding: 1.25rem; }
+    /* 下一场活动主卡片：天气作为背景层 */
+    .next-card { position: relative; padding: 1.25rem; overflow: hidden; }
+    .next-card-weather-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: flex; align-items: flex-start; justify-content: flex-end; padding: 0; overflow: hidden; }
+    .next-card-weather-bg .weather-bg-icon { font-size: 7rem; line-height: 1; opacity: 0.12; transform: translate(15%, -15%); }
+    .next-card-weather-bg .weather-bg-temp { position: absolute; right: 0.75rem; top: 0.5rem; font-size: 2rem; font-weight: 700; color: rgba(255,255,255,.15); }
+    .next-card-content { position: relative; z-index: 1; }
     #weekendCard[data-activity-id] { cursor: pointer; }
-    .next-card .venue-row { color: rgba(255,255,255,.7); font-size: 0.875rem; margin-top: 0.25rem; }
-    .next-card .time-row { color: rgba(255,255,255,.5); font-size: 0.8125rem; margin-top: 0.25rem; }
+    .next-card .next-card-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; font-size: 0.875rem; color: rgba(255,255,255,.7); }
+    .next-card .next-card-meta-sep { color: rgba(255,255,255,.4); flex-shrink: 0; }
+    .next-card .meta-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .next-card .meta-item .meta-icon { display: inline-flex; flex-shrink: 0; width: 1rem; height: 1rem; color: rgba(255,255,255,.75); }
+    .next-card .meta-item .meta-icon svg { width: 100%; height: 100%; }
     .next-card .cta { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
     .badge-today { background: rgba(34,197,94,.25); color: #86efac; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
     .badge-tomorrow { background: rgba(59,130,246,.25); color: #93c5fd; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
     .badge-date { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }
     /* 下一场活动 - 报名队员预览 */
-    .next-card .roster-label { font-size: 0.75rem; color: rgba(255,255,255,.5); margin-top: 0.75rem; margin-bottom: 0.25rem; }
+    .next-card .roster-label { font-size: 0.75rem; color: rgba(255,255,255,.5); margin-top: 0.75rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem; }
+    .next-card .roster-count { font-size: 0.75rem; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
     .next-card .roster-names { font-size: 0.8125rem; color: rgba(255,255,255,.75); line-height: 1.4; }
     .next-card .roster-names .name-tag { display: inline-block; margin: 0.125rem 0.25rem 0.125rem 0; padding: 0.125rem 0.5rem; background: rgba(255,255,255,.08); border-radius: 0.5rem; }
-    /* 活动列表项 */
-    .activity-row { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,.08); text-decoration: none; color: inherit; transition: background .15s; }
+    /* 活动列表项：星期与箭头留出边距，不贴边 */
+    .activity-row { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,.08); text-decoration: none; color: inherit; transition: background .15s; }
     .activity-row:last-child { border-bottom: none; }
     .activity-row:hover { background: rgba(255,255,255,.05); }
-    .activity-row .badge { flex-shrink: 0; min-width: 3rem; text-align: center; }
+    .activity-row .badge { flex-shrink: 0; min-width: 3rem; text-align: center; margin-left: 0.125rem; }
     .activity-row .body { flex: 1; min-width: 0; }
     .activity-row .body .name { font-weight: 500; color: #fff; }
     .activity-row .body .meta { font-size: 0.8125rem; color: rgba(255,255,255,.5); margin-top: 0.125rem; }
-    .activity-row .arrow { color: rgba(255,255,255,.35); font-size: 0.875rem; flex-shrink: 0; }
+    .activity-row .arrow { color: rgba(255,255,255,.4); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-right: 0.125rem; transition: color .2s, transform .2s; }
+    .activity-row:hover .arrow { color: rgba(255,255,255,.7); transform: translateX(2px); }
+    .activity-row .arrow svg { width: 1.25rem; height: 1.25rem; }
+    .welcome-card .nav-arrow { color: rgba(255,255,255,.4); display: inline-flex; align-items: center; transition: color .2s, transform .2s; }
+    .welcome-card a:hover .nav-arrow { color: rgba(255,255,255,.7); transform: translateX(2px); }
+    .welcome-card .nav-arrow svg { width: 1.25rem; height: 1.25rem; }
     /* 欢迎区头像：与「我的」页面一致 5rem × 5rem */
     .welcome-avatar { width: 5rem; height: 5rem; min-width: 5rem; min-height: 5rem; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
     .welcome-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* 报名弹窗：出场位置选择 */
+    .register-modal-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 1rem; }
+    .register-modal-overlay.show { display: flex; }
+    .register-modal { width: 100%; max-width: 22rem; background: rgba(15,23,42,.95); border: 1px solid rgba(255,255,255,.15); border-radius: 1rem; padding: 1.25rem; box-shadow: 0 20px 40px rgba(0,0,0,.4); }
+    .register-modal h3 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #fff; }
+    .register-modal .modal-select { width: 100%; padding: 0.625rem 0.75rem; border-radius: 0.5rem; font-size: 0.9375rem; color: #fff; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.2); margin-bottom: 1rem; }
+    .register-modal .modal-select:focus { outline: none; border-color: rgba(34,197,94,.6); }
+    .register-modal .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+    .register-modal .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer; border: none; }
+    .register-modal .btn-ghost { background: rgba(255,255,255,.1); color: #e2e8f0; }
+    .register-modal .btn-ghost:hover { background: rgba(255,255,255,.15); }
+    /* 已报名角标：与标题同行，不遮挡箭头 */
+    .registered-badge { white-space: nowrap; flex-shrink: 0; background: rgba(16,185,129,0.22); border: 1px solid rgba(16,185,129,0.5); color: #a7f3d0; }
+    .registered-badge svg { width: 0.875rem; height: 0.875rem; flex-shrink: 0; }
   </style>
 </head>
 <body class="min-h-screen text-slate-100">
-  <div class="min-h-screen safe-bottom pb-24">
+  <a href="/login.html" class="top-nav-login" aria-label="登出" onclick="event.preventDefault(); localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken'); window.location.href='/login.html';">登出</a>
+  <div class="min-h-screen safe-bottom-nav">
     <div class="max-w-2xl mx-auto px-4 py-6">
 
       <!-- 欢迎区：头像 + 问候 + 副标题 -->
@@ -60,30 +88,34 @@
               <div id="userName" class="text-white font-semibold truncate text-lg">—</div>
               <div class="text-white/50 text-xs mt-0.5">点击进入个人中心</div>
             </div>
-            <span class="text-white/40 text-xl shrink-0" aria-hidden="true">→</span>
+            <span class="nav-arrow shrink-0" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
           </div>
         </a>
       </section>
 
-      <!-- 下一场活动（主卡片） -->
+      <!-- 下一场活动（主卡片，天气为背景） -->
       <section class="mb-6" id="weekendSection">
         <h2 class="text-white/80 text-sm font-medium mb-3">下一场活动</h2>
         <div id="weekendCard" class="card rounded-2xl next-card">
+          <div id="weekendCardWeatherBg" class="next-card-weather-bg" aria-hidden="true"></div>
           <div id="weekendEmpty" class="text-white/50 text-sm text-center py-6">
             暂无即将举行的活动<br />
             <a href="/activities.html" class="text-cyan-400/90 text-xs mt-2 inline-block underline">去活动页看看</a>
           </div>
-          <div id="weekendContent" class="hidden">
+          <div id="weekendContent" class="next-card-content hidden">
             <div id="weekendName" class="text-white font-semibold text-lg">—</div>
-            <div id="weekendVenue" class="venue-row">—</div>
-            <div id="weekendTime" class="time-row">—</div>
+            <div class="next-card-meta">
+              <span id="weekendVenue">—</span>
+              <span class="next-card-meta-sep"> · </span>
+              <span id="weekendTime">—</span>
+            </div>
             <div id="weekendRoster" class="hidden">
-              <div class="roster-label">已报名队员</div>
+              <div class="roster-label"><span>已报名队员</span><span id="weekendRosterCount" class="roster-count">0/11</span></div>
               <div id="weekendRosterNames" class="roster-names"></div>
             </div>
             <div class="cta">
               <span id="weekendStatus" class="text-white/60 text-sm">—</span>
-              <button type="button" id="weekendRegisterBtn" class="btn btn-primary hidden">报名</button>
+              <button type="button" id="weekendRegisterBtn" class="btn btn-primary btn-sm hidden">报名</button>
             </div>
           </div>
         </div>
@@ -105,11 +137,41 @@
           </div>
         </div>
       </section>
+    </div>
+  </div>
 
-      <!-- 服务状态（弱化） -->
-      <div class="text-white/35 text-xs flex items-center gap-2 pt-2">
-        <span id="healthText">检查中…</span>
-        <span id="healthTime"></span>
+  <!-- 报名弹窗：选择出场位置 -->
+  <div id="registerModalOverlay" class="register-modal-overlay" aria-hidden="true">
+    <div class="register-modal" role="dialog" aria-labelledby="registerModalTitle" aria-modal="true">
+      <h3 id="registerModalTitle">选择出场位置</h3>
+      <select id="registerPositionSelect" class="modal-select" aria-label="出场位置">
+        <option value="">未选择</option>
+        <optgroup label="守门员">
+          <option value="守门员">守门员 (GK)</option>
+        </optgroup>
+        <optgroup label="后卫">
+          <option value="中后卫">中后卫 (CB)</option>
+          <option value="右后卫">右后卫 (RB)</option>
+          <option value="左后卫">左后卫 (LB)</option>
+        </optgroup>
+        <optgroup label="中场">
+          <option value="后腰">后腰 (DM)</option>
+          <option value="中前卫">中前卫 (CM)</option>
+          <option value="前腰">前腰 (AM)</option>
+          <option value="右前卫">右前卫 (RM)</option>
+          <option value="左前卫">左前卫 (LM)</option>
+          <option value="右边锋">右边锋 (RW)</option>
+          <option value="左边锋">左边锋 (LW)</option>
+        </optgroup>
+        <optgroup label="前锋">
+          <option value="影锋">影锋 (SS)</option>
+          <option value="中锋">中锋 (CF)</option>
+          <option value="前锋">前锋 (ST)</option>
+        </optgroup>
+      </select>
+      <div class="modal-actions">
+        <button type="button" id="registerModalCancel" class="btn btn-ghost">取消</button>
+        <button type="button" id="registerModalConfirm" class="btn btn-primary">确定报名</button>
       </div>
     </div>
   </div>
@@ -118,12 +180,13 @@
   <nav class="bottom-nav" aria-label="底部导航">
     <div class="bottom-nav-inner">
       <a class="bottom-nav-item active" data-nav="dashboard" href="/dashboard.html">首页</a>
-      <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
+      <a class="bottom-nav-item" data-nav="activities" href="/activities.html">活动</a>
       <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
     </div>
   </nav>
 
   <script src="/js/fancy-background.js"></script>
+  <script src="/js/position-options.js"></script>
   <script>
 (function () {
   const TOKEN_KEY = 'authToken';
@@ -142,6 +205,13 @@
   const nameEl = document.getElementById('userName');
 
   const defaultAvatar = 'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%230b1220%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2246%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E';
+
+  function toAbsoluteAvatarUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    var path = url.startsWith('/') ? url : '/' + url;
+    return window.location.origin + path;
+  }
 
   function requireLogin(reason) {
     // #region agent log
@@ -179,13 +249,21 @@
       }
       const me = await res.json();
       setGreeting(me.username);
-      avatarEl.src = (me.avatarUrl ? (me.avatarUrl + '?t=' + Date.now()) : defaultAvatar);
+      if (me.avatarUrl) {
+        var avatarSrc = toAbsoluteAvatarUrl(me.avatarUrl);
+        avatarEl.src = avatarSrc + (avatarSrc.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+      } else {
+        avatarEl.src = defaultAvatar;
+      }
+      avatarEl.onerror = function () { avatarEl.src = defaultAvatar; };
       localStorage.setItem(USER_KEY, JSON.stringify(me));
     } catch (e) {
       console.warn('首页：/auth/me 请求失败', e);
       requireLogin('请求 /auth/me 失败');
     }
   }
+
+  var weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
   function formatActivityDate(iso) {
     if (!iso) return '—';
@@ -195,9 +273,11 @@
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     d.setHours(0, 0, 0, 0);
-    if (d.getTime() === today.getTime()) return '今天 ' + new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-    if (d.getTime() === tomorrow.getTime()) return '明天 ' + new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-    return new Date(iso).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    var w = weekdays[d.getDay()];
+    var timeStr = new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    if (d.getTime() === today.getTime()) return '今天 ' + w + ' ' + timeStr;
+    if (d.getTime() === tomorrow.getTime()) return '明天 ' + w + ' ' + timeStr;
+    return (d.getMonth() + 1) + '月' + d.getDate() + '号 ' + w + ' ' + timeStr;
   }
 
   function getDateBadge(iso) {
@@ -211,12 +291,94 @@
     if (d.getTime() === today.getTime()) return { text: '今天', cls: 'badge-today' };
     if (d.getTime() === tomorrow.getTime()) return { text: '明天', cls: 'badge-tomorrow' };
     const week = ['日','一','二','三','四','五','六'][d.getDay()];
-    return { text: d.getMonth() + 1 + '/' + d.getDate() + ' 周' + week, cls: 'badge-date' };
+    return { text: (d.getMonth() + 1) + '月' + d.getDate() + '号 周' + week, cls: 'badge-date' };
   }
 
   function getVenueDisplay(activity) {
     if (activity.venue && activity.venue.name) return activity.venue.name;
     return activity.location || '—';
+  }
+
+  function weatherCodeToDesc(code) {
+    if (code == null) return '—';
+    var c = parseInt(code, 10);
+    if (c === 0) return '晴';
+    if (c >= 1 && c <= 3) return ['少云', '多云', '阴'][c - 1];
+    if (c === 45 || c === 48) return '雾';
+    if (c >= 51 && c <= 67) return '雨';
+    if (c >= 71 && c <= 77) return '雪';
+    if (c >= 80 && c <= 82) return '阵雨';
+    if (c >= 85 && c <= 86) return '阵雪';
+    if (c >= 95 && c <= 99) return '雷暴';
+    return '—';
+  }
+
+  function weatherCodeToIcon(code) {
+    if (code == null) return '🌤';
+    var c = parseInt(code, 10);
+    if (c === 0) return '☀️';
+    if (c >= 1 && c <= 3) return '⛅';
+    if (c === 45 || c === 48) return '🌫';
+    if (c >= 51 && c <= 67) return '🌧';
+    if (c >= 71 && c <= 77) return '🌨';
+    if (c >= 80 && c <= 82) return '🌦';
+    if (c >= 85 && c <= 86) return '🌨';
+    if (c >= 95 && c <= 99) return '⛈';
+    return '🌤';
+  }
+
+  function formatActivityDateForApi(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  async function loadWeatherForActivity(activity, venueDisplay) {
+    var weatherBg = document.getElementById('weekendCardWeatherBg');
+    if (!weatherBg) return;
+    var setLoading = function () {
+      weatherBg.innerHTML = '';
+    };
+    var setError = function () {
+      weatherBg.innerHTML = '';
+    };
+    var dateStr = formatActivityDateForApi(activity.date);
+    if (!dateStr) { setError(); return; }
+    var lat = 35.6762;
+    var lon = 139.6503;
+    var searchName = (venueDisplay && venueDisplay !== '—') ? venueDisplay : '东京';
+    try {
+      var geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(searchName) + '&count=1&language=zh');
+      if (geoRes.ok) {
+        var geo = await geoRes.json();
+        if (geo.results && geo.results[0]) {
+          lat = geo.results[0].latitude;
+          lon = geo.results[0].longitude;
+        }
+      }
+    } catch (e) {}
+    try {
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+        '&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=Asia%2FTokyo' +
+        '&start_date=' + dateStr + '&end_date=' + dateStr;
+      var forecastRes = await fetch(url);
+      if (!forecastRes.ok) { setError(); return; }
+      var data = await forecastRes.json();
+      var daily = data.daily;
+      if (!daily || !daily.time || !daily.time[0]) { setError(); return; }
+      var maxT = daily.temperature_2m_max && daily.temperature_2m_max[0];
+      var minT = daily.temperature_2m_min && daily.temperature_2m_min[0];
+      var code = daily.weathercode && daily.weathercode[0];
+      var tempStr = (minT != null && maxT != null) ? (Math.round(minT) + '~' + Math.round(maxT) + '°C') : '';
+      weatherBg.innerHTML =
+        '<span class="weather-bg-icon" aria-hidden="true">' + weatherCodeToIcon(code) + '</span>' +
+        (tempStr ? '<span class="weather-bg-temp">' + tempStr + '</span>' : '');
+    } catch (e) {
+      setError();
+    }
   }
 
   async function loadWeekendActivity() {
@@ -236,7 +398,9 @@
       const first = list[0];
       if (!first || !first.id) {
         var cardEl = document.getElementById('weekendCard');
+        var weatherBg = document.getElementById('weekendCardWeatherBg');
         if (cardEl) delete cardEl.dataset.activityId;
+        if (weatherBg) weatherBg.innerHTML = '';
         emptyEl.hidden = false;
         contentEl.hidden = true;
         emptyEl.classList.remove('hidden');
@@ -246,7 +410,9 @@
       const detailRes = await fetch('/activities/' + first.id, { headers: { Authorization: 'Bearer ' + token } });
       if (!detailRes.ok) {
         var cardEl = document.getElementById('weekendCard');
+        var weatherBg = document.getElementById('weekendCardWeatherBg');
         if (cardEl) delete cardEl.dataset.activityId;
+        if (weatherBg) weatherBg.innerHTML = '';
         emptyEl.hidden = false;
         contentEl.hidden = true;
         emptyEl.classList.remove('hidden');
@@ -265,30 +431,45 @@
       contentEl.classList.remove('hidden');
       var weekendCard = document.getElementById('weekendCard');
       if (weekendCard) weekendCard.dataset.activityId = activity.id;
-      nameEl.textContent = activity.name || '未命名活动';
-      venueEl.textContent = '📍 ' + venueDisplay;
-      timeEl.textContent = '🕐 ' + formatActivityDate(activity.date);
+      var nameText = activity.name || '未命名活动';
+      nameEl.textContent = nameText.length > 17 ? nameText.slice(0, 17) + '…' : nameText;
+      var locationIcon = '<span class="meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span>';
+      var clockIcon = '<span class="meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>';
+      venueEl.className = 'meta-item';
+      timeEl.className = 'meta-item';
+      var venueText = (venueDisplay && venueDisplay.length > 15) ? venueDisplay.slice(0, 15) + '…' : (venueDisplay || '—');
+      venueEl.innerHTML = locationIcon + '<span>' + escapeHtml(venueText) + '</span>';
+      timeEl.innerHTML = clockIcon + '<span>' + escapeHtml(formatActivityDate(activity.date)) + '</span>';
+
+      loadWeatherForActivity(activity, venueDisplay);
 
       var rosterWrap = document.getElementById('weekendRoster');
       var rosterNamesEl = document.getElementById('weekendRosterNames');
+      var rosterCountEl = document.getElementById('weekendRosterCount');
       var attendances = activity.attendances || [];
+      var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
+      if (rosterCountEl) rosterCountEl.textContent = attendances.length + '/' + totalSlots;
       if (rosterWrap && rosterNamesEl) {
         if (attendances.length > 0) {
           rosterWrap.classList.remove('hidden');
           rosterNamesEl.innerHTML = attendances.map(function (a) {
             var name = (a.user && a.user.username) ? a.user.username : '—';
-            return '<span class="name-tag">' + escapeHtml(name) + '</span>';
+            var pos = (a.position != null && String(a.position).trim()) ? String(a.position).trim() : ((a.user && a.user.playingPosition && a.user.playingPosition.trim()) ? a.user.playingPosition.trim() : '未设置');
+            return '<span class="name-tag">' + escapeHtml(name) + ' · ' + escapeHtml(pos) + '</span>';
           }).join('');
         } else {
           rosterWrap.classList.add('hidden');
           rosterNamesEl.innerHTML = '';
         }
+        if (rosterCountEl) rosterCountEl.textContent = attendances.length + '/' + totalSlots;
       }
 
       if (myAtt) {
         statusEl.textContent = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
         statusEl.classList.remove('hidden');
         btnEl.classList.remove('hidden');
+        btnEl.classList.remove('btn-primary');
+        btnEl.classList.add('btn-danger');
         btnEl.textContent = '取消报名';
         btnEl.onclick = async (e) => {
           e.preventDefault();
@@ -311,26 +492,18 @@
       } else {
         statusEl.classList.add('hidden');
         btnEl.classList.remove('hidden');
+        btnEl.classList.remove('btn-danger');
+        btnEl.classList.add('btn-primary');
         btnEl.textContent = '报名';
-        btnEl.onclick = async (e) => {
+        btnEl.onclick = function (e) {
           e.preventDefault();
-          btnEl.disabled = true;
-          try {
-            const r = await fetch('/activities/' + activity.id + '/register', {
-              method: 'POST',
-              headers: { Authorization: 'Bearer ' + token },
-            });
-            if (r.ok) loadWeekendActivity();
-            else {
-              const err = await r.json().catch(() => ({}));
-              alert(err.message || '报名失败');
-            }
-          } finally {
-            btnEl.disabled = false;
-          }
+          e.stopPropagation();
+          openRegisterModal(activity);
         };
       }
     } catch (e) {
+      var weatherBg = document.getElementById('weekendCardWeatherBg');
+      if (weatherBg) weatherBg.innerHTML = '';
       emptyEl.hidden = false;
       contentEl.hidden = true;
       emptyEl.classList.remove('hidden');
@@ -354,16 +527,25 @@
 
       list.forEach(a => {
         const badge = getDateBadge(a.date);
+        var nameText = a.name || '未命名活动';
+        nameText = nameText.length > 17 ? nameText.slice(0, 17) + '…' : nameText;
+        var venueDisplay = getVenueDisplay(a);
+        var venueText = (venueDisplay && venueDisplay.length > 15) ? venueDisplay.slice(0, 15) + '…' : (venueDisplay || '—');
+        var count = (a._count && a._count.attendances != null) ? a._count.attendances : (a.attendances ? a.attendances.length : 0);
+        var total = (a.maxParticipants != null && a.maxParticipants >= 1) ? a.maxParticipants : 11;
+        var countText = count + '/' + total + '人';
+        var isRegistered = !!(a.isRegisteredByCurrentUser);
+        var registeredBadge = isRegistered ? '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" aria-label="已报名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已报名</span>' : '';
         const row = document.createElement('a');
         row.href = '/activities.html?id=' + (a.id || '');
-        row.className = 'activity-row block px-4';
+        row.className = 'activity-row block';
         row.innerHTML =
           '<span class="badge ' + badge.cls + '">' + badge.text + '</span>' +
-          '<div class="body">' +
-            '<div class="name">' + (a.name || '未命名活动') + '</div>' +
-            '<div class="meta">' + getVenueDisplay(a) + ' · ' + formatActivityDate(a.date) + '</div>' +
+          '<div class="body flex-1 min-w-0">' +
+            '<div class="name-row flex items-center gap-2 flex-wrap"><span class="name">' + escapeHtml(nameText) + '</span>' + registeredBadge + '</div>' +
+            '<div class="meta">' + escapeHtml(venueText) + ' · ' + formatActivityDate(a.date) + ' · <span class="tabular-nums">' + countText + '</span></div>' +
           '</div>' +
-          '<span class="arrow">→</span>';
+          '<span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>';
         itemsEl.appendChild(row);
       });
     } catch (e) {
@@ -372,28 +554,96 @@
     }
   }
 
-  async function health() {
-    const textEl = document.getElementById('healthText');
-    const timeEl = document.getElementById('healthTime');
-    try {
-      const res = await fetch('/health');
-      if (!res.ok) throw new Error('health');
-      const data = await res.json();
-      textEl.textContent = '服务正常';
-      timeEl.textContent = data.timestamp ? new Date(data.timestamp).toLocaleString('zh-CN') : '';
-    } catch (e) {
-      textEl.textContent = '服务异常';
-      timeEl.textContent = '';
-    }
-  }
-
   function setBottomNavActive() {
     const path = window.location.pathname;
-    const key = path === '/dashboard.html' ? 'dashboard' : path === '/tactics.html' ? 'tactics' : path === '/profile.html' ? 'me' : 'dashboard';
+    const key = path === '/dashboard.html' ? 'dashboard' : path === '/activities.html' ? 'activities' : path === '/profile.html' ? 'me' : 'dashboard';
     document.querySelectorAll('.bottom-nav-item').forEach(a => {
       a.classList.toggle('active', a.dataset.nav === key);
     });
   }
+
+  var registerModalActivityId = null;
+  var registerModalAttendances = [];
+
+  function openRegisterModal(activity) {
+    var overlay = document.getElementById('registerModalOverlay');
+    var selectEl = document.getElementById('registerPositionSelect');
+    if (!overlay || !selectEl) return;
+    var activityId = activity && activity.id;
+    var attendances = (activity && activity.attendances) || [];
+    var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 11;
+    registerModalActivityId = activityId;
+    registerModalAttendances = attendances;
+    if (typeof window.fillPositionSelect === 'function') {
+      window.fillPositionSelect(selectEl, maxParticipants);
+    }
+    var me = null;
+    try {
+      var userStr = localStorage.getItem(USER_KEY);
+      if (userStr) me = JSON.parse(userStr);
+    } catch (e) {}
+    var defaultPos = (me && me.playingPosition && String(me.playingPosition).trim()) ? String(me.playingPosition).trim() : '';
+    selectEl.value = defaultPos;
+    if (selectEl.value !== defaultPos) selectEl.value = '';
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeRegisterModal() {
+    var overlay = document.getElementById('registerModalOverlay');
+    if (overlay) {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+    registerModalActivityId = null;
+    registerModalAttendances = [];
+  }
+
+  (function bindRegisterModal() {
+    var overlay = document.getElementById('registerModalOverlay');
+    var cancelBtn = document.getElementById('registerModalCancel');
+    var confirmBtn = document.getElementById('registerModalConfirm');
+    var selectEl = document.getElementById('registerPositionSelect');
+    if (cancelBtn) cancelBtn.addEventListener('click', closeRegisterModal);
+    if (overlay) {
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeRegisterModal();
+      });
+    }
+    if (confirmBtn && selectEl) {
+      confirmBtn.addEventListener('click', async function () {
+        if (!registerModalActivityId) { closeRegisterModal(); return; }
+        var position = (selectEl.value || '').trim();
+        if (position) {
+          var hasSame = (registerModalAttendances || []).some(function (a) {
+            return (a.position || '').trim() === position;
+          });
+          if (hasSame) {
+            alert('位置重复了，请换个位置');
+            return;
+          }
+        }
+        confirmBtn.disabled = true;
+        try {
+          var body = position ? { position: position } : {};
+          var r = await fetch('/activities/' + registerModalActivityId + '/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify(body),
+          });
+          if (r.ok) {
+            closeRegisterModal();
+            loadWeekendActivity();
+          } else {
+            var err = await r.json().catch(function () { return {}; });
+            alert(err.message || '报名失败');
+          }
+        } finally {
+          confirmBtn.disabled = false;
+        }
+      });
+    }
+  })();
 
   (function bindWeekendCardClick() {
     var weekendCard = document.getElementById('weekendCard');
@@ -420,7 +670,6 @@
         await loadMe();
         loadWeekendActivity();
         loadAllActivities();
-        health();
         setBottomNavActive();
       })();
     }, 0);

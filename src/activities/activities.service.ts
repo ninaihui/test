@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -13,6 +14,9 @@ export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, createActivityDto: CreateActivityDto) {
+    let maxParticipants = createActivityDto.maxParticipants != null ? createActivityDto.maxParticipants : 11;
+    if (maxParticipants < 6) maxParticipants = 6;
+    if (maxParticipants > 99) maxParticipants = 99;
     const activity = await this.prisma.activity.create({
       data: {
         name: createActivityDto.name,
@@ -20,6 +24,7 @@ export class ActivitiesService {
         date: new Date(createActivityDto.date),
         location: createActivityDto.location,
         venueId: createActivityDto.venueId,
+        maxParticipants,
         createdById: userId,
       },
       include: {
@@ -48,15 +53,10 @@ export class ActivitiesService {
     return activity;
   }
 
-  async findAll(userId: string, upcoming?: boolean) {
-    const where: any = {};
-
-    if (upcoming) {
-      where.date = { gte: new Date() };
-    }
-
+  async findAll(userId: string, _upcoming?: boolean) {
+    const now = new Date();
     const activities = await this.prisma.activity.findMany({
-      where,
+      where: { date: { gte: now } },
       include: {
         createdBy: {
           select: {
@@ -78,12 +78,23 @@ export class ActivitiesService {
           },
         },
       },
-      orderBy: {
-        date: upcoming ? 'asc' : 'desc',
-      },
+      orderBy: { date: 'asc' },
     });
 
-    return activities;
+    const activityIds = activities.map((a) => a.id);
+    const myAttendanceActivityIds = new Set(
+      (
+        await this.prisma.attendance.findMany({
+          where: { userId, activityId: { in: activityIds } },
+          select: { activityId: true },
+        })
+      ).map((r) => r.activityId),
+    );
+
+    return activities.map((a) => ({
+      ...a,
+      isRegisteredByCurrentUser: myAttendanceActivityIds.has(a.id),
+    }));
   }
 
   async findOne(id: string, _userId: string) {
@@ -112,6 +123,7 @@ export class ActivitiesService {
                 username: true,
                 email: true,
                 avatarUrl: true,
+                playingPosition: true,
               },
             },
           },
@@ -173,8 +185,8 @@ export class ActivitiesService {
     return updatedActivity;
   }
 
-  /** 用户报名参加活动（创建出勤记录，状态为「已报名」） */
-  async register(activityId: string, userId: string) {
+  /** 用户报名参加活动（创建出勤记录，状态为「已报名」），可选出场位置 position */
+  async register(activityId: string, userId: string, position?: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
     });
@@ -195,11 +207,22 @@ export class ActivitiesService {
       throw new ConflictException('您已报名过该活动');
     }
 
+    const pos = position?.trim();
+    if (pos) {
+      const samePosition = await this.prisma.attendance.findFirst({
+        where: { activityId, position: pos },
+      });
+      if (samePosition) {
+        throw new ConflictException('位置重复了，请换个位置');
+      }
+    }
+
     const attendance = await this.prisma.attendance.create({
       data: {
         userId,
         activityId,
         status: 'registered',
+        position: pos || undefined,
       },
       include: {
         user: {
@@ -254,6 +277,64 @@ export class ActivitiesService {
       },
     });
     return { message: '已取消报名' };
+  }
+
+  /** 管理员按战术板槽位保存本活动的出场位置（更新各报名记录的 position） */
+  async updatePositions(activityId: string, _adminUserId: string, positions: { userId: string; position: string }[]) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+    });
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 11;
+    if (positions.length > maxParticipants) {
+      throw new BadRequestException(`出场人数不能超过活动人数上限（${maxParticipants} 人）`);
+    }
+
+    for (const item of positions) {
+      const attendance = await this.prisma.attendance.findUnique({
+        where: {
+          userId_activityId: {
+            userId: item.userId,
+            activityId,
+          },
+        },
+      });
+      if (attendance) {
+        await this.prisma.attendance.update({
+          where: { id: attendance.id },
+          data: { position: item.position.trim() || null },
+        });
+      }
+    }
+    return { message: '出场位置已保存' };
+  }
+
+  /** 当前用户保存本场自己的出场位置（普通用户战术板保存用） */
+  async updateMyPosition(activityId: string, userId: string, position: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+    });
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+    const attendance = await this.prisma.attendance.findUnique({
+      where: {
+        userId_activityId: {
+          userId,
+          activityId,
+        },
+      },
+    });
+    if (!attendance) {
+      throw new NotFoundException('您未报名该活动');
+    }
+    await this.prisma.attendance.update({
+      where: { id: attendance.id },
+      data: { position: (position || '').trim() || null },
+    });
+    return { message: '出场位置已保存' };
   }
 
   async remove(id: string, _userId: string) {

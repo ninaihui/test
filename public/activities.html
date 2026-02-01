@@ -14,6 +14,10 @@
         .glass input, .glass select, .glass textarea { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
         .activity-list-item { border-bottom: 1px solid rgba(255,255,255,.08); }
         .activity-list-item:last-child { border-bottom: none; }
+        .activity-list-item .nav-arrow { color: rgba(255,255,255,.4); display: inline-flex; align-items: center; gap: 0.25rem; transition: color .2s, transform .2s; }
+        .activity-list-item a:hover .nav-arrow { color: rgba(255,255,255,.7); transform: translateX(2px); }
+        .activity-list-item .nav-arrow svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+        .detail-nav-icon { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
         /* 创建活动弹窗：手机端固定高度，保证保存按钮始终在可视区 */
         @media (max-width: 640px) {
             .activity-modal-inner { height: 88vh; max-height: 88vh; }
@@ -21,9 +25,24 @@
                 padding-bottom: max(1rem, env(safe-area-inset-bottom));
             }
         }
+        /* 报名弹窗：出场位置选择 */
+        .register-modal-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 1rem; }
+        .register-modal-overlay.show { display: flex; }
+        .register-modal { width: 100%; max-width: 22rem; background: rgba(15,23,42,.95); border: 1px solid rgba(255,255,255,.15); border-radius: 1rem; padding: 1.25rem; box-shadow: 0 20px 40px rgba(0,0,0,.4); }
+        .register-modal h3 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #fff; }
+        .register-modal .modal-select { width: 100%; padding: 0.625rem 0.75rem; border-radius: 0.5rem; font-size: 0.9375rem; color: #fff; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.2); margin-bottom: 1rem; }
+        .register-modal .modal-select:focus { outline: none; border-color: rgba(34,197,94,.6); }
+        .register-modal .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .register-modal .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer; border: none; }
+        .register-modal .btn-ghost { background: rgba(255,255,255,.1); color: #e2e8f0; }
+        .register-modal .btn-ghost:hover { background: rgba(255,255,255,.15); }
+        /* 已报名角标：与标题同行，不遮挡查看 */
+        .registered-badge { white-space: nowrap; flex-shrink: 0; background: rgba(16,185,129,0.22); border: 1px solid rgba(16,185,129,0.5); color: #a7f3d0; }
+        .registered-badge svg { width: 0.875rem; height: 0.875rem; flex-shrink: 0; }
     </style>
 </head>
-<body class="min-h-screen text-slate-100 safe-bottom pb-24">
+<body class="min-h-screen text-slate-100 safe-bottom-nav">
+    <a href="/login.html" class="top-nav-login" aria-label="登出" onclick="event.preventDefault(); localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken'); window.location.href='/login.html';">登出</a>
     <!-- 主内容：移动端优先，与 dashboard 统一 -->
     <div class="max-w-2xl mx-auto px-4 py-6">
         <header class="flex items-center justify-between mb-6">
@@ -59,21 +78,57 @@
     <nav class="bottom-nav" aria-label="底部导航">
         <div class="bottom-nav-inner">
             <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
-            <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
+            <a class="bottom-nav-item" data-nav="activities" href="/activities.html">活动</a>
             <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
         </div>
     </nav>
 
-    <!-- 活动详情弹窗 -->
+    <!-- 报名弹窗：选择出场位置 -->
+    <div id="registerModalOverlay" class="register-modal-overlay" aria-hidden="true">
+        <div class="register-modal" role="dialog" aria-labelledby="registerModalTitle" aria-modal="true">
+            <h3 id="registerModalTitle">选择出场位置</h3>
+            <select id="registerPositionSelect" class="modal-select" aria-label="出场位置">
+                <option value="">未选择</option>
+                <optgroup label="守门员">
+                    <option value="守门员">守门员 (GK)</option>
+                </optgroup>
+                <optgroup label="后卫">
+                    <option value="中后卫">中后卫 (CB)</option>
+                    <option value="右后卫">右后卫 (RB)</option>
+                    <option value="左后卫">左后卫 (LB)</option>
+                </optgroup>
+                <optgroup label="中场">
+                    <option value="后腰">后腰 (DM)</option>
+                    <option value="中前卫">中前卫 (CM)</option>
+                    <option value="前腰">前腰 (AM)</option>
+                    <option value="右前卫">右前卫 (RM)</option>
+                    <option value="左前卫">左前卫 (LM)</option>
+                    <option value="右边锋">右边锋 (RW)</option>
+                    <option value="左边锋">左边锋 (LW)</option>
+                </optgroup>
+                <optgroup label="前锋">
+                    <option value="影锋">影锋 (SS)</option>
+                    <option value="中锋">中锋 (CF)</option>
+                    <option value="前锋">前锋 (ST)</option>
+                </optgroup>
+            </select>
+            <div class="modal-actions">
+                <button type="button" id="registerModalCancel" class="btn btn-ghost">取消</button>
+                <button type="button" id="registerModalConfirm" class="btn btn-primary">确定报名</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 活动详情弹窗：标题固定，内容区可纵向滚动 -->
     <div id="activityDetailModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
+        <div class="glass rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="flex justify-between items-center p-4 pb-2 shrink-0">
                 <h3 class="text-lg font-bold text-white">活动详情</h3>
                 <button type="button" onclick="closeActivityDetailModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white bg-white/10 hover:bg-white/20 transition" aria-label="关闭">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            <div id="activityDetailContent" class="space-y-4">
+            <div id="activityDetailContent" class="space-y-4 overflow-y-auto overflow-x-hidden flex-1 min-h-0 px-4 pb-4 overscroll-contain" style="-webkit-overflow-scrolling: touch;">
                 <div class="text-center py-8 text-white/50 text-sm">加载中…</div>
             </div>
         </div>
@@ -115,6 +170,13 @@
                         </div>
                     </div>
                     <div>
+                        <label class="block text-white/80 mb-2">活动人数</label>
+                        <input type="number" id="activityMaxParticipants" min="6" max="99" value="11" required
+                            class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+                            placeholder="11">
+                        <p class="text-white/50 text-xs mt-1">最少 6 人，最多 99 人</p>
+                    </div>
+                    <div>
                         <label class="block text-white/80 mb-2">活动描述 <span class="text-white/40 text-sm">（选填）</span></label>
                         <textarea id="activityDescription" rows="2" placeholder="可选备注"
                             class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 resize-none"></textarea>
@@ -135,6 +197,7 @@
 
     <!-- 炫酷背景效果 -->
     <script src="/js/fancy-background.js"></script>
+    <script src="/js/position-options.js"></script>
     <script>
         const authToken = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'));
         const LAST_LOCATION_KEY = 'team_management:lastActivityLocation';
@@ -173,6 +236,8 @@
             document.getElementById('activityForm').reset();
             document.getElementById('activityError').classList.add('hidden');
             document.getElementById('activityDate').value = getThisWeekSaturday();
+            var maxEl = document.getElementById('activityMaxParticipants');
+            if (maxEl) maxEl.value = '11';
             document.getElementById('activityTime').value = '19:00';
             var locInput = document.getElementById('activityLocation');
             var lastLoc = localStorage.getItem(LAST_LOCATION_KEY);
@@ -219,6 +284,13 @@
             const activityTime = document.getElementById('activityTime').value;
             const location = document.getElementById('activityLocation').value.trim();
             const description = document.getElementById('activityDescription').value.trim() || undefined;
+            var maxParticipants = 11;
+            var maxEl = document.getElementById('activityMaxParticipants');
+            if (maxEl && maxEl.value !== '') {
+                var n = parseInt(maxEl.value, 10);
+                if (n >= 6 && n <= 99) maxParticipants = n;
+                else if (n >= 1 && n < 6) { maxParticipants = 6; if (maxEl) maxEl.value = '6'; }
+            }
 
             if (!activityDate || !activityTime || !location) {
                 errorEl.textContent = '请填写日期、时间和地点';
@@ -243,6 +315,7 @@
                         date: dateStr,
                         location: location || undefined,
                         description,
+                        maxParticipants,
                     }),
                 });
                 const data = await res.json().catch(() => ({}));
@@ -270,7 +343,19 @@
         function formatActivityDate(iso) {
             if (!iso) return '—';
             const d = new Date(iso);
-            return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            var datePart = (d.getMonth() + 1) + '月' + d.getDate() + '号';
+            var timePart = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            return datePart + ' ' + timePart;
+        }
+        function formatDateTimeLocal(iso) {
+            if (!iso) return '';
+            var d = new Date(iso);
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            var h = String(d.getHours()).padStart(2, '0');
+            var min = String(d.getMinutes()).padStart(2, '0');
+            return y + '-' + m + '-' + day + 'T' + h + ':' + min;
         }
 
         async function loadActivities() {
@@ -291,13 +376,23 @@
                     return;
                 }
                 listEl.innerHTML = list.map(function(a) {
+                    var nameText = a.name || '未命名';
+                    nameText = nameText.length > 17 ? nameText.slice(0, 17) + '…' : nameText;
                     var venueDisplay = getVenueDisplay(a);
+                    var venueText = (venueDisplay && venueDisplay.length > 15) ? venueDisplay.slice(0, 15) + '…' : (venueDisplay || '—');
+                    var nameEsc = (nameText || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    var venueEsc = (venueText || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     var canDel = canDeleteActivity(a);
+                    var count = (a._count && a._count.attendances != null) ? a._count.attendances : (a.attendances ? a.attendances.length : 0);
+                    var total = (a.maxParticipants != null && a.maxParticipants >= 1) ? a.maxParticipants : 11;
+                    var countText = count + '/' + total + '人';
+                    var isRegistered = !!(a.isRegisteredByCurrentUser);
+                    var registeredBadge = isRegistered ? '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" aria-label="已报名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已报名</span>' : '';
                     var row = '<div class="activity-list-item flex justify-between items-center gap-2 py-4 px-4 hover:bg-white/5 transition">' +
-                        '<a href="/activities.html?id=' + (a.id || '') + '" class="min-w-0 flex-1 flex items-center gap-4">' +
-                        '<div class="min-w-0 flex-1"><div class="text-white font-medium">' + (a.name || '未命名') + '</div>' +
-                        '<div class="text-white/60 text-sm mt-0.5">' + venueDisplay + ' · ' + formatActivityDate(a.date) + '</div></div>' +
-                        '<span class="text-white/40 text-sm shrink-0">查看 →</span></a>';
+                        '<a href="/activity-detail.html?activityId=' + (a.id || '') + '" class="min-w-0 flex-1 flex items-center gap-4">' +
+                        '<div class="min-w-0 flex-1"><div class="flex items-center gap-2 flex-wrap"><span class="text-white font-medium min-w-0">' + nameEsc + '</span>' + registeredBadge + '</div>' +
+                        '<div class="text-white/60 text-sm mt-0.5">' + venueEsc + ' · ' + formatActivityDate(a.date) + ' · <span class="tabular-nums">' + countText + '</span></div></div>' +
+                        '<span class="nav-arrow text-sm shrink-0"><span>查看</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span></a>';
                     if (canDel) {
                         row += '<button type="button" class="btn btn-danger btn-sm shrink-0" data-activity-id="' + (a.id || '') + '" aria-label="删除活动">删除</button>';
                     }
@@ -345,22 +440,98 @@
             }
         }
 
-        async function registerActivity(id) {
-            if (!id) return;
+        async function registerActivity(id, position) {
+            if (!id) return false;
             try {
+                var body = (position && position.trim()) ? { position: position.trim() } : {};
                 var res = await fetch('/activities/' + id + '/register', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + authToken },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                    body: JSON.stringify(body),
                 });
-                if (res.ok) openActivityDetail(id);
-                else {
-                    var err = await res.json().catch(function() { return {}; });
-                    alert(err.message || '报名失败');
-                }
+                if (res.ok) { openActivityDetail(id); return true; }
+                var err = await res.json().catch(function() { return {}; });
+                alert(err.message || '报名失败');
+                return false;
             } catch (e) {
                 alert('网络错误，请重试');
+                return false;
             }
         }
+
+        var registerModalActivityId = null;
+        var registerModalAttendances = [];
+
+        function openRegisterModal(activity) {
+            var overlay = document.getElementById('registerModalOverlay');
+            var selectEl = document.getElementById('registerPositionSelect');
+            if (!overlay || !selectEl) return;
+            var activityId = activity && activity.id;
+            var attendances = (activity && activity.attendances) || [];
+            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 11;
+            registerModalActivityId = activityId;
+            registerModalAttendances = attendances;
+            if (typeof window.fillPositionSelect === 'function') {
+                window.fillPositionSelect(selectEl, maxParticipants);
+            }
+            var me = currentUser || null;
+            try {
+                var userStr = localStorage.getItem('user');
+                if (userStr && !me) me = JSON.parse(userStr);
+            } catch (e) {}
+            var defaultPos = (me && me.playingPosition && String(me.playingPosition).trim()) ? String(me.playingPosition).trim() : '';
+            selectEl.value = defaultPos;
+            if (selectEl.value !== defaultPos) selectEl.value = '';
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeRegisterModal() {
+            var overlay = document.getElementById('registerModalOverlay');
+            if (overlay) {
+                overlay.classList.remove('show');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+            registerModalActivityId = null;
+            registerModalAttendances = [];
+        }
+
+        (function bindRegisterModal() {
+            var overlay = document.getElementById('registerModalOverlay');
+            var cancelBtn = document.getElementById('registerModalCancel');
+            var confirmBtn = document.getElementById('registerModalConfirm');
+            var selectEl = document.getElementById('registerPositionSelect');
+            if (cancelBtn) cancelBtn.addEventListener('click', closeRegisterModal);
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeRegisterModal();
+                });
+            }
+            if (confirmBtn && selectEl) {
+                confirmBtn.addEventListener('click', async function() {
+                    if (!registerModalActivityId) { closeRegisterModal(); return; }
+                    var position = (selectEl.value || '').trim();
+                    if (position) {
+                        var hasSame = (registerModalAttendances || []).some(function(a) {
+                            return (a.position || '').trim() === position;
+                        });
+                        if (hasSame) {
+                            alert('位置重复了，请换个位置');
+                            return;
+                        }
+                    }
+                    confirmBtn.disabled = true;
+                    try {
+                        var ok = await registerActivity(registerModalActivityId, position);
+                        if (ok) closeRegisterModal();
+                    } catch (e) {
+                        alert('网络错误，请重试');
+                    } finally {
+                        confirmBtn.disabled = false;
+                    }
+                });
+            }
+        })();
 
         async function unregisterActivity(id) {
             if (!id || !confirm('确定取消报名？')) return;
@@ -397,14 +568,21 @@
                 var titleHtml = canEdit
                     ? '<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-white font-semibold text-lg" id="activityDetailName">' + displayName + '</span><button type="button" class="btn btn-ghost btn-sm shrink-0" id="activityDetailEditNameBtn" data-activity-id="' + (activity.id || '') + '">编辑名称</button></div>'
                     : '<div class="text-white font-semibold text-lg" id="activityDetailName">' + displayName + '</div>';
-                var html = titleHtml +
-                    '<div class="text-white/70 text-sm">' + (venueDisplay || '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') + '</div>' +
-                    '<div class="text-white/60 text-sm">' + formatActivityDate(activity.date) + '</div>';
+                var venueEscapedForRow = (venueDisplay || '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                var dateDisplay = formatActivityDate(activity.date);
+                var venueRowHtml = canEdit
+                    ? '<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-white/70 text-sm" id="activityDetailVenue">' + venueEscapedForRow + '</span><button type="button" class="btn btn-ghost btn-sm shrink-0" id="activityDetailEditVenueBtn" data-activity-id="' + (activity.id || '') + '">编辑地点</button></div>'
+                    : '<div class="text-white/70 text-sm" id="activityDetailVenue">' + venueEscapedForRow + '</div>';
+                var dateRowHtml = canEdit
+                    ? '<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-white/60 text-sm" id="activityDetailDate">' + dateDisplay + '</span><button type="button" class="btn btn-ghost btn-sm shrink-0" id="activityDetailEditDateBtn" data-activity-id="' + (activity.id || '') + '">编辑时间</button></div>'
+                    : '<div class="text-white/60 text-sm" id="activityDetailDate">' + dateDisplay + '</div>';
+                var html = titleHtml + venueRowHtml + dateRowHtml;
                 if (venueDisplay && venueDisplay !== '—') {
                     var mapQuery = encodeURIComponent(venueDisplay);
                     var navUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + mapQuery;
                     var venueEscaped = (venueDisplay || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                    html += '<div class="pt-3"><div class="text-white/70 text-sm mb-2">地点：' + venueEscaped + '</div><a href="' + navUrl + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 py-2 px-3 rounded-xl bg-white/10 border border-white/15 text-cyan-400/90 hover:bg-white/15 hover:text-cyan-400 text-sm font-medium transition">📍 定位 · 点击导航至此处</a></div>';
+                    var locationSvg = '<svg class="detail-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>';
+                    html += '<div class="pt-3"><div class="text-white/70 text-sm mb-2">地点：' + venueEscaped + '</div><a href="' + navUrl + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 py-2 px-3 rounded-xl bg-white/10 border border-white/15 text-cyan-400/90 hover:bg-white/15 hover:text-cyan-400 text-sm font-medium transition">' + locationSvg + ' 定位 · 点击导航至此处</a></div>';
                 }
                 if (activity.description && activity.description.trim()) {
                     html += '<div class="text-white/60 text-sm pt-2 border-t border-white/10">' + activity.description.trim() + '</div>';
@@ -415,22 +593,24 @@
                 if (myAtt) {
                     var myStatusText = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
                     html += '<div class="flex items-center justify-between gap-3 py-2"><span class="text-white/90 text-sm">' + myStatusText + '</span>' +
-                        '<button type="button" class="btn btn-ghost btn-sm" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消报名</button></div>';
+                        '<button type="button" class="btn btn-danger btn-sm text-xs py-1.5 px-2" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消报名</button></div>';
                 } else {
-                    html += '<div class="py-2"><button type="button" class="btn btn-primary w-full py-2" id="activityDetailRegisterBtn" data-activity-id="' + (activity.id || '') + '">报名</button></div>';
+                    html += '<div class="py-2"><button type="button" class="btn btn-primary btn-sm w-full py-1.5 text-sm" id="activityDetailRegisterBtn" data-activity-id="' + (activity.id || '') + '">报名</button></div>';
                 }
                 html += '</div>';
-                html += '<div class="pt-4 border-t border-white/10"><div class="text-white/80 text-sm font-medium mb-2">报名名单</div>';
+                var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
+                html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + (attendances.length) + '/' + totalSlots + '人</span></span><a href="/tactics.html?activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">战术板</a></div>';
                 if (attendances.length === 0) {
                     html += '<div class="text-white/50 text-sm">暂无报名</div>';
                 } else {
                     html += '<ul class="space-y-2">';
                     attendances.forEach(function(att) {
                         var statusText = att.status === 'registered' ? '已报名' : (att.status === 'present' ? '到场' : (att.status === 'absent' ? '缺席' : '迟到'));
-                        var pos = (att.position && att.position.trim()) ? att.position : '';
+                        var pos = (att.position != null && String(att.position).trim()) ? String(att.position).trim() : ((att.user && att.user.playingPosition && att.user.playingPosition.trim()) ? att.user.playingPosition.trim() : '未设置');
+                        var name = (att.user && att.user.username) ? att.user.username : '—';
                         html += '<li class="flex justify-between items-center text-sm py-2 px-3 rounded-lg bg-white/5">' +
-                            '<span class="text-white/90">' + (att.user && att.user.username ? att.user.username : '—') + '</span>' +
-                            '<span class="text-white/60">' + statusText + (pos ? ' · ' + pos : '') + '</span></li>';
+                            '<span class="text-white/90">' + name + '</span>' +
+                            '<span class="text-white/60">上场位置：' + pos + ' · ' + statusText + '</span></li>';
                     });
                     html += '</ul>';
                 }
@@ -450,7 +630,7 @@
                 if (regBtn) {
                     regBtn.addEventListener('click', function() {
                         var aid = regBtn.getAttribute('data-activity-id');
-                        if (aid) registerActivity(aid);
+                        if (aid) openRegisterModal(activity);
                     });
                 }
                 var unregBtn = document.getElementById('activityDetailUnregisterBtn');
@@ -507,6 +687,96 @@
                         cancelBtn.onclick = function() { openActivityDetail(aid); };
                     });
                 }
+                var editVenueBtn = document.getElementById('activityDetailEditVenueBtn');
+                if (editVenueBtn) {
+                    editVenueBtn.addEventListener('click', function() {
+                        var aid = editVenueBtn.getAttribute('data-activity-id');
+                        if (!aid) return;
+                        var venueEl = document.getElementById('activityDetailVenue');
+                        var wrap = venueEl && venueEl.parentElement;
+                        if (!wrap) return;
+                        var currentVenue = (getVenueDisplay(activity) || '').trim();
+                        var input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = currentVenue;
+                        input.className = 'flex-1 min-w-0 rounded-xl bg-black/30 border border-white/20 px-3 py-2 text-white text-sm';
+                        input.placeholder = '地点';
+                        var saveBtn = document.createElement('button');
+                        saveBtn.type = 'button';
+                        saveBtn.className = 'btn btn-primary btn-sm shrink-0';
+                        saveBtn.textContent = '保存';
+                        var cancelBtn = document.createElement('button');
+                        cancelBtn.type = 'button';
+                        cancelBtn.className = 'btn btn-ghost btn-sm shrink-0';
+                        cancelBtn.textContent = '取消';
+                        var editRow = document.createElement('div');
+                        editRow.className = 'flex items-center gap-2 flex-wrap';
+                        editRow.appendChild(input);
+                        editRow.appendChild(saveBtn);
+                        editRow.appendChild(cancelBtn);
+                        wrap.innerHTML = '';
+                        wrap.appendChild(editRow);
+                        input.focus();
+                        saveBtn.onclick = function() {
+                            var newLocation = (input.value || '').trim();
+                            saveBtn.disabled = true;
+                            fetch('/activities/' + aid, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                                body: JSON.stringify({ location: newLocation || undefined, venueId: null })
+                            }).then(function(r) {
+                                if (r.ok) openActivityDetail(aid);
+                                else r.json().then(function(err) { alert(err.message || '保存失败'); }).catch(function() { alert('保存失败'); });
+                            }).catch(function() { alert('网络错误'); }).finally(function() { saveBtn.disabled = false; });
+                        };
+                        cancelBtn.onclick = function() { openActivityDetail(aid); };
+                    });
+                }
+                var editDateBtn = document.getElementById('activityDetailEditDateBtn');
+                if (editDateBtn) {
+                    editDateBtn.addEventListener('click', function() {
+                        var aid = editDateBtn.getAttribute('data-activity-id');
+                        if (!aid) return;
+                        var dateEl = document.getElementById('activityDetailDate');
+                        var wrap = dateEl && dateEl.parentElement;
+                        if (!wrap) return;
+                        var input = document.createElement('input');
+                        input.type = 'datetime-local';
+                        input.value = formatDateTimeLocal(activity.date);
+                        input.className = 'flex-1 min-w-0 rounded-xl bg-black/30 border border-white/20 px-3 py-2 text-white text-sm';
+                        var saveBtn = document.createElement('button');
+                        saveBtn.type = 'button';
+                        saveBtn.className = 'btn btn-primary btn-sm shrink-0';
+                        saveBtn.textContent = '保存';
+                        var cancelBtn = document.createElement('button');
+                        cancelBtn.type = 'button';
+                        cancelBtn.className = 'btn btn-ghost btn-sm shrink-0';
+                        cancelBtn.textContent = '取消';
+                        var editRow = document.createElement('div');
+                        editRow.className = 'flex items-center gap-2 flex-wrap';
+                        editRow.appendChild(input);
+                        editRow.appendChild(saveBtn);
+                        editRow.appendChild(cancelBtn);
+                        wrap.innerHTML = '';
+                        wrap.appendChild(editRow);
+                        input.focus();
+                        saveBtn.onclick = function() {
+                            var dateVal = (input.value || '').trim();
+                            if (!dateVal) { alert('请选择时间'); return; }
+                            saveBtn.disabled = true;
+                            var isoDate = new Date(dateVal).toISOString();
+                            fetch('/activities/' + aid, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                                body: JSON.stringify({ date: isoDate })
+                            }).then(function(r) {
+                                if (r.ok) openActivityDetail(aid);
+                                else r.json().then(function(err) { alert(err.message || '保存失败'); }).catch(function() { alert('保存失败'); });
+                            }).catch(function() { alert('网络错误'); }).finally(function() { saveBtn.disabled = false; });
+                        };
+                        cancelBtn.onclick = function() { openActivityDetail(aid); };
+                    });
+                }
             } catch (err) {
                 content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">网络错误</div>';
             }
@@ -516,7 +786,7 @@
             var params = new URLSearchParams(window.location.search);
             var id = params.get('id');
             if (id && id.trim()) {
-                openActivityDetail(id.trim());
+                window.location.replace('/activity-detail.html?activityId=' + encodeURIComponent(id.trim()));
             }
         }
 
@@ -527,7 +797,7 @@
 
         (function setBottomNavActive(){
             var path = window.location.pathname;
-            var map = { '/dashboard.html': 'dashboard', '/tactics.html': 'tactics', '/profile.html': 'me' };
+            var map = { '/dashboard.html': 'dashboard', '/activities.html': 'activities', '/profile.html': 'me' };
             var key = map[path];
             if (key) document.querySelectorAll('.bottom-nav-item').forEach(function(a) { a.classList.toggle('active', a.dataset.nav === key); });
         })();

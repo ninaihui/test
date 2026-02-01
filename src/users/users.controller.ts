@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Controller,
+  Get,
   Patch,
   Post,
   Body,
@@ -34,6 +35,11 @@ const ALLOWED_AVATAR_MIME: Record<string, string> = {
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private usersService: UsersService) {}
+
+  @Get('me')
+  async getMe(@Request() req) {
+    return this.usersService.getMe(req.user.sub);
+  }
 
   @Post('me/avatar')
   @UseInterceptors(

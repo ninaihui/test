@@ -42,15 +42,16 @@ model Venue {
 }
 
 model Activity {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  date        DateTime
-  location    String?  // 兼容旧数据或手填地点
-  venueId     String?  // 关联场地（优先展示场地名）
-  createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(uuid())
+  name             String
+  description      String?
+  date             DateTime
+  location         String?  // 兼容旧数据或手填地点
+  venueId          String?  // 关联场地（优先展示场地名）
+  maxParticipants  Int     @default(11) // 活动人数，默认 11 人
+  createdById      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
   venue       Venue?       @relation(fields: [venueId], references: [id], onDelete: SetNull)

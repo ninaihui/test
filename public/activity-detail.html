@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动详情 - 业余球队管理系统</title>
+    <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
+    <style>
+        body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
+            background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+                url('/assets/login-bg.png') no-repeat center center fixed;
+            background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+        .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+        .glass input, .glass select, .glass textarea { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
+        .detail-nav-icon { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+        .register-modal-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 1rem; }
+        .register-modal-overlay.show { display: flex; }
+        .register-modal { width: 100%; max-width: 22rem; background: rgba(15,23,42,.95); border: 1px solid rgba(255,255,255,.15); border-radius: 1rem; padding: 1.25rem; box-shadow: 0 20px 40px rgba(0,0,0,.4); }
+        .register-modal h3 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: #fff; }
+        .register-modal .modal-select { width: 100%; padding: 0.625rem 0.75rem; border-radius: 0.5rem; font-size: 0.9375rem; color: #fff; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.2); margin-bottom: 1rem; }
+        .register-modal .modal-select:focus { outline: none; border-color: rgba(34,197,94,.6); }
+        .register-modal .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .register-modal .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer; border: none; }
+        .register-modal .btn-ghost { background: rgba(255,255,255,.1); color: #e2e8f0; }
+        .register-modal .btn-ghost:hover { background: rgba(255,255,255,.15); }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 safe-bottom-nav-lg">
+    <a href="/login.html" class="top-nav-login" aria-label="登出" onclick="event.preventDefault(); localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken'); window.location.href='/login.html';">登出</a>
+    <div class="max-w-2xl mx-auto px-4 py-6">
+        <header class="flex items-center gap-3 mb-6">
+            <a href="/activities.html" class="flex items-center justify-center w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition shrink-0" aria-label="返回活动列表">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </a>
+            <h1 class="text-xl font-bold text-white">活动详情</h1>
+        </header>
+
+        <div id="activityDetailContent" class="glass rounded-2xl p-4 sm:p-6 space-y-4">
+            <div class="text-center py-8 text-white/50 text-sm">加载中…</div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="底部导航">
+        <div class="bottom-nav-inner">
+            <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
+            <a class="bottom-nav-item" data-nav="activities" href="/activities.html">活动</a>
+            <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
+        </div>
+    </nav>
+
+    <div id="registerModalOverlay" class="register-modal-overlay" aria-hidden="true">
+        <div class="register-modal" role="dialog" aria-labelledby="registerModalTitle" aria-modal="true">
+            <h3 id="registerModalTitle">选择出场位置</h3>
+            <select id="registerPositionSelect" class="modal-select" aria-label="出场位置">
+                <option value="">未选择</option>
+                <optgroup label="守门员"><option value="守门员">守门员 (GK)</option></optgroup>
+                <optgroup label="后卫"><option value="中后卫">中后卫 (CB)</option><option value="右后卫">右后卫 (RB)</option><option value="左后卫">左后卫 (LB)</option></optgroup>
+                <optgroup label="中场"><option value="后腰">后腰 (DM)</option><option value="中前卫">中前卫 (CM)</option><option value="前腰">前腰 (AM)</option><option value="右前卫">右前卫 (RM)</option><option value="左前卫">左前卫 (LM)</option><option value="右边锋">右边锋 (RW)</option><option value="左边锋">左边锋 (LW)</option></optgroup>
+                <optgroup label="前锋"><option value="影锋">影锋 (SS)</option><option value="中锋">中锋 (CF)</option><option value="前锋">前锋 (ST)</option></optgroup>
+            </select>
+            <div class="modal-actions">
+                <button type="button" id="registerModalCancel" class="btn btn-ghost">取消</button>
+                <button type="button" id="registerModalConfirm" class="btn btn-primary">确定报名</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/fancy-background.js"></script>
+    <script src="/js/position-options.js"></script>
+    <script>
+        var authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        var currentUser = null;
+        try { var u = localStorage.getItem('user'); if (u) currentUser = JSON.parse(u); } catch (e) {}
+        if (!authToken) { window.location.href = '/login.html'; }
+
+        function canDeleteActivity(activity) { return currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin'); }
+        function getVenueDisplay(activity) { return (activity.venue && activity.venue.name) ? activity.venue.name : (activity.location || '—'); }
+        function formatActivityDate(iso) {
+            if (!iso) return '—';
+            var d = new Date(iso);
+            return (d.getMonth() + 1) + '月' + d.getDate() + '号 ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+        function formatDateTimeLocal(iso) {
+            if (!iso) return '';
+            var d = new Date(iso);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        }
+
+        var activityIdFromUrl = (function() {
+            var p = new URLSearchParams(window.location.search);
+            return p.get('activityId') || p.get('id') || '';
+        })();
+        if (!activityIdFromUrl.trim()) { window.location.href = '/activities.html'; }
+
+        var registerModalActivityId = null;
+        document.getElementById('registerModalCancel').addEventListener('click', function() {
+            document.getElementById('registerModalOverlay').classList.remove('show');
+        });
+        document.getElementById('registerModalConfirm').addEventListener('click', function() {
+            var activityId = registerModalActivityId;
+            var selectEl = document.getElementById('registerPositionSelect');
+            var position = (selectEl.value || '').trim();
+            if (!activityId) return;
+            document.getElementById('registerModalOverlay').classList.remove('show');
+            var body = (position && position.trim()) ? { position: position.trim() } : {};
+            fetch('/activities/' + activityId + '/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                body: JSON.stringify(body)
+            }).then(function(r) {
+                if (r.ok) loadActivity();
+                else r.json().then(function(err) { alert(err.message || '报名失败'); }).catch(function() { alert('报名失败'); });
+            }).catch(function() { alert('网络错误'); });
+        });
+
+        function openRegisterModal(activity) {
+            var activityId = activity && activity.id;
+            var attendances = (activity && activity.attendances) || [];
+            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 11;
+            registerModalActivityId = activityId;
+            var selectEl = document.getElementById('registerPositionSelect');
+            if (selectEl && typeof window.fillPositionSelect === 'function') {
+                window.fillPositionSelect(selectEl, maxParticipants);
+            }
+            var me = currentUser;
+            var defaultPos = (me && me.playingPosition && String(me.playingPosition).trim()) ? String(me.playingPosition).trim() : '';
+            selectEl.value = defaultPos || '';
+            var hasOption = false;
+            for (var i = 0; i < selectEl.options.length; i++) {
+                if (selectEl.options[i].value === defaultPos) { hasOption = true; break; }
+            }
+            if (!hasOption && defaultPos) selectEl.value = '';
+            document.getElementById('registerModalOverlay').classList.add('show');
+        }
+
+        function loadActivity() {
+            var content = document.getElementById('activityDetailContent');
+            var id = activityIdFromUrl.trim();
+            if (!id) return;
+            content.innerHTML = '<div class="text-center py-8 text-white/50 text-sm">加载中…</div>';
+            fetch('/activities/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } })
+                .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('加载失败')); })
+                .then(function(activity) { renderActivity(activity); })
+                .catch(function() { content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">加载失败，<a href="/activities.html" class="text-cyan-400 underline">返回活动列表</a></div>'; });
+        }
+
+        function renderActivity(activity) {
+            var content = document.getElementById('activityDetailContent');
+            var canEdit = canDeleteActivity(activity);
+            var displayName = (activity.name || '未命名').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            var venueDisplay = getVenueDisplay(activity);
+            var venueEscapedForRow = (venueDisplay || '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            var dateDisplay = formatActivityDate(activity.date);
+            var attendances = activity.attendances || [];
+            var myAtt = currentUser ? (attendances.find(function(a) { return a.user && a.user.id === currentUser.id; }) || null) : null;
+            var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
+
+            var titleHtml = canEdit
+                ? '<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-white font-semibold text-lg" id="activityDetailName">' + displayName + '</span><button type="button" class="btn btn-ghost btn-sm shrink-0" id="activityDetailEditNameBtn" data-activity-id="' + (activity.id || '') + '">编辑名称</button></div>'
+                : '<div class="text-white font-semibold text-lg" id="activityDetailName">' + displayName + '</div>';
+            var venueRowHtml = canEdit
+                ? '<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-white/70 text-sm" id="activityDetailVenue">' + venueEscapedForRow + '</span><button type="button" class="btn btn-ghost btn-sm shrink-0" id="activityDetailEditVenueBtn" data-activity-id="' + (activity.id || '') + '">编辑地点</button></div>'
+                : '<div class="text-white/70 text-sm" id="activityDetailVenue">' + venueEscapedForRow + '</div>';
+            var dateRowHtml = canEdit
+                ? '<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-white/60 text-sm" id="activityDetailDate">' + dateDisplay + '</span><button type="button" class="btn btn-ghost btn-sm shrink-0" id="activityDetailEditDateBtn" data-activity-id="' + (activity.id || '') + '">编辑时间</button></div>'
+                : '<div class="text-white/60 text-sm" id="activityDetailDate">' + dateDisplay + '</div>';
+            var html = titleHtml + venueRowHtml + dateRowHtml;
+
+            if (venueDisplay && venueDisplay !== '—') {
+                var navUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(venueDisplay);
+                var venueEscaped = (venueDisplay || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                var locationSvg = '<svg class="detail-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>';
+                html += '<div class="pt-3"><div class="text-white/70 text-sm mb-2">地点：' + venueEscaped + '</div><a href="' + navUrl + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 py-2 px-3 rounded-xl bg-white/10 border border-white/15 text-cyan-400/90 hover:bg-white/15 hover:text-cyan-400 text-sm font-medium transition">' + locationSvg + ' 定位 · 点击导航至此处</a></div>';
+            }
+            if (activity.description && activity.description.trim()) {
+                html += '<div class="text-white/60 text-sm pt-2 border-t border-white/10">' + activity.description.trim() + '</div>';
+            }
+
+            html += '<div class="pt-4 border-t border-white/10"><div class="text-white/80 text-sm font-medium mb-2">我的报名</div>';
+            if (myAtt) {
+                var myStatusText = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
+                html += '<div class="flex justify-between gap-3 py-2 items-center"><span class="text-white/90 text-sm">' + myStatusText + '</span><button type="button" class="btn btn-danger btn-sm text-xs py-1.5 px-2" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消报名</button></div>';
+            } else {
+                html += '<div class="py-2"><button type="button" class="btn btn-primary btn-sm w-full py-1.5 text-sm" id="activityDetailRegisterBtn" data-activity-id="' + (activity.id || '') + '">报名</button></div>';
+            }
+            html += '</div>';
+
+            html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + attendances.length + '/' + totalSlots + '人</span></span><a href="/tactics.html?activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">战术板</a></div>';
+            if (attendances.length === 0) {
+                html += '<div class="text-white/50 text-sm">暂无报名</div>';
+            } else {
+                html += '<ul class="space-y-2">';
+                attendances.forEach(function(att) {
+                    var statusText = att.status === 'registered' ? '已报名' : (att.status === 'present' ? '到场' : (att.status === 'absent' ? '缺席' : '迟到'));
+                    var pos = (att.position != null && String(att.position).trim()) ? String(att.position).trim() : ((att.user && att.user.playingPosition && att.user.playingPosition.trim()) ? att.user.playingPosition.trim() : '未设置');
+                    var name = (att.user && att.user.username) ? att.user.username : '—';
+                    html += '<li class="flex justify-between items-center text-sm py-2 px-3 rounded-lg bg-white/5"><span class="text-white/90">' + name + '</span><span class="text-white/60">上场位置：' + pos + ' · ' + statusText + '</span></li>';
+                });
+                html += '</ul>';
+            }
+            html += '</div>';
+
+            if (canEdit) {
+                html += '<div class="pt-4 border-t border-white/10"><button type="button" class="btn btn-danger w-full" id="activityDetailDeleteBtn" data-activity-id="' + (activity.id || '') + '">删除活动</button></div>';
+            }
+            content.innerHTML = html;
+
+            var delBtn = document.getElementById('activityDetailDeleteBtn');
+            if (delBtn) delBtn.addEventListener('click', function() {
+                var aid = delBtn.getAttribute('data-activity-id');
+                if (!aid || !confirm('确定删除该活动？删除后报名记录也会被清除。')) return;
+                fetch('/activities/' + aid, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken } })
+                    .then(function(r) { if (r.ok) window.location.href = '/activities.html'; else return r.json(); })
+                    .then(function(err) { if (err) alert(err.message || '删除失败'); });
+            });
+
+            var regBtn = document.getElementById('activityDetailRegisterBtn');
+            if (regBtn) regBtn.addEventListener('click', function() {
+                var aid = regBtn.getAttribute('data-activity-id');
+                if (aid) openRegisterModal(activity);
+            });
+            var unregBtn = document.getElementById('activityDetailUnregisterBtn');
+            if (unregBtn) unregBtn.addEventListener('click', function() {
+                var aid = unregBtn.getAttribute('data-activity-id');
+                if (!aid || !confirm('确定取消报名？')) return;
+                fetch('/activities/' + aid + '/register', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken } })
+                    .then(function(r) { if (r.ok) loadActivity(); else return r.json().then(function(e) { alert(e.message || '取消失败'); }); });
+            });
+
+            function bindEditName() {
+                var editNameBtn = document.getElementById('activityDetailEditNameBtn');
+                if (!editNameBtn) return;
+                editNameBtn.addEventListener('click', function() {
+                    var aid = editNameBtn.getAttribute('data-activity-id');
+                    var nameEl = document.getElementById('activityDetailName');
+                    var wrap = nameEl && nameEl.parentElement;
+                    if (!aid || !wrap) return;
+                    var input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = (activity.name || '未命名').trim();
+                    input.className = 'flex-1 min-w-0 rounded-xl bg-black/30 border border-white/20 px-3 py-2 text-white text-base';
+                    var saveBtn = document.createElement('button');
+                    saveBtn.type = 'button';
+                    saveBtn.className = 'btn btn-primary btn-sm shrink-0';
+                    saveBtn.textContent = '保存';
+                    var cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.className = 'btn btn-ghost btn-sm shrink-0';
+                    cancelBtn.textContent = '取消';
+                    var editRow = document.createElement('div');
+                    editRow.className = 'flex items-center gap-2 flex-wrap';
+                    editRow.appendChild(input);
+                    editRow.appendChild(saveBtn);
+                    editRow.appendChild(cancelBtn);
+                    wrap.innerHTML = '';
+                    wrap.appendChild(editRow);
+                    input.focus();
+                    saveBtn.onclick = function() {
+                        var newName = (input.value || '').trim();
+                        if (newName.length < 2) { alert('活动名称至少 2 个字符'); return; }
+                        saveBtn.disabled = true;
+                        fetch('/activities/' + aid, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }, body: JSON.stringify({ name: newName }) })
+                            .then(function(r) { if (r.ok) loadActivity(); else return r.json().then(function(e) { alert(e.message || '保存失败'); }); })
+                            .finally(function() { saveBtn.disabled = false; });
+                    };
+                    cancelBtn.onclick = function() { loadActivity(); };
+                });
+            }
+            function bindEditVenue() {
+                var editVenueBtn = document.getElementById('activityDetailEditVenueBtn');
+                if (!editVenueBtn) return;
+                editVenueBtn.addEventListener('click', function() {
+                    var aid = editVenueBtn.getAttribute('data-activity-id');
+                    var venueEl = document.getElementById('activityDetailVenue');
+                    var wrap = venueEl && venueEl.parentElement;
+                    if (!aid || !wrap) return;
+                    var input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = (venueDisplay || '').trim();
+                    input.className = 'flex-1 min-w-0 rounded-xl bg-black/30 border border-white/20 px-3 py-2 text-white text-sm';
+                    var saveBtn = document.createElement('button');
+                    saveBtn.type = 'button';
+                    saveBtn.className = 'btn btn-primary btn-sm shrink-0';
+                    saveBtn.textContent = '保存';
+                    var cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.className = 'btn btn-ghost btn-sm shrink-0';
+                    cancelBtn.textContent = '取消';
+                    var editRow = document.createElement('div');
+                    editRow.className = 'flex items-center gap-2 flex-wrap';
+                    editRow.appendChild(input);
+                    editRow.appendChild(saveBtn);
+                    editRow.appendChild(cancelBtn);
+                    wrap.innerHTML = '';
+                    wrap.appendChild(editRow);
+                    input.focus();
+                    saveBtn.onclick = function() {
+                        var newLocation = (input.value || '').trim();
+                        saveBtn.disabled = true;
+                        fetch('/activities/' + aid, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }, body: JSON.stringify({ location: newLocation || undefined, venueId: null }) })
+                            .then(function(r) { if (r.ok) loadActivity(); else return r.json().then(function(e) { alert(e.message || '保存失败'); }); })
+                            .finally(function() { saveBtn.disabled = false; });
+                    };
+                    cancelBtn.onclick = function() { loadActivity(); };
+                });
+            }
+            function bindEditDate() {
+                var editDateBtn = document.getElementById('activityDetailEditDateBtn');
+                if (!editDateBtn) return;
+                editDateBtn.addEventListener('click', function() {
+                    var aid = editDateBtn.getAttribute('data-activity-id');
+                    var dateEl = document.getElementById('activityDetailDate');
+                    var wrap = dateEl && dateEl.parentElement;
+                    if (!aid || !wrap) return;
+                    var input = document.createElement('input');
+                    input.type = 'datetime-local';
+                    input.value = formatDateTimeLocal(activity.date);
+                    input.className = 'flex-1 min-w-0 rounded-xl bg-black/30 border border-white/20 px-3 py-2 text-white text-sm';
+                    var saveBtn = document.createElement('button');
+                    saveBtn.type = 'button';
+                    saveBtn.className = 'btn btn-primary btn-sm shrink-0';
+                    saveBtn.textContent = '保存';
+                    var cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.className = 'btn btn-ghost btn-sm shrink-0';
+                    cancelBtn.textContent = '取消';
+                    var editRow = document.createElement('div');
+                    editRow.className = 'flex items-center gap-2 flex-wrap';
+                    editRow.appendChild(input);
+                    editRow.appendChild(saveBtn);
+                    editRow.appendChild(cancelBtn);
+                    wrap.innerHTML = '';
+                    wrap.appendChild(editRow);
+                    input.focus();
+                    saveBtn.onclick = function() {
+                        var dateVal = (input.value || '').trim();
+                        if (!dateVal) { alert('请选择时间'); return; }
+                        saveBtn.disabled = true;
+                        var isoDate = new Date(dateVal).toISOString();
+                        fetch('/activities/' + aid, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }, body: JSON.stringify({ date: isoDate }) })
+                            .then(function(r) { if (r.ok) loadActivity(); else return r.json().then(function(e) { alert(e.message || '保存失败'); }); })
+                            .finally(function() { saveBtn.disabled = false; });
+                    };
+                    cancelBtn.onclick = function() { loadActivity(); };
+                });
+            }
+            bindEditName();
+            bindEditVenue();
+            bindEditDate();
+        }
+
+        (function setBottomNavActive() {
+            var path = window.location.pathname;
+            document.querySelectorAll('.bottom-nav-item').forEach(function(a) {
+                var isActivities = (path === '/activities.html' || path === '/activity-detail.html') && a.dataset.nav === 'activities';
+                a.classList.toggle('active', isActivities || (path === '/profile.html' && a.dataset.nav === 'me') || (path === '/dashboard.html' && a.dataset.nav === 'dashboard'));
+            });
+        })();
+        loadActivity();
+    </script>
+</body>
+</html>

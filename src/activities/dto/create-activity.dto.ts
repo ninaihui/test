@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, IsDateString, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsDateString, MinLength, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateActivityDto {
   @IsString({ message: '活动名称必须是字符串' })
@@ -21,4 +22,11 @@ export class CreateActivityDto {
   @IsString({ message: '场地ID必须是字符串' })
   @IsOptional()
   venueId?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(6, { message: '活动人数至少 6 人' })
+  @Max(99, { message: '活动人数最多 99 人' })
+  maxParticipants?: number;
 }

@@ -36,5 +36,5 @@ ssh $SSH_OPTS "${ECS_USER}@${ECS_HOST}" "cd ${ECS_APP_PATH} && npm install && np
 
 echo -e "${GREEN}✅ 代码已推送并构建完成${NC}"
 echo -e "${YELLOW}请在 ECS 上手动重启应用，例如：${NC}"
-echo -e "  ssh ${SSH_OPTS} ${ECS_USER}@${ECS_HOST} 'cd ${ECS_APP_PATH} && ./stop.sh; ./start-prod.sh'"
+echo -e "  ssh ${SSH_OPTS} ${ECS_USER}@${ECS_HOST} 'cd ${ECS_APP_PATH} && npm run start:production &'"
 echo -e "${YELLOW}或若使用 pm2： pm2 restart team-app${NC}"

@@ -140,6 +140,7 @@ export class AuthService {
     };
   }
 
+  /** 返回当前用户信息，含 playingPosition 供报名弹窗等默认选中出场位置 */
   async validateUser(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -149,6 +150,7 @@ export class AuthService {
         username: true,
         role: true,
         avatarUrl: true,
+        playingPosition: true,
         createdAt: true,
         updatedAt: true,
       },
