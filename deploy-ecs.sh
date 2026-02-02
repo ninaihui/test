@@ -32,9 +32,10 @@ rsync -avz --delete $RSYNC_EXCLUDE \
   ./ "${ECS_USER}@${ECS_HOST}:${ECS_APP_PATH}/"
 
 echo -e "${BLUE}🔨 在 ECS 上安装依赖并构建...${NC}"
-ssh $SSH_OPTS "${ECS_USER}@${ECS_HOST}" "cd ${ECS_APP_PATH} && npm install && npm run build"
+# 注意：生产环境常用 NODE_ENV=production，会导致 devDependencies（含 prisma CLI）不安装，从而无法生成 Prisma Client。
+# 这里强制安装 devDependencies，并显式执行 prisma generate。
+ssh $SSH_OPTS "${ECS_USER}@${ECS_HOST}" "cd ${ECS_APP_PATH} && npm install --include=dev && npx prisma generate && npm run build"
 
 echo -e "${GREEN}✅ 代码已推送并构建完成${NC}"
-echo -e "${YELLOW}请在 ECS 上手动重启应用，例如：${NC}"
-echo -e "  ssh ${SSH_OPTS} ${ECS_USER}@${ECS_HOST} 'cd ${ECS_APP_PATH} && ./stop.sh; ./start-prod.sh'"
-echo -e "${YELLOW}或若使用 pm2： pm2 restart team-app${NC}"
+echo -e "${YELLOW}建议在 ECS 上用 ecs-fix-and-start.sh 方式重启（nohup 后台运行）：${NC}"
+echo -e "  ssh ${SSH_OPTS} ${ECS_USER}@${ECS_HOST} 'cd ${ECS_APP_PATH} && bash ecs-fix-and-start.sh'"
