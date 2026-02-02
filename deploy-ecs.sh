@@ -32,7 +32,7 @@ rsync -avz --delete $RSYNC_EXCLUDE \
   ./ "${ECS_USER}@${ECS_HOST}:${ECS_APP_PATH}/"
 
 echo -e "${BLUE}🔨 在 ECS 上安装依赖并构建...${NC}"
-ssh $SSH_OPTS "${ECS_USER}@${ECS_HOST}" "cd ${ECS_APP_PATH} && npm install && npm run build"
+ssh $SSH_OPTS "${ECS_USER}@${ECS_HOST}" "cd ${ECS_APP_PATH} && rm -rf node_modules && npm install && npm run build"
 
 echo -e "${GREEN}✅ 代码已推送并构建完成${NC}"
 echo -e "${YELLOW}请在 ECS 上手动重启应用，例如：${NC}"
