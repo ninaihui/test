@@ -16,8 +16,8 @@ echo -e "${BLUE}🛑 停止业余球队管理系统...${NC}"
 # 切换到项目目录
 cd "$(dirname "$0")"
 
-# 停止数据库
-echo -e "${BLUE}📦 停止 PostgreSQL 数据库...${NC}"
-docker-compose down
+# 停止所有服务（生产 compose）
+echo -e "${BLUE}📦 停止 Docker Compose 服务...${NC}"
+docker compose -f docker-compose.prod.yml down
 
 echo -e "${GREEN}✅ 已停止所有服务${NC}"

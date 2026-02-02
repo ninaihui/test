@@ -35,7 +35,9 @@ RUN apt-get update \
 
 # Only production deps
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev \
+  # prisma CLI is required for migrate deploy / generate; install it without touching package-lock
+  && npm install prisma --no-save
 
 # App artifacts
 COPY --from=build /app/dist ./dist

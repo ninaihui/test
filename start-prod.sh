@@ -30,7 +30,7 @@ fi
 
 # 启动 PostgreSQL 数据库
 echo -e "${BLUE}📦 启动 PostgreSQL 数据库...${NC}"
-docker-compose up -d postgres
+docker compose -f docker-compose.prod.yml up -d postgres
 
 # 等待数据库就绪
 echo -e "${BLUE}⏳ 等待数据库就绪...${NC}"
@@ -46,10 +46,9 @@ for i in {1..30}; do
     sleep 1
 done
 
-# 构建项目
-echo -e "${BLUE}🔨 构建项目...${NC}"
-npm run build
+# 启动 API（docker compose 会自动 build 镜像并以 unless-stopped 常驻）
+echo -e "${BLUE}🐳 启动 API（Docker Compose 生产模式）...${NC}"
+docker compose -f docker-compose.prod.yml up -d --build api
 
-# 启动应用
-echo -e "${BLUE}🎯 启动 NestJS 应用（生产模式）...${NC}"
-npm run start:prod
+echo -e "${GREEN}✅ 已启动（Docker Compose）${NC}"
+echo -e "${YELLOW}查看日志：docker compose -f docker-compose.prod.yml logs -f api${NC}"
