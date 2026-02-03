@@ -387,8 +387,22 @@
                     var registeredCount = (a.registeredCount != null) ? a.registeredCount : ((a._count && a._count.attendances != null) ? a._count.attendances : (a.attendances ? a.attendances.length : 0));
                     var waitlistCount = (a.waitlistCount != null) ? a.waitlistCount : 0;
                     var countText = registeredCount + '/' + total + '人' + (waitlistCount > 0 ? (' · 候补' + waitlistCount) : '');
-                    var isRegistered = !!(a.isRegisteredByCurrentUser);
-                    var registeredBadge = isRegistered ? '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" aria-label="已报名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已报名</span>' : '';
+                    var myAttLite = null;
+                    try {
+                        var me2 = currentUser || null;
+                        if (!me2) { var u2 = localStorage.getItem('user'); if (u2) me2 = JSON.parse(u2); }
+                        if (me2 && a.attendances && a.attendances.length) {
+                            myAttLite = a.attendances.find(function(t){ return t && t.userId === me2.id; }) || null;
+                        }
+                    } catch (e) {}
+                    var registeredBadge = '';
+                    if (myAttLite) {
+                        if (myAttLite.status === 'waitlist') {
+                            registeredBadge = '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style="background: rgba(251,191,36,0.18); border-color: rgba(251,191,36,0.5); color: #fde68a;" aria-label="候补"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/></svg>候补</span>';
+                        } else {
+                            registeredBadge = '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" aria-label="已报名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已报名</span>';
+                        }
+                    }
                     var isFull = (registeredCount >= total);
                     var fullBadge = isFull ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-white/70">已满</span>' : '';
                     var row = '<div class="activity-list-item flex justify-between items-center gap-2 py-4 px-4 hover:bg-white/5 transition">' +
@@ -592,30 +606,56 @@
                 }
                 var attendances = activity.attendances || [];
                 var myAtt = currentUser ? (attendances.find(function(a) { return a.user && a.user.id === currentUser.id; }) || null) : null;
+                var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
+                var regAttendances = attendances.filter(function(a){ return a && (a.status === 'registered' || a.status === 'present' || a.status === 'late'); });
+                var waitAttendances = attendances.filter(function(a){ return a && a.status === 'waitlist'; }).sort(function(a,b){ return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(); });
+                var waitIndex = (myAtt && myAtt.status === 'waitlist') ? (waitAttendances.findIndex(function(a){ return a.id === myAtt.id; }) + 1) : 0;
+
                 html += '<div class="pt-4 border-t border-white/10"><div class="text-white/80 text-sm font-medium mb-2">我的报名</div>';
                 if (myAtt) {
-                    var myStatusText = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
-                    html += '<div class="flex items-center justify-between gap-3 py-2"><span class="text-white/90 text-sm">' + myStatusText + '</span>' +
-                        '<button type="button" class="btn btn-danger btn-sm text-xs py-1.5 px-2" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消报名</button></div>';
+                    if (myAtt.status === 'waitlist') {
+                        var myWaitText = '候补中' + (waitIndex ? (' · 第' + waitIndex + '位') : '');
+                        html += '<div class="flex items-center justify-between gap-3 py-2"><span class="text-amber-200 text-sm">' + myWaitText + '</span>' +
+                            '<button type="button" class="btn btn-danger btn-sm text-xs py-1.5 px-2" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消候补</button></div>';
+                    } else {
+                        var myStatusText = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
+                        html += '<div class="flex items-center justify-between gap-3 py-2"><span class="text-white/90 text-sm">' + myStatusText + '</span>' +
+                            '<button type="button" class="btn btn-danger btn-sm text-xs py-1.5 px-2" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消报名</button></div>';
+                    }
                 } else {
-                    html += '<div class="py-2"><button type="button" class="btn btn-primary btn-sm w-full py-1.5 text-sm" id="activityDetailRegisterBtn" data-activity-id="' + (activity.id || '') + '">报名</button></div>';
+                    var isFullNow = regAttendances.length >= totalSlots;
+                    html += '<div class="py-2"><button type="button" class="btn btn-primary btn-sm w-full py-1.5 text-sm" id="activityDetailRegisterBtn" data-activity-id="' + (activity.id || '') + '">' + (isFullNow ? '加入候补' : '报名') + '</button></div>';
                 }
                 html += '</div>';
-                var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
-                html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + (attendances.length) + '/' + totalSlots + '人</span></span><a href="/tactics.html?activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">战术板</a></div>';
-                if (attendances.length === 0) {
+
+                var countText = regAttendances.length + '/' + totalSlots + '人' + (waitAttendances.length > 0 ? (' · 候补' + waitAttendances.length) : '');
+                html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + countText + '</span></span><a href="/tactics.html?activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">战术板</a></div>';
+                if (regAttendances.length === 0 && waitAttendances.length === 0) {
                     html += '<div class="text-white/50 text-sm">暂无报名</div>';
                 } else {
-                    html += '<ul class="space-y-2">';
-                    attendances.forEach(function(att) {
-                        var statusText = att.status === 'registered' ? '已报名' : (att.status === 'present' ? '到场' : (att.status === 'absent' ? '缺席' : '迟到'));
-                        var pos = (att.position != null && String(att.position).trim()) ? String(att.position).trim() : ((att.user && att.user.playingPosition && att.user.playingPosition.trim()) ? att.user.playingPosition.trim() : '未设置');
-                        var name = (att.user && att.user.username) ? att.user.username : '—';
-                        html += '<li class="flex justify-between items-center text-sm py-2 px-3 rounded-lg bg-white/5">' +
-                            '<span class="text-white/90">' + name + '</span>' +
-                            '<span class="text-white/60">上场位置：' + pos + ' · ' + statusText + '</span></li>';
-                    });
-                    html += '</ul>';
+                    if (regAttendances.length > 0) {
+                        html += '<div class="text-white/60 text-xs mb-2">已报名</div><ul class="space-y-2">';
+                        regAttendances.forEach(function(att) {
+                            var statusText = att.status === 'registered' ? '已报名' : (att.status === 'present' ? '到场' : (att.status === 'absent' ? '缺席' : '迟到'));
+                            var pos = (att.position != null && String(att.position).trim()) ? String(att.position).trim() : ((att.user && att.user.playingPosition && att.user.playingPosition.trim()) ? att.user.playingPosition.trim() : '未设置');
+                            var name = (att.user && att.user.username) ? att.user.username : '—';
+                            html += '<li class="flex justify-between items-center text-sm py-2 px-3 rounded-lg bg-white/5">' +
+                                '<span class="text-white/90">' + name + '</span>' +
+                                '<span class="text-white/60">上场位置：' + pos + ' · ' + statusText + '</span></li>';
+                        });
+                        html += '</ul>';
+                    }
+                    if (waitAttendances.length > 0) {
+                        html += '<div class="text-white/60 text-xs mt-4 mb-2">候补队列</div><ul class="space-y-2">';
+                        waitAttendances.forEach(function(att, idx) {
+                            var name = (att.user && att.user.username) ? att.user.username : '—';
+                            var pos = (att.user && att.user.playingPosition && att.user.playingPosition.trim()) ? att.user.playingPosition.trim() : '未设置';
+                            html += '<li class="flex justify-between items-center text-sm py-2 px-3 rounded-lg bg-white/5">' +
+                                '<span class="text-white/90">' + name + '</span>' +
+                                '<span class="text-amber-200">候补#' + (idx + 1) + ' · ' + pos + '</span></li>';
+                        });
+                        html += '</ul>';
+                    }
                 }
                 html += '</div>';
                 if (canDeleteActivity(activity)) {

@@ -238,10 +238,7 @@ export class ActivitiesService {
       }
     }
 
-    const now = new Date();
-    if (activity.deadlineAt && now.getTime() > activity.deadlineAt.getTime()) {
-      throw new BadRequestException('已过报名截止时间');
-    }
+    // NOTE: per product decision (2026-02-03): even if deadlineAt is reached, still allow new registrations.
 
     const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
     const registeredCount = await this.prisma.attendance.count({

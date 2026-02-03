@@ -467,15 +467,21 @@
       }
 
       if (myAtt) {
-        statusEl.textContent = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
+        var waitAttendances2 = (activity.attendances || []).filter(function(a){ return a && a.status === 'waitlist'; }).sort(function(a,b){ return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(); });
+        var waitIndex2 = (myAtt.status === 'waitlist') ? (waitAttendances2.findIndex(function(a){ return a.id === myAtt.id; }) + 1) : 0;
+        if (myAtt.status === 'waitlist') {
+          statusEl.textContent = '候补中' + (waitIndex2 ? (' · 第' + waitIndex2 + '位') : '');
+        } else {
+          statusEl.textContent = (myAtt.position && myAtt.position.trim()) ? '已报名 · ' + myAtt.position : '已报名';
+        }
         statusEl.classList.remove('hidden');
         btnEl.classList.remove('hidden');
         btnEl.classList.remove('btn-primary');
         btnEl.classList.add('btn-danger');
-        btnEl.textContent = '取消报名';
+        btnEl.textContent = (myAtt.status === 'waitlist') ? '取消候补' : '取消报名';
         btnEl.onclick = async (e) => {
           e.preventDefault();
-          if (!confirm('确定取消报名？')) return;
+          if (!confirm('确定取消？')) return;
           btnEl.disabled = true;
           try {
             const r = await fetch('/activities/' + activity.id + '/register', {
@@ -533,11 +539,26 @@
         nameText = nameText.length > 17 ? nameText.slice(0, 17) + '…' : nameText;
         var venueDisplay = getVenueDisplay(a);
         var venueText = (venueDisplay && venueDisplay.length > 15) ? venueDisplay.slice(0, 15) + '…' : (venueDisplay || '—');
-        var count = (a._count && a._count.attendances != null) ? a._count.attendances : (a.attendances ? a.attendances.length : 0);
         var total = (a.maxParticipants != null && a.maxParticipants >= 1) ? a.maxParticipants : 14;
-        var countText = count + '/' + total + '人';
-        var isRegistered = !!(a.isRegisteredByCurrentUser);
-        var registeredBadge = isRegistered ? '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" aria-label="已报名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已报名</span>' : '';
+        var registeredCount = (a.registeredCount != null) ? a.registeredCount : ((a.attendances || []).filter(function(t){ return t && (t.status === 'registered' || t.status === 'present' || t.status === 'late'); }).length);
+        var waitlistCount = (a.waitlistCount != null) ? a.waitlistCount : ((a.attendances || []).filter(function(t){ return t && t.status === 'waitlist'; }).length);
+        var countText = registeredCount + '/' + total + '人' + (waitlistCount > 0 ? (' · 候补' + waitlistCount) : '');
+        var registeredBadge = '';
+        try {
+          var me3 = null;
+          var userStr3 = localStorage.getItem(USER_KEY);
+          if (userStr3) me3 = JSON.parse(userStr3);
+          if (me3 && a.attendances && a.attendances.length) {
+            var myLite = a.attendances.find(function(t){ return t && t.userId === me3.id; }) || null;
+            if (myLite) {
+              if (myLite.status === 'waitlist') {
+                registeredBadge = '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style="background: rgba(251,191,36,0.18); border-color: rgba(251,191,36,0.5); color: #fde68a;" aria-label="候补"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/></svg>候补</span>';
+              } else {
+                registeredBadge = '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" aria-label="已报名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已报名</span>';
+              }
+            }
+          }
+        } catch (e) {}
         const row = document.createElement('a');
         row.href = '/activities.html?id=' + (a.id || '');
         row.className = 'activity-row block';
