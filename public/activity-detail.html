@@ -144,6 +144,20 @@
                 .catch(function() { content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">加载失败，<a href="/activities.html" class="text-cyan-400 underline">返回活动列表</a></div>'; });
         }
 
+        function maybeNotifyPromotion(activityId, myAtt) {
+            try {
+                if (!activityId || !myAtt) return;
+                var key = 'team_management:lastStatus:' + activityId;
+                var prev = sessionStorage.getItem(key);
+                var nowStatus = myAtt.status || 'registered';
+                // If previously waitlisted and now promoted to registered/present/late, show a one-time notice.
+                if (prev === 'waitlist' && nowStatus !== 'waitlist') {
+                    alert('好消息：你已从候补转为已报名！');
+                }
+                sessionStorage.setItem(key, nowStatus);
+            } catch (e) {}
+        }
+
         function renderActivity(activity) {
             var content = document.getElementById('activityDetailContent');
             var canEdit = canDeleteActivity(activity);
@@ -181,6 +195,7 @@
 
             html += '<div class="pt-4 border-t border-white/10"><div class="text-white/80 text-sm font-medium mb-2">我的报名</div>';
             if (myAtt) {
+                maybeNotifyPromotion(activity.id || '', myAtt);
                 if (myAtt.status === 'waitlist') {
                     var myWaitText = '候补中' + (waitIndex ? (' · 第' + waitIndex + '位') : '');
                     html += '<div class="flex justify-between gap-3 py-2 items-center"><span class="text-amber-200 text-sm">' + myWaitText + '</span><button type="button" class="btn btn-danger btn-sm text-xs py-1.5 px-2" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消候补</button></div>';

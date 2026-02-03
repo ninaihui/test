@@ -467,6 +467,15 @@
       }
 
       if (myAtt) {
+        try {
+          var key = 'team_management:lastStatus:' + activity.id;
+          var prev = sessionStorage.getItem(key);
+          var nowStatus = myAtt.status || 'registered';
+          if (prev === 'waitlist' && nowStatus !== 'waitlist') {
+            alert('好消息：你已从候补转为已报名！');
+          }
+          sessionStorage.setItem(key, nowStatus);
+        } catch (e) {}
         var waitAttendances2 = (activity.attendances || []).filter(function(a){ return a && a.status === 'waitlist'; }).sort(function(a,b){ return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(); });
         var waitIndex2 = (myAtt.status === 'waitlist') ? (waitAttendances2.findIndex(function(a){ return a.id === myAtt.id; }) + 1) : 0;
         if (myAtt.status === 'waitlist') {

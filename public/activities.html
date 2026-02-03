@@ -567,6 +567,19 @@
             }
         }
 
+        function maybeNotifyPromotion(activityId, myAtt) {
+            try {
+                if (!activityId || !myAtt) return;
+                var key = 'team_management:lastStatus:' + activityId;
+                var prev = sessionStorage.getItem(key);
+                var nowStatus = myAtt.status || 'registered';
+                if (prev === 'waitlist' && nowStatus !== 'waitlist') {
+                    alert('好消息：你已从候补转为已报名！');
+                }
+                sessionStorage.setItem(key, nowStatus);
+            } catch (e) {}
+        }
+
         async function openActivityDetail(id) {
             var modal = document.getElementById('activityDetailModal');
             var content = document.getElementById('activityDetailContent');
@@ -606,6 +619,7 @@
                 }
                 var attendances = activity.attendances || [];
                 var myAtt = currentUser ? (attendances.find(function(a) { return a.user && a.user.id === currentUser.id; }) || null) : null;
+                if (myAtt) maybeNotifyPromotion(activity.id || '', myAtt);
                 var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
                 var regAttendances = attendances.filter(function(a){ return a && (a.status === 'registered' || a.status === 'present' || a.status === 'late'); });
                 var waitAttendances = attendances.filter(function(a){ return a && a.status === 'waitlist'; }).sort(function(a,b){ return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(); });
