@@ -7,4 +7,4 @@ echo "[entrypoint] Running prisma migrate deploy..."
 node ./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma
 
 echo "[entrypoint] Starting app..."
-exec node dist/main
+exec node dist/src/main.js
