@@ -144,16 +144,60 @@
                 .catch(function() { content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">加载失败，<a href="/activities.html" class="text-cyan-400 underline">返回活动列表</a></div>'; });
         }
 
-        function maybeNotifyPromotion(activityId, myAtt) {
+        function showToast(message) {
             try {
-                if (!activityId || !myAtt) return;
-                var key = 'team_management:lastStatus:' + activityId;
+                var existing = document.getElementById('toast');
+                if (!existing) {
+                    existing = document.createElement('div');
+                    existing.id = 'toast';
+                    existing.style.position = 'fixed';
+                    existing.style.left = '50%';
+                    existing.style.bottom = 'calc(80px + env(safe-area-inset-bottom))';
+                    existing.style.transform = 'translateX(-50%)';
+                    existing.style.zIndex = '200';
+                    existing.style.maxWidth = '92vw';
+                    existing.style.padding = '10px 12px';
+                    existing.style.borderRadius = '999px';
+                    existing.style.background = 'rgba(15,23,42,0.95)';
+                    existing.style.border = '1px solid rgba(255,255,255,0.18)';
+                    existing.style.boxShadow = '0 12px 28px rgba(0,0,0,0.35)';
+                    existing.style.color = '#e2e8f0';
+                    existing.style.fontSize = '14px';
+                    existing.style.opacity = '0';
+                    existing.style.transition = 'opacity .15s ease, transform .15s ease';
+                    document.body.appendChild(existing);
+                }
+                existing.textContent = message;
+                existing.style.opacity = '1';
+                existing.style.transform = 'translateX(-50%) translateY(-4px)';
+                clearTimeout(window.__toastTimer);
+                window.__toastTimer = setTimeout(function () {
+                    try {
+                        existing.style.opacity = '0';
+                        existing.style.transform = 'translateX(-50%)';
+                    } catch (e) {}
+                }, 2200);
+            } catch (e) {}
+        }
+
+        function maybeNotifyWaitlistOrPromotion(activityId, userId, myAtt, waitIndex) {
+            try {
+                if (!activityId || !userId || !myAtt) return;
+                // Namespace by user to avoid cross-account leakage on the same browser.
+                var key = 'team_management:lastStatus:' + userId + ':' + activityId;
                 var prev = sessionStorage.getItem(key);
                 var nowStatus = myAtt.status || 'registered';
-                // If previously waitlisted and now promoted to registered/present/late, show a one-time notice.
-                if (prev === 'waitlist' && nowStatus !== 'waitlist') {
-                    alert('好消息：你已从候补转为已报名！');
+
+                // When user just became waitlisted (e.g. 7th user joins), notify that user.
+                if (prev && prev !== 'waitlist' && nowStatus === 'waitlist') {
+                    showToast('你已进入候补队列（第' + (waitIndex || '?') + '位）');
                 }
+
+                // When user was waitlisted and is now promoted.
+                if (prev === 'waitlist' && nowStatus !== 'waitlist') {
+                    showToast('好消息：你已从候补转为已报名！');
+                }
+
                 sessionStorage.setItem(key, nowStatus);
             } catch (e) {}
         }
@@ -195,7 +239,7 @@
 
             html += '<div class="pt-4 border-t border-white/10"><div class="text-white/80 text-sm font-medium mb-2">我的报名</div>';
             if (myAtt) {
-                maybeNotifyPromotion(activity.id || '', myAtt);
+                maybeNotifyWaitlistOrPromotion(activity.id || '', (currentUser && currentUser.id) || '', myAtt, waitIndex);
                 if (myAtt.status === 'waitlist') {
                     var myWaitText = '候补中' + (waitIndex ? (' · 第' + waitIndex + '位') : '');
                     html += '<div class="flex justify-between gap-3 py-2 items-center"><span class="text-amber-200 text-sm">' + myWaitText + '</span><button type="button" class="btn btn-danger btn-sm text-xs py-1.5 px-2" id="activityDetailUnregisterBtn" data-activity-id="' + (activity.id || '') + '">取消候补</button></div>';

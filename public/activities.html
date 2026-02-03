@@ -567,14 +567,53 @@
             }
         }
 
-        function maybeNotifyPromotion(activityId, myAtt) {
+        function showToast(message) {
             try {
-                if (!activityId || !myAtt) return;
-                var key = 'team_management:lastStatus:' + activityId;
+                var existing = document.getElementById('toast');
+                if (!existing) {
+                    existing = document.createElement('div');
+                    existing.id = 'toast';
+                    existing.style.position = 'fixed';
+                    existing.style.left = '50%';
+                    existing.style.bottom = 'calc(80px + env(safe-area-inset-bottom))';
+                    existing.style.transform = 'translateX(-50%)';
+                    existing.style.zIndex = '200';
+                    existing.style.maxWidth = '92vw';
+                    existing.style.padding = '10px 12px';
+                    existing.style.borderRadius = '999px';
+                    existing.style.background = 'rgba(15,23,42,0.95)';
+                    existing.style.border = '1px solid rgba(255,255,255,0.18)';
+                    existing.style.boxShadow = '0 12px 28px rgba(0,0,0,0.35)';
+                    existing.style.color = '#e2e8f0';
+                    existing.style.fontSize = '14px';
+                    existing.style.opacity = '0';
+                    existing.style.transition = 'opacity .15s ease, transform .15s ease';
+                    document.body.appendChild(existing);
+                }
+                existing.textContent = message;
+                existing.style.opacity = '1';
+                existing.style.transform = 'translateX(-50%) translateY(-4px)';
+                clearTimeout(window.__toastTimer);
+                window.__toastTimer = setTimeout(function () {
+                    try {
+                        existing.style.opacity = '0';
+                        existing.style.transform = 'translateX(-50%)';
+                    } catch (e) {}
+                }, 2200);
+            } catch (e) {}
+        }
+
+        function maybeNotifyWaitlistOrPromotion(activityId, userId, myAtt, waitIndex) {
+            try {
+                if (!activityId || !userId || !myAtt) return;
+                var key = 'team_management:lastStatus:' + userId + ':' + activityId;
                 var prev = sessionStorage.getItem(key);
                 var nowStatus = myAtt.status || 'registered';
+                if (prev && prev !== 'waitlist' && nowStatus === 'waitlist') {
+                    showToast('你已进入候补队列（第' + (waitIndex || '?') + '位）');
+                }
                 if (prev === 'waitlist' && nowStatus !== 'waitlist') {
-                    alert('好消息：你已从候补转为已报名！');
+                    showToast('好消息：你已从候补转为已报名！');
                 }
                 sessionStorage.setItem(key, nowStatus);
             } catch (e) {}
@@ -619,7 +658,11 @@
                 }
                 var attendances = activity.attendances || [];
                 var myAtt = currentUser ? (attendances.find(function(a) { return a.user && a.user.id === currentUser.id; }) || null) : null;
-                if (myAtt) maybeNotifyPromotion(activity.id || '', myAtt);
+                var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
+                var regAttendances = attendances.filter(function(a){ return a && (a.status === 'registered' || a.status === 'present' || a.status === 'late'); });
+                var waitAttendances = attendances.filter(function(a){ return a && a.status === 'waitlist'; }).sort(function(a,b){ return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(); });
+                var waitIndex = (myAtt && myAtt.status === 'waitlist') ? (waitAttendances.findIndex(function(a){ return a.id === myAtt.id; }) + 1) : 0;
+                if (myAtt && currentUser && currentUser.id) maybeNotifyWaitlistOrPromotion(activity.id || '', currentUser.id, myAtt, waitIndex);
                 var totalSlots = (activity.maxParticipants != null && activity.maxParticipants >= 1) ? activity.maxParticipants : 11;
                 var regAttendances = attendances.filter(function(a){ return a && (a.status === 'registered' || a.status === 'present' || a.status === 'late'); });
                 var waitAttendances = attendances.filter(function(a){ return a && a.status === 'waitlist'; }).sort(function(a,b){ return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(); });
