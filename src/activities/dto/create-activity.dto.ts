@@ -29,4 +29,8 @@ export class CreateActivityDto {
   @Min(6, { message: '活动人数至少 6 人' })
   @Max(99, { message: '活动人数最多 99 人' })
   maxParticipants?: number;
+
+  @IsOptional()
+  @IsDateString({}, { message: '报名截止时间格式不正确' })
+  deadlineAt?: string;
 }

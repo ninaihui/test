@@ -14,14 +14,22 @@ export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, createActivityDto: CreateActivityDto) {
-    let maxParticipants = createActivityDto.maxParticipants != null ? createActivityDto.maxParticipants : 11;
+    let maxParticipants = createActivityDto.maxParticipants != null ? createActivityDto.maxParticipants : 14;
     if (maxParticipants < 6) maxParticipants = 6;
     if (maxParticipants > 99) maxParticipants = 99;
+
+    const deadlineAt = createActivityDto.deadlineAt ? new Date(createActivityDto.deadlineAt) : null;
+    const activityDate = new Date(createActivityDto.date);
+    if (deadlineAt && Number.isFinite(deadlineAt.getTime()) && deadlineAt.getTime() > activityDate.getTime()) {
+      throw new BadRequestException('报名截止时间不能晚于活动开始时间');
+    }
+
     const activity = await this.prisma.activity.create({
       data: {
         name: createActivityDto.name,
         description: createActivityDto.description,
-        date: new Date(createActivityDto.date),
+        date: activityDate,
+        deadlineAt,
         location: createActivityDto.location,
         venueId: createActivityDto.venueId,
         maxParticipants,
@@ -72,6 +80,10 @@ export class ActivitiesService {
             address: true,
           },
         },
+        // 轻量带上状态以便前端展示“已报名/候补”计数
+        attendances: {
+          select: { status: true, userId: true },
+        },
         _count: {
           select: {
             attendances: true,
@@ -91,10 +103,18 @@ export class ActivitiesService {
       ).map((r) => r.activityId),
     );
 
-    return activities.map((a) => ({
-      ...a,
-      isRegisteredByCurrentUser: myAttendanceActivityIds.has(a.id),
-    }));
+    return activities.map((a) => {
+      const registeredCount = (a.attendances || []).filter(
+        (r) => r.status === 'registered' || r.status === 'present' || r.status === 'late',
+      ).length;
+      const waitlistCount = (a.attendances || []).filter((r) => r.status === 'waitlist').length;
+      return {
+        ...a,
+        registeredCount,
+        waitlistCount,
+        isRegisteredByCurrentUser: myAttendanceActivityIds.has(a.id),
+      };
+    });
   }
 
   async findOne(id: string, _userId: string) {
@@ -127,6 +147,7 @@ export class ActivitiesService {
               },
             },
           },
+          orderBy: { createdAt: 'asc' },
         },
       },
     });
@@ -210,19 +231,35 @@ export class ActivitiesService {
     const pos = position?.trim();
     if (pos) {
       const samePosition = await this.prisma.attendance.findFirst({
-        where: { activityId, position: pos },
+        where: { activityId, position: pos, status: { in: ['registered', 'present', 'late'] } },
       });
       if (samePosition) {
         throw new ConflictException('位置重复了，请换个位置');
       }
     }
 
+    const now = new Date();
+    if (activity.deadlineAt && now.getTime() > activity.deadlineAt.getTime()) {
+      throw new BadRequestException('已过报名截止时间');
+    }
+
+    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
+    const registeredCount = await this.prisma.attendance.count({
+      where: {
+        activityId,
+        status: { in: ['registered', 'present', 'late'] },
+      },
+    });
+
+    const willWaitlist = registeredCount >= maxParticipants;
+
     const attendance = await this.prisma.attendance.create({
       data: {
         userId,
         activityId,
-        status: 'registered',
-        position: pos || undefined,
+        status: willWaitlist ? 'waitlist' : 'registered',
+        // 候补不占用位置槽位，避免位置冲突
+        position: willWaitlist ? undefined : (pos || undefined),
       },
       include: {
         user: {
@@ -268,14 +305,31 @@ export class ActivitiesService {
       throw new NotFoundException('您未报名该活动');
     }
 
-    await this.prisma.attendance.delete({
-      where: {
-        userId_activityId: {
-          userId,
-          activityId,
+    // 取消报名后，如果有人在候补队列，则按时间顺序自动递补
+    await this.prisma.$transaction(async (tx) => {
+      await tx.attendance.delete({
+        where: {
+          userId_activityId: {
+            userId,
+            activityId,
+          },
         },
-      },
+      });
+
+      if (attendance.status === 'registered' || attendance.status === 'present' || attendance.status === 'late') {
+        const nextWaitlist = await tx.attendance.findFirst({
+          where: { activityId, status: 'waitlist' },
+          orderBy: { createdAt: 'asc' },
+        });
+        if (nextWaitlist) {
+          await tx.attendance.update({
+            where: { id: nextWaitlist.id },
+            data: { status: 'registered', position: null },
+          });
+        }
+      }
     });
+
     return { message: '已取消报名' };
   }
 

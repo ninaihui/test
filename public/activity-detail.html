@@ -116,7 +116,7 @@
         function openRegisterModal(activity) {
             var activityId = activity && activity.id;
             var attendances = (activity && activity.attendances) || [];
-            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 11;
+            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14;
             registerModalActivityId = activityId;
             var selectEl = document.getElementById('registerPositionSelect');
             if (selectEl && typeof window.fillPositionSelect === 'function') {

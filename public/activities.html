@@ -171,10 +171,10 @@
                     </div>
                     <div>
                         <label class="block text-white/80 mb-2">活动人数</label>
-                        <input type="number" id="activityMaxParticipants" min="6" max="99" value="11" required
+                        <input type="number" id="activityMaxParticipants" min="6" max="99" value="14" required
                             class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
                             placeholder="11">
-                        <p class="text-white/50 text-xs mt-1">最少 6 人，最多 99 人</p>
+                        <p class="text-white/50 text-xs mt-1">默认 14 人（含替补）。最少 6 人，最多 99 人</p>
                     </div>
                     <div>
                         <label class="block text-white/80 mb-2">活动描述 <span class="text-white/40 text-sm">（选填）</span></label>
@@ -237,7 +237,7 @@
             document.getElementById('activityError').classList.add('hidden');
             document.getElementById('activityDate').value = getThisWeekSaturday();
             var maxEl = document.getElementById('activityMaxParticipants');
-            if (maxEl) maxEl.value = '11';
+            if (maxEl) maxEl.value = '14';
             document.getElementById('activityTime').value = '19:00';
             var locInput = document.getElementById('activityLocation');
             var lastLoc = localStorage.getItem(LAST_LOCATION_KEY);
@@ -284,7 +284,7 @@
             const activityTime = document.getElementById('activityTime').value;
             const location = document.getElementById('activityLocation').value.trim();
             const description = document.getElementById('activityDescription').value.trim() || undefined;
-            var maxParticipants = 11;
+            var maxParticipants = 14;
             var maxEl = document.getElementById('activityMaxParticipants');
             if (maxEl && maxEl.value !== '') {
                 var n = parseInt(maxEl.value, 10);
@@ -383,14 +383,17 @@
                     var nameEsc = (nameText || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     var venueEsc = (venueText || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     var canDel = canDeleteActivity(a);
-                    var count = (a._count && a._count.attendances != null) ? a._count.attendances : (a.attendances ? a.attendances.length : 0);
-                    var total = (a.maxParticipants != null && a.maxParticipants >= 1) ? a.maxParticipants : 11;
-                    var countText = count + '/' + total + '人';
+                    var total = (a.maxParticipants != null && a.maxParticipants >= 1) ? a.maxParticipants : 14;
+                    var registeredCount = (a.registeredCount != null) ? a.registeredCount : ((a._count && a._count.attendances != null) ? a._count.attendances : (a.attendances ? a.attendances.length : 0));
+                    var waitlistCount = (a.waitlistCount != null) ? a.waitlistCount : 0;
+                    var countText = registeredCount + '/' + total + '人' + (waitlistCount > 0 ? (' · 候补' + waitlistCount) : '');
                     var isRegistered = !!(a.isRegisteredByCurrentUser);
                     var registeredBadge = isRegistered ? '<span class="registered-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" aria-label="已报名"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>已报名</span>' : '';
+                    var isFull = (registeredCount >= total);
+                    var fullBadge = isFull ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-white/70">已满</span>' : '';
                     var row = '<div class="activity-list-item flex justify-between items-center gap-2 py-4 px-4 hover:bg-white/5 transition">' +
                         '<a href="/activity-detail.html?activityId=' + (a.id || '') + '" class="min-w-0 flex-1 flex items-center gap-4">' +
-                        '<div class="min-w-0 flex-1"><div class="flex items-center gap-2 flex-wrap"><span class="text-white font-medium min-w-0">' + nameEsc + '</span>' + registeredBadge + '</div>' +
+                        '<div class="min-w-0 flex-1"><div class="flex items-center gap-2 flex-wrap"><span class="text-white font-medium min-w-0">' + nameEsc + '</span>' + registeredBadge + fullBadge + '</div>' +
                         '<div class="text-white/60 text-sm mt-0.5">' + venueEsc + ' · ' + formatActivityDate(a.date) + ' · <span class="tabular-nums">' + countText + '</span></div></div>' +
                         '<span class="nav-arrow text-sm shrink-0"><span>查看</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span></a>';
                     if (canDel) {
