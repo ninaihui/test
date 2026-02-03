@@ -11,4 +11,4 @@ Dockerfile
 dist
 coverage
 generated
-prisma/migrations
+# prisma/migrations  (do not ignore; needed for prisma migrate deploy in container)

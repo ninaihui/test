@@ -4,6 +4,10 @@
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 
+# Prisma CLI validates env("DATABASE_URL") exists during generate/build even if it doesn't connect.
+# Provide a harmless default for build-time only; runtime value comes from docker-compose.
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/team_management?schema=public"
+
 # Native deps for bcrypt (and friends)
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ openssl ca-certificates \
@@ -27,6 +31,9 @@ RUN npm run build
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Same rationale as build stage: allow prisma generate to run during image build.
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/team_management?schema=public"
 
 # Native deps for bcrypt (runtime install step)
 RUN apt-get update \

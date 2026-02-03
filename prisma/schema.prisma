@@ -46,9 +46,12 @@ model Activity {
   name             String
   description      String?
   date             DateTime
+  /// 报名截止时间（可选）。到点后不允许新报名（含候补）。
+  deadlineAt       DateTime?
   location         String?  // 兼容旧数据或手填地点
   venueId          String?  // 关联场地（优先展示场地名）
-  maxParticipants  Int     @default(11) // 活动人数，默认 11 人
+  /// 活动人数上限（含替补），默认 14
+  maxParticipants  Int      @default(14)
   createdById      String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
