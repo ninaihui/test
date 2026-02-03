@@ -63,28 +63,31 @@
     };
   }
 
-  function defaultAvatarSvg(number, color) {
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">' +
-      '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
-      '<stop offset="0" stop-color="' + color + '" stop-opacity="1"/>' +
-      '<stop offset="1" stop-color="#0b1220" stop-opacity="1"/></linearGradient></defs>' +
-      '<circle cx="64" cy="64" r="62" fill="url(#g)"/>' +
-      '<circle cx="64" cy="64" r="60" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>' +
-      '<text x="64" y="78" font-family="ui-sans-serif, system-ui" font-size="54" font-weight="800" text-anchor="middle" fill="rgba(255,255,255,0.95)">' + number + '</text></svg>';
+  function jerseySvg(label, color, textColor) {
+    var tc = textColor || 'rgba(255,255,255,0.95)';
+    // Simple 2D jersey icon
+    var svg = '' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">' +
+      '<defs>' +
+      '  <linearGradient id="jg" x1="0" y1="0" x2="1" y2="1">' +
+      '    <stop offset="0" stop-color="' + color + '" stop-opacity="1"/>' +
+      '    <stop offset="1" stop-color="#0b1220" stop-opacity="1"/>' +
+      '  </linearGradient>' +
+      '</defs>' +
+      '<path d="M34 22c6 10 16 14 30 14s24-4 30-14l18 12-10 18-10-6v58c0 6-4 10-10 10H46c-6 0-10-4-10-10V46l-10 6-10-18 18-12z" fill="url(#jg)" stroke="rgba(255,255,255,0.25)" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M46 40c5 6 11 9 18 9s13-3 18-9" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3" stroke-linecap="round"/>' +
+      '<text x="64" y="86" font-family="ui-sans-serif, system-ui" font-size="44" font-weight="900" text-anchor="middle" fill="' + tc + '">' + label + '</text>' +
+      '</svg>';
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
 
-  /** 没设置头像的用户：问号风格默认头像，背景灰色 */
+  function defaultAvatarSvg(number, color) {
+    return jerseySvg(String(number), color, 'rgba(255,255,255,0.95)');
+  }
+
+  /** 没设置头像的用户：问号球衣 */
   function defaultAvatarQuestionSvg() {
-    var grey = '#64748b';
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">' +
-      '<defs><linearGradient id="gq" x1="0" y1="0" x2="1" y2="1">' +
-      '<stop offset="0" stop-color="' + grey + '" stop-opacity="1"/>' +
-      '<stop offset="1" stop-color="#334155" stop-opacity="1"/></linearGradient></defs>' +
-      '<circle cx="64" cy="64" r="62" fill="url(#gq)"/>' +
-      '<circle cx="64" cy="64" r="60" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>' +
-      '<text x="64" y="82" font-family="ui-sans-serif, system-ui" font-size="64" font-weight="700" text-anchor="middle" fill="rgba(255,255,255,0.9)">?</text></svg>';
-    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    return jerseySvg('?', '#64748b', 'rgba(255,255,255,0.9)');
   }
 
   const palette = [
