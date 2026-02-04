@@ -14,7 +14,7 @@
     .profile-card:hover { border-color: rgba(255,255,255,.16); }
     .profile-header { padding: 1.5rem 1.25rem; }
     /* 头像框固定尺寸，不随图片变化 */
-    .avatar-wrap { position: relative; display: inline-block; width: 5rem; height: 5rem; flex-shrink: 0; }
+    .avatar-wrap { position: relative; display: inline-block; width: 5rem; height: 5rem; flex-shrink: 0; cursor: pointer; }
     .avatar-wrap .avatar-box { width: 5rem; height: 5rem; min-width: 5rem; min-height: 5rem; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; }
     .avatar-wrap .avatar-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .avatar-wrap .edit-badge { position: absolute; right: 0; bottom: 0; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,.5); border: 2px solid rgba(255,255,255,.3); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; pointer-events: none; }
@@ -51,14 +51,11 @@
       </div>
     </section>
 
-    <!-- 头像设置：简洁一行选择 + 上传 -->
+    <!-- 头像设置：点击头像选择并上传 -->
     <section class="glass rounded-2xl p-4 mb-4">
-      <h2 class="text-white/80 text-sm font-medium mb-2">头像设置</h2>
-      <p class="text-white/50 text-xs mb-3">用于战术板展示。</p>
-      <div class="flex items-center gap-2 flex-wrap">
-        <input id="fileInput" type="file" accept="image/*,image/heic,image/heif" class="flex-1 min-w-0 text-sm text-white/80 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-white/15 file:text-white hover:file:bg-white/20" />
-        <button type="button" id="btnUpload" class="btn btn-primary shrink-0">↑ 上传头像</button>
-      </div>
+      <h2 class="text-white/80 text-sm font-medium mb-2">提示</h2>
+      <p class="text-white/50 text-xs">点击上方头像即可选择并上传新头像（用于战术板展示）。</p>
+      <input id="fileInput" type="file" accept="image/*,image/heic,image/heif" class="hidden" />
       <span id="status" class="text-sm text-white/60 mt-2 block"></span>
     </section>
 
@@ -126,7 +123,8 @@
       var userTitle = document.getElementById('userTitle');
       var userMeta = document.getElementById('userMeta');
       var fileInputEl = document.getElementById('fileInput');
-      var btnUploadEl = document.getElementById('btnUpload');
+      var btnUploadEl = document.getElementById('btnUpload'); // legacy (removed from UI)
+      var avatarWrap = document.querySelector('.avatar-wrap');
       var btnSavePosition = document.getElementById('btnSavePosition');
       var playingPositionEl = document.getElementById('playingPosition');
       var positionStatusEl = document.getElementById('positionStatus');
@@ -214,71 +212,71 @@
         }
       }
 
+      function uploadAvatarFile(f) {
+        var MAX_AVATAR_SIZE = 10 * 1024 * 1024;
+        if (!f) return;
+        if (f.size > MAX_AVATAR_SIZE) {
+          setStatus('图片不能超过 10MB', 'error');
+          return;
+        }
+        if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
+        setStatus('上传中…');
+        var fd = new FormData();
+        fd.append('file', f);
+        fetch('/users/me/avatar', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + getToken() },
+          body: fd,
+        }).then(function (r) {
+          if (r.status === 401 || r.status === 403) {
+            setStatus('登录已失效，请重新登录', 'error');
+            localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            setTimeout(function () { window.location.href = window.location.origin + '/login.html'; }, 600);
+            return { _authFail: true };
+          }
+          return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+        }).then(function (result) {
+          if (!result || result._authFail) return;
+          var data = result.data;
+          if (result.ok && data && data.avatarUrl) {
+            setStatus('上传成功', 'success');
+            setAvatarFromUrl(data.avatarUrl);
+            var cached = JSON.parse(localStorage.getItem('user') || 'null');
+            if (cached) { cached.avatarUrl = data.avatarUrl; localStorage.setItem('user', JSON.stringify(cached)); }
+          } else if (data && (data.message || data.error)) {
+            setStatus('上传失败：' + (data.message || data.error), 'error');
+          } else {
+            setStatus('上传失败', 'error');
+          }
+        }).catch(function () {
+          setStatus('网络错误，请稍后再试', 'error');
+        }).finally(function () {
+          if (fileInputEl) fileInputEl.value = '';
+        });
+      }
+
       var previewUrl = null;
+      if (avatarWrap && fileInputEl) {
+        avatarWrap.addEventListener('click', function () {
+          if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
+          fileInputEl.click();
+        });
+      }
+
       if (fileInputEl) {
         fileInputEl.addEventListener('change', function (e) {
           var f = e.target.files && e.target.files[0];
           if (!f) return;
-          if (previewUrl) URL.revokeObjectURL(previewUrl);
-          previewUrl = URL.createObjectURL(f);
-          if (avatarImg) avatarImg.src = previewUrl;
+          // Local preview
+          try {
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            previewUrl = URL.createObjectURL(f);
+            if (avatarImg) avatarImg.src = previewUrl;
+          } catch (err) {}
           setStatus('');
-        });
-      }
-
-      var MAX_AVATAR_SIZE = 10 * 1024 * 1024;
-      if (btnUploadEl) {
-        btnUploadEl.addEventListener('click', function () {
-          var input = document.getElementById('fileInput');
-          var f = input && input.files && input.files[0];
-          if (!f) {
-            setStatus('请先选择一张图片（或点「选取文件」）', 'error');
-            if (input) input.click();
-            return;
-          }
-          if (f.size > MAX_AVATAR_SIZE) {
-            setStatus('图片不能超过 10MB', 'error');
-            return;
-          }
-          if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
-          btnUploadEl.disabled = true;
-          btnUploadEl.classList.add('opacity-60');
-          setStatus('上传中…');
-          var fd = new FormData();
-          fd.append('file', f);
-          fetch('/users/me/avatar', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer ' + getToken() },
-            body: fd,
-          }).then(function (r) {
-            if (r.status === 401 || r.status === 403) {
-              setStatus('登录已失效，请重新登录', 'error');
-              localStorage.removeItem('authToken'); sessionStorage.removeItem('authToken');
-              localStorage.removeItem('user');
-              setTimeout(function () { window.location.href = window.location.origin + '/login.html'; }, 600);
-              return { _authFail: true };
-            }
-            return r.json().then(function (data) { return { ok: r.ok, data: data }; });
-          }).then(function (result) {
-            if (result._authFail) return;
-            var data = result.data;
-            if (result.ok && data && data.avatarUrl) {
-              setStatus('上传成功', 'success');
-              setAvatarFromUrl(data.avatarUrl);
-              var cached = JSON.parse(localStorage.getItem('user') || 'null');
-              if (cached) { cached.avatarUrl = data.avatarUrl; localStorage.setItem('user', JSON.stringify(cached)); }
-              if (fileInputEl) fileInputEl.value = '';
-            } else if (data && (data.message || data.error)) {
-              setStatus('上传失败：' + (data.message || data.error), 'error');
-            } else if (!result.ok) {
-              setStatus('上传失败', 'error');
-            }
-          }).catch(function () {
-            setStatus('网络错误，请稍后再试', 'error');
-          }).then(function () {
-            btnUploadEl.disabled = false;
-            btnUploadEl.classList.remove('opacity-60');
-          });
+          // Auto upload
+          uploadAvatarFile(f);
         });
       }
 
