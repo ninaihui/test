@@ -537,10 +537,15 @@ export class ActivitiesService {
     return this.getTeams(activityId, currentUserId, currentUserRole);
   }
 
-  /** 异常通道：仅网站管理员调用（controller 已限制）。设置本活动额外可编辑者 userId 列表 */
-  async updateEditors(activityId: string, editorUserIds: string[]) {
+  /** 异常通道：网站管理员 或 活动创建者（队长）可设置本活动额外可编辑者 userId 列表 */
+  async updateEditors(activityId: string, currentUserId: string, currentUserRole: string | undefined, editorUserIds: string[]) {
     const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
     if (!activity) throw new NotFoundException('活动不存在');
+
+    const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+    if (!isSystemAdmin && activity.createdById !== currentUserId) {
+      throw new ForbiddenException('无权限设置协管');
+    }
 
     const normalized = normalizeEditorUserIds(editorUserIds || []);
     await this.prisma.activity.update({

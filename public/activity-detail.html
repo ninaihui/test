@@ -158,7 +158,6 @@
                     var used = teamCounts[t] || 0;
                     opt.textContent = (teamNames[t-1] || ('队伍' + t)) + '（' + used + '/' + teamCap + '）';
                     if (used >= teamCap) {
-                        opt.disabled = true;
                         opt.textContent += ' 已满';
                     }
                     teamEl.appendChild(opt);
@@ -171,12 +170,35 @@
             if (selectEl && typeof window.fillPositionSelect === 'function') {
                 window.fillPositionSelect(selectEl, maxParticipants);
             }
+
+            // Mark occupied positions (do not disable)
+            try {
+                var occupied = {};
+                regAttendances.forEach(function(a){
+                    if (!a || !a.position) return;
+                    var uid = a.user && a.user.id;
+                    if (currentUser && uid && currentUser.id && uid === currentUser.id) return; // exclude myself
+                    var p = String(a.position).trim();
+                    if (p) occupied[p] = true;
+                });
+                for (var j = 0; j < selectEl.options.length; j++) {
+                    var opt = selectEl.options[j];
+                    var v = (opt.value || '').trim();
+                    if (!v) continue;
+                    // restore base text if previously marked
+                    opt.textContent = opt.textContent.replace(/\s*·\s*已有人\s*$/, '');
+                    if (occupied[v]) {
+                        opt.textContent = opt.textContent + ' · 已有人';
+                    }
+                }
+            } catch (e) {}
+
             var me = currentUser;
             var defaultPos = (me && me.playingPosition && String(me.playingPosition).trim()) ? String(me.playingPosition).trim() : '';
             selectEl.value = defaultPos || '';
             var hasOption = false;
-            for (var i = 0; i < selectEl.options.length; i++) {
-                if (selectEl.options[i].value === defaultPos) { hasOption = true; break; }
+            for (var k = 0; k < selectEl.options.length; k++) {
+                if (selectEl.options[k].value === defaultPos) { hasOption = true; break; }
             }
             if (!hasOption && defaultPos) selectEl.value = '';
             document.getElementById('registerModalOverlay').classList.add('show');
@@ -313,7 +335,14 @@
                         var statusText = att.status === 'registered' ? '已报名' : (att.status === 'present' ? '到场' : (att.status === 'absent' ? '缺席' : '迟到'));
                         var pos = (att.position != null && String(att.position).trim()) ? String(att.position).trim() : ((att.user && att.user.playingPosition && att.user.playingPosition.trim()) ? att.user.playingPosition.trim() : '未设置');
                         var name = (att.user && att.user.username) ? att.user.username : '—';
-                        html += '<li class="flex justify-between items-center text-sm py-2 px-3 rounded-lg bg-white/5"><span class="text-white/90">' + name + '</span><span class="text-white/60">上场位置：' + pos + ' · ' + statusText + '</span></li>';
+                        var isOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || (activity && activity.createdById && currentUser.id === activity.createdById));
+                        var editors = (activity && activity.editorUserIds && Array.isArray(activity.editorUserIds)) ? activity.editorUserIds : [];
+                        var isEditor = att.user && att.user.id ? (editors.indexOf(att.user.id) >= 0) : false;
+                        var editorBtn = '';
+                        if (isOwner && att.user && att.user.id) {
+                            editorBtn = '<button type="button" class="btn btn-ghost btn-xs text-xs px-2 py-1" data-editor-user-id="' + att.user.id + '" data-editor-on="' + (isEditor ? '1' : '0') + '">' + (isEditor ? '取消协管' : '设为协管') + '</button>';
+                        }
+                        html += '<li class="flex justify-between items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5"><span class="text-white/90">' + name + '</span><span class="text-white/60 flex-1 text-right">上场位置：' + pos + ' · ' + statusText + '</span>' + editorBtn + '</li>';
                     });
                     html += '</ul>';
                 }
@@ -348,6 +377,29 @@
                 var aid = regBtn.getAttribute('data-activity-id');
                 if (aid) openRegisterModal(activity);
             });
+
+            // Captain/admin can toggle editors (exception channel)
+            try {
+                document.querySelectorAll('[data-editor-user-id]').forEach(function(btn){
+                    btn.addEventListener('click', function(){
+                        var uid = btn.getAttribute('data-editor-user-id');
+                        if (!uid) return;
+                        var editors = (activity && activity.editorUserIds && Array.isArray(activity.editorUserIds)) ? activity.editorUserIds.slice(0) : [];
+                        var on = btn.getAttribute('data-editor-on') === '1';
+                        if (on) editors = editors.filter(function(x){ return x !== uid; });
+                        else if (editors.indexOf(uid) < 0) editors.push(uid);
+
+                        fetch('/activities/' + (activity.id || '') + '/editors', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+                            body: JSON.stringify({ editorUserIds: editors })
+                        }).then(function(r){
+                            if (r.ok) loadActivity();
+                            else r.json().then(function(err){ alert(err.message || '设置失败'); }).catch(function(){ alert('设置失败'); });
+                        }).catch(function(){ alert('网络错误'); });
+                    });
+                });
+            } catch (e) {}
             var unregBtn = document.getElementById('activityDetailUnregisterBtn');
             if (unregBtn) unregBtn.addEventListener('click', function() {
                 var aid = unregBtn.getAttribute('data-activity-id');

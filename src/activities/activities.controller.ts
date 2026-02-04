@@ -113,15 +113,14 @@ export class ActivitiesController {
     return this.activitiesService.update(id, req.user.sub, updateActivityDto, req.user.role);
   }
 
-  /** 异常通道：仅网站管理员可设置本活动的战术板协管（额外编辑者） */
+  /** 异常通道：网站管理员 或 活动创建者（队长）可设置本活动的战术板协管（额外编辑者） */
   @Patch(':id/editors')
-  @UseGuards(RolesGuard)
-  @Roles('admin', 'super_admin')
   updateEditors(
     @Param('id') id: string,
+    @Request() req,
     @Body() dto: UpdateActivityEditorsDto,
   ) {
-    return this.activitiesService.updateEditors(id, dto.editorUserIds);
+    return this.activitiesService.updateEditors(id, req.user.sub, req.user.role, dto.editorUserIds);
   }
 
   /** 仅管理员可删除活动 */
