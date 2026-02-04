@@ -51,13 +51,35 @@
       </div>
     </section>
 
-    <!-- 头像设置：点击头像选择并上传 -->
+    <!-- 头像设置：点击头像选择；弹窗圆形预览并确认上传 -->
     <section class="glass rounded-2xl p-4 mb-4">
       <h2 class="text-white/80 text-sm font-medium mb-2">提示</h2>
       <p class="text-white/50 text-xs">点击上方头像即可选择并上传新头像（用于战术板展示）。</p>
       <input id="fileInput" type="file" accept="image/*,image/heic,image/heif" class="hidden" />
       <span id="status" class="text-sm text-white/60 mt-2 block"></span>
     </section>
+
+    <!-- 头像裁剪弹窗（简易：居中裁剪为正方形，并用圆形框预览） -->
+    <div id="avatarCropOverlay" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+      <div class="glass rounded-2xl w-full max-w-sm p-4 border border-white/15">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-white font-semibold">预览头像</div>
+          <button type="button" id="btnCropClose" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-center" aria-label="关闭">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="flex items-center justify-center">
+          <div class="relative w-40 h-40 rounded-full overflow-hidden border-2 border-white/25 bg-black/20">
+            <img id="avatarCropPreview" alt="头像预览" class="w-full h-full object-cover" />
+          </div>
+        </div>
+        <p class="text-white/50 text-xs mt-3">将自动居中裁剪为正方形并上传（显示效果与战术板一致）。</p>
+        <div class="flex items-center justify-end gap-2 mt-4">
+          <button type="button" id="btnCropCancel" class="btn btn-ghost">取消</button>
+          <button type="button" id="btnCropUpload" class="btn btn-primary">上传头像</button>
+        </div>
+      </div>
+    </div>
 
     <!-- 上场位置：用户自选常用位置（参考足球常见位置） -->
     <section class="glass rounded-2xl p-4 mb-4">
@@ -212,17 +234,37 @@
         }
       }
 
-      function uploadAvatarFile(f) {
-        var MAX_AVATAR_SIZE = 10 * 1024 * 1024;
-        if (!f) return;
-        if (f.size > MAX_AVATAR_SIZE) {
-          setStatus('图片不能超过 10MB', 'error');
-          return;
-        }
+      function cropToSquareBlob(file, cb) {
+        try {
+          var img = new Image();
+          img.onload = function () {
+            try {
+              var w = img.naturalWidth || img.width;
+              var h = img.naturalHeight || img.height;
+              var side = Math.min(w, h);
+              var sx = Math.floor((w - side) / 2);
+              var sy = Math.floor((h - side) / 2);
+              var canvas = document.createElement('canvas');
+              canvas.width = 512;
+              canvas.height = 512;
+              var ctx = canvas.getContext('2d');
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
+              ctx.drawImage(img, sx, sy, side, side, 0, 0, 512, 512);
+              canvas.toBlob(function (blob) { cb(blob); }, 'image/jpeg', 0.9);
+            } catch (e) { cb(null); }
+          };
+          img.onerror = function () { cb(null); };
+          img.src = URL.createObjectURL(file);
+        } catch (e) { cb(null); }
+      }
+
+      function uploadAvatarBlob(blob) {
+        if (!blob) { setStatus('裁剪失败，请换一张图', 'error'); return; }
         if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
         setStatus('上传中…');
         var fd = new FormData();
-        fd.append('file', f);
+        fd.append('file', blob, 'avatar.jpg');
         fetch('/users/me/avatar', {
           method: 'POST',
           headers: { Authorization: 'Bearer ' + getToken() },
@@ -257,6 +299,48 @@
       }
 
       var previewUrl = null;
+      var cropOverlay = document.getElementById('avatarCropOverlay');
+      var cropPreview = document.getElementById('avatarCropPreview');
+      var btnCropClose = document.getElementById('btnCropClose');
+      var btnCropCancel = document.getElementById('btnCropCancel');
+      var btnCropUpload = document.getElementById('btnCropUpload');
+      var pendingFile = null;
+
+      function openCropModal(file) {
+        pendingFile = file;
+        try {
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          previewUrl = URL.createObjectURL(file);
+          if (cropPreview) cropPreview.src = previewUrl;
+        } catch (e) {}
+        if (cropOverlay) {
+          cropOverlay.classList.remove('hidden');
+          cropOverlay.classList.add('flex');
+        }
+      }
+      function closeCropModal() {
+        pendingFile = null;
+        if (cropOverlay) {
+          cropOverlay.classList.add('hidden');
+          cropOverlay.classList.remove('flex');
+        }
+      }
+      if (btnCropClose) btnCropClose.addEventListener('click', closeCropModal);
+      if (btnCropCancel) btnCropCancel.addEventListener('click', closeCropModal);
+      if (cropOverlay) cropOverlay.addEventListener('click', function (e) { if (e.target === cropOverlay) closeCropModal(); });
+
+      if (btnCropUpload) {
+        btnCropUpload.addEventListener('click', function () {
+          if (!pendingFile) return;
+          btnCropUpload.disabled = true;
+          cropToSquareBlob(pendingFile, function (blob) {
+            btnCropUpload.disabled = false;
+            closeCropModal();
+            uploadAvatarBlob(blob);
+          });
+        });
+      }
+
       if (avatarWrap && fileInputEl) {
         avatarWrap.addEventListener('click', function () {
           if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
@@ -268,15 +352,9 @@
         fileInputEl.addEventListener('change', function (e) {
           var f = e.target.files && e.target.files[0];
           if (!f) return;
-          // Local preview
-          try {
-            if (previewUrl) URL.revokeObjectURL(previewUrl);
-            previewUrl = URL.createObjectURL(f);
-            if (avatarImg) avatarImg.src = previewUrl;
-          } catch (err) {}
+          // show preview in circle frame (matches actual avatar shape)
           setStatus('');
-          // Auto upload
-          uploadAvatarFile(f);
+          openCropModal(f);
         });
       }
 
