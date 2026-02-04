@@ -379,7 +379,9 @@ export class ActivitiesService {
       throw new NotFoundException('您未报名该活动');
     }
 
-    // 取消报名后，如果有人在候补队列，则按时间顺序自动递补
+    // 取消报名后：
+    // 1) 若有候补，按时间顺序递补为已报名
+    // 2) 若退出者属于某个队伍，则从“未定”中按报名时间顺序自动补位到该队（不含候补）
     await this.prisma.$transaction(async (tx) => {
       await tx.attendance.delete({
         where: {
@@ -390,7 +392,9 @@ export class ActivitiesService {
         },
       });
 
-      if (attendance.status === 'registered' || attendance.status === 'present' || attendance.status === 'late') {
+      const wasRegistered = attendance.status === 'registered' || attendance.status === 'present' || attendance.status === 'late';
+
+      if (wasRegistered) {
         const nextWaitlist = await tx.attendance.findFirst({
           where: { activityId, status: 'waitlist' },
           orderBy: { createdAt: 'asc' },
@@ -398,8 +402,61 @@ export class ActivitiesService {
         if (nextWaitlist) {
           await tx.attendance.update({
             where: { id: nextWaitlist.id },
-            data: { status: 'registered', position: null },
+            data: { status: 'registered', position: null, teamNo: null },
           });
+        }
+      }
+
+      // Auto-fill team vacancy from unassigned (teamNo=null) registered participants
+      const teamNo = attendance.teamNo;
+      if (wasRegistered && teamNo != null) {
+        const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
+        const teamCount = (activity as any).teamCount != null ? Number((activity as any).teamCount) : 2;
+        const teamCap = Math.ceil(maxParticipants / (teamCount || 1));
+
+        // current team size
+        const currentTeamSize = await tx.attendance.count({
+          where: {
+            activityId,
+            status: { in: ['registered', 'present', 'late'] },
+            teamNo,
+          },
+        });
+
+        let need = teamCap - currentTeamSize;
+        if (need > 0) {
+          const candidates = await tx.attendance.findMany({
+            where: {
+              activityId,
+              status: { in: ['registered', 'present', 'late'] },
+              teamNo: null,
+            },
+            orderBy: { createdAt: 'asc' },
+            select: { id: true, position: true },
+          });
+
+          for (const c of candidates) {
+            if (need <= 0) break;
+            const pos = c.position ? String(c.position).trim() : '';
+            if (pos) {
+              const conflict = await tx.attendance.findFirst({
+                where: {
+                  activityId,
+                  status: { in: ['registered', 'present', 'late'] },
+                  teamNo,
+                  position: pos,
+                },
+                select: { id: true },
+              });
+              if (conflict) continue;
+            }
+
+            await tx.attendance.update({
+              where: { id: c.id },
+              data: { teamNo },
+            });
+            need--;
+          }
         }
       }
     });
