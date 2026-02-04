@@ -17,6 +17,8 @@ model User {
   password  String
   /// 系统角色：user（普通用户） / admin（管理员）
   role      String   @default("user")
+  /// 队长权限（由网站管理在 DB 指定）。队长可创建活动。
+  isCaptain Boolean  @default(false)
   avatarUrl String?
   /// 用户自选上场位置（如 守门员、中后卫、前锋 等）
   playingPosition String?

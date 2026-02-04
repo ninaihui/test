@@ -26,12 +26,10 @@ import { Roles } from '../auth/roles.decorator';
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
-  /** 仅管理员可创建活动 */
+  /** 创建活动：网站管理员 或 队长（由网站管理员在 DB 指定） */
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles('admin', 'super_admin')
   create(@Request() req, @Body() createActivityDto: CreateActivityDto) {
-    return this.activitiesService.create(req.user.sub, createActivityDto);
+    return this.activitiesService.create(req.user.sub, req.user.role, createActivityDto);
   }
 
   @Get()

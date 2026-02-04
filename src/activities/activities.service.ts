@@ -14,7 +14,16 @@ import { UpdateTeamsDto } from './dto/update-teams.dto';
 export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, createActivityDto: CreateActivityDto) {
+  async create(userId: string, userRole: string | undefined, createActivityDto: CreateActivityDto) {
+    // Permission: system admin OR captain
+    const isSystemAdmin = userRole === 'admin' || userRole === 'super_admin';
+    if (!isSystemAdmin) {
+      const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { isCaptain: true } });
+      if (!u || !u.isCaptain) {
+        throw new ForbiddenException('只有网站管理员或队长可以创建活动');
+      }
+    }
+
     let maxParticipants = createActivityDto.maxParticipants != null ? createActivityDto.maxParticipants : 14;
     if (maxParticipants < 1) maxParticipants = 1;
     if (maxParticipants > 40) maxParticipants = 40;
