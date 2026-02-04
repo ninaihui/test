@@ -32,7 +32,8 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      # expose API only to localhost; public traffic should go through Nginx (HTTPS)
+      - "127.0.0.1:3000:3000"
 
 volumes:
   postgres_data:
