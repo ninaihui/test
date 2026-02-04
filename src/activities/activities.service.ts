@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
+import { UpdateTeamsDto } from './dto/update-teams.dto';
 
 @Injectable()
 export class ActivitiesService {
@@ -386,6 +387,62 @@ export class ActivitiesService {
       data: { position: (position || '').trim() || null },
     });
     return { message: '出场位置已保存' };
+  }
+
+  /** 仅管理员：获取已报名用户的分队信息（候补不包含） */
+  async getTeams(activityId: string) {
+    const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
+    if (!activity) throw new NotFoundException('活动不存在');
+
+    const rows = await this.prisma.attendance.findMany({
+      where: {
+        activityId,
+        status: { in: ['registered', 'present', 'late'] },
+      },
+      select: {
+        userId: true,
+        teamNo: true,
+        updatedAt: true,
+        user: { select: { id: true, username: true, avatarUrl: true, playingPosition: true } },
+      },
+      orderBy: [{ teamNo: 'asc' }, { updatedAt: 'desc' }],
+    });
+
+    return {
+      activityId,
+      teams: rows.map((r) => ({
+        userId: r.userId,
+        teamNo: r.teamNo,
+        user: r.user,
+      })),
+    };
+  }
+
+  /** 仅管理员：批量更新已报名用户的分队（teamNo）。teamNo 为空则清除分队 */
+  async updateTeams(activityId: string, dto: UpdateTeamsDto) {
+    const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
+    if (!activity) throw new NotFoundException('活动不存在');
+
+    const assignments = (dto && dto.assignments) || [];
+    if (!assignments.length) throw new BadRequestException('assignments 不能为空');
+
+    // Only update registered participants; waitlist does not participate.
+    await this.prisma.$transaction(async (tx) => {
+      for (const a of assignments) {
+        const att = await tx.attendance.findUnique({
+          where: { userId_activityId: { userId: a.userId, activityId } },
+          select: { id: true, status: true },
+        });
+        if (!att) continue;
+        if (!['registered', 'present', 'late'].includes(att.status)) continue;
+        await tx.attendance.update({
+          where: { id: att.id },
+          data: { teamNo: a.teamNo ?? null },
+        });
+      }
+    });
+
+    return this.getTeams(activityId);
   }
 
   async remove(id: string, _userId: string) {

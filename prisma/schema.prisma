@@ -69,6 +69,8 @@ model Attendance {
   activityId String
   status     String   @default("present") // registered=已报名, present=到场, absent=缺席, late=迟到
   position   String?  // 出场位置（管理员安排），如 前锋、左后卫
+  /// 分队编号（仅已报名参与；候补不参与）。从 1 开始：1=蓝队、2=紫队...（可扩展）
+  teamNo     Int?
   notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

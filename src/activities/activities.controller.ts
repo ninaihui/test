@@ -16,6 +16,7 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 import { RegisterActivityDto } from './dto/register-activity.dto';
 import { UpdatePositionsDto } from './dto/update-positions.dto';
 import { UpdateMyPositionDto } from './dto/update-my-position.dto';
+import { UpdateTeamsDto } from './dto/update-teams.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -83,6 +84,25 @@ export class ActivitiesController {
     @Body() dto: UpdatePositionsDto,
   ) {
     return this.activitiesService.updatePositions(id, req.user.sub, dto.positions);
+  }
+
+  /** 仅管理员可设置本活动已报名用户的分队（teamNo）。候补不参与分队 */
+  @Get(':id/teams')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
+  getTeams(@Param('id') id: string) {
+    return this.activitiesService.getTeams(id);
+  }
+
+  /** 仅管理员可批量更新分队 */
+  @Patch(':id/teams')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
+  updateTeams(
+    @Param('id') id: string,
+    @Body() dto: UpdateTeamsDto,
+  ) {
+    return this.activitiesService.updateTeams(id, dto);
   }
 
   /** 仅管理员可编辑活动 */
