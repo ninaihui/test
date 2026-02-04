@@ -55,7 +55,7 @@ export class ActivitiesController {
     @Request() req,
     @Body() dto: RegisterActivityDto,
   ) {
-    return this.activitiesService.register(id, req.user.sub, dto?.position);
+    return this.activitiesService.register(id, req.user.sub, dto?.position, dto?.teamNo);
   }
 
   /** 当前用户取消报名 */

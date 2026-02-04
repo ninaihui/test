@@ -50,7 +50,10 @@
 
     <div id="registerModalOverlay" class="register-modal-overlay" aria-hidden="true">
         <div class="register-modal" role="dialog" aria-labelledby="registerModalTitle" aria-modal="true">
-            <h3 id="registerModalTitle">选择出场位置</h3>
+            <h3 id="registerModalTitle">报名设置</h3>
+            <select id="registerTeamSelect" class="modal-select" aria-label="队伍">
+                <option value="0">未定</option>
+            </select>
             <select id="registerPositionSelect" class="modal-select" aria-label="出场位置">
                 <option value="">未选择</option>
                 <optgroup label="守门员"><option value="守门员">守门员 (GK)</option></optgroup>
@@ -100,9 +103,13 @@
             var activityId = registerModalActivityId;
             var selectEl = document.getElementById('registerPositionSelect');
             var position = (selectEl.value || '').trim();
+            var teamEl = document.getElementById('registerTeamSelect');
+            var teamNo = teamEl ? parseInt((teamEl.value || '0'), 10) : 0;
             if (!activityId) return;
             document.getElementById('registerModalOverlay').classList.remove('show');
-            var body = (position && position.trim()) ? { position: position.trim() } : {};
+            var body = {};
+            if (position && position.trim()) body.position = position.trim();
+            if (Number.isFinite(teamNo) && teamNo >= 0) body.teamNo = teamNo;
             fetch('/activities/' + activityId + '/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
@@ -117,6 +124,48 @@
             var activityId = activity && activity.id;
             var attendances = (activity && activity.attendances) || [];
             var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14;
+            var teamCount = (activity && activity.teamCount != null) ? activity.teamCount : Math.ceil((maxParticipants || 1) / 12);
+            if (teamCount < 1) teamCount = 1;
+            if (teamCount > 4) teamCount = 4;
+            var teamCap = Math.ceil((maxParticipants || 1) / teamCount);
+            var teamNames = (activity && activity.teamNames && Array.isArray(activity.teamNames)) ? activity.teamNames : [];
+            var defaultNames = teamCount === 1 ? ['队伍'] : (teamCount === 2 ? ['红队','蓝队'] : (teamCount === 3 ? ['红队','蓝队','紫队'] : ['红队','蓝队','紫队','黄队']));
+            while (teamNames.length < teamCount) teamNames.push(defaultNames[teamNames.length] || ('队伍' + (teamNames.length + 1)));
+            if (teamNames.length > teamCount) teamNames = teamNames.slice(0, teamCount);
+
+            // counts (registered only)
+            var regAttendances = attendances.filter(function(a){ return a && (a.status === 'registered' || a.status === 'present' || a.status === 'late'); });
+            var teamCounts = {};
+            for (var i = 1; i <= teamCount; i++) teamCounts[i] = 0;
+            regAttendances.forEach(function(a){
+                var tn = a.teamNo;
+                if (tn == null) return;
+                if (typeof tn !== 'number') tn = parseInt(String(tn), 10);
+                if (tn >= 1 && tn <= teamCount) teamCounts[tn] = (teamCounts[tn] || 0) + 1;
+            });
+
+            // render team select
+            var teamEl = document.getElementById('registerTeamSelect');
+            if (teamEl) {
+                teamEl.innerHTML = '';
+                var opt0 = document.createElement('option');
+                opt0.value = '0';
+                opt0.textContent = '未定';
+                teamEl.appendChild(opt0);
+                for (var t = 1; t <= teamCount; t++) {
+                    var opt = document.createElement('option');
+                    opt.value = String(t);
+                    var used = teamCounts[t] || 0;
+                    opt.textContent = (teamNames[t-1] || ('队伍' + t)) + '（' + used + '/' + teamCap + '）';
+                    if (used >= teamCap) {
+                        opt.disabled = true;
+                        opt.textContent += ' 已满';
+                    }
+                    teamEl.appendChild(opt);
+                }
+                teamEl.value = '0';
+            }
+
             registerModalActivityId = activityId;
             var selectEl = document.getElementById('registerPositionSelect');
             if (selectEl && typeof window.fillPositionSelect === 'function') {

@@ -233,7 +233,7 @@ export class ActivitiesService {
   }
 
   /** 用户报名参加活动（创建出勤记录，状态为「已报名」），可选出场位置 position */
-  async register(activityId: string, userId: string, position?: string) {
+  async register(activityId: string, userId: string, position?: string, teamNo?: number) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
     });
@@ -276,6 +276,32 @@ export class ActivitiesService {
 
     const willWaitlist = registeredCount >= maxParticipants;
 
+    // Team assignment (only for registered participants; waitlist does not participate)
+    const teamCount = (activity as any).teamCount != null ? Number((activity as any).teamCount) : 2;
+    const teamCap = Math.ceil(maxParticipants / (teamCount || 1));
+    let normalizedTeamNo: number | null = null;
+    if (!willWaitlist) {
+      const tn = teamNo != null ? Number(teamNo) : 0;
+      if (!Number.isFinite(tn) || tn < 0) {
+        throw new BadRequestException('队伍选择不合法');
+      }
+      if (tn === 0) normalizedTeamNo = null;
+      else {
+        if (tn > teamCount) throw new BadRequestException('队伍选择不合法');
+        const teamUsed = await this.prisma.attendance.count({
+          where: {
+            activityId,
+            status: { in: ['registered', 'present', 'late'] },
+            teamNo: tn,
+          },
+        });
+        if (teamUsed >= teamCap) {
+          throw new ConflictException('该队已满，请选择其他队或未定');
+        }
+        normalizedTeamNo = tn;
+      }
+    }
+
     const attendance = await this.prisma.attendance.create({
       data: {
         userId,
@@ -283,6 +309,8 @@ export class ActivitiesService {
         status: willWaitlist ? 'waitlist' : 'registered',
         // 候补不占用位置槽位，避免位置冲突
         position: willWaitlist ? undefined : (pos || undefined),
+        // 候补不参与分队
+        teamNo: willWaitlist ? null : normalizedTeamNo,
       },
       include: {
         user: {
