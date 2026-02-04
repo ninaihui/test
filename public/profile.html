@@ -17,7 +17,8 @@
     .avatar-wrap { position: relative; display: inline-block; width: 5rem; height: 5rem; flex-shrink: 0; cursor: pointer; }
     .avatar-wrap .avatar-box { width: 5rem; height: 5rem; min-width: 5rem; min-height: 5rem; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,.2); background: rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; }
     .avatar-wrap .avatar-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .avatar-wrap .edit-badge { position: absolute; right: 0; bottom: 0; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,.5); border: 2px solid rgba(255,255,255,.3); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; pointer-events: none; }
+    .avatar-wrap .edit-badge { position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.28); display: flex; align-items: center; justify-content: center; color: #fff; pointer-events: none; }
+    .avatar-wrap .edit-badge svg { width: 16px; height: 16px; opacity: .95; }
     .status--success { color: #6ee7b7; }
     .status--error { color: #fca5a5; }
     /* 账号区：退出登录用危险样式，与主操作区分 */
@@ -35,18 +36,24 @@
       <p class="text-sm text-white/50 mt-0.5">管理你的资料与账号</p>
     </header>
 
-    <!-- 个人信息卡片：头像 + 昵称 + 邮箱 -->
+    <!-- 个人信息卡片：头像 + 昵称 + 邮箱（参考常见 App 个人中心） -->
     <section class="glass rounded-2xl overflow-hidden mb-4">
       <div class="profile-header flex items-center gap-4">
-        <div class="avatar-wrap">
+        <div class="avatar-wrap" role="button" tabindex="0" aria-label="点击更换头像">
           <div class="avatar-box">
             <img id="avatarImg" alt="头像" src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2264%22%20fill%3D%22%23111827%22/%3E%3Ctext%20x%3D%2264%22%20y%3D%2276%22%20font-family%3D%22ui-sans-serif%2C%20system-ui%22%20font-size%3D%2248%22%20font-weight%3D%22800%22%20text-anchor%3D%22middle%22%20fill%3D%22rgba(255%2C255%2C255%2C0.85)%22%3E%3F%3C/text%3E%3C/svg%3E" />
           </div>
-          <span class="edit-badge" aria-hidden="true">📷</span>
+          <span class="edit-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-2h4l2 2h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+          </span>
         </div>
         <div class="min-w-0 flex-1">
           <div class="text-white font-semibold text-lg truncate" id="userTitle">未登录</div>
           <div class="text-white/60 text-sm truncate mt-0.5" id="userMeta">请先登录</div>
+          <div class="text-white/45 text-xs mt-1">点击头像更换</div>
         </div>
       </div>
     </section>
@@ -341,10 +348,18 @@
         });
       }
 
+      function openFilePicker() {
+        if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
+        if (fileInputEl) fileInputEl.click();
+      }
+
       if (avatarWrap && fileInputEl) {
-        avatarWrap.addEventListener('click', function () {
-          if (!getToken()) { setStatus('请先登录', 'error'); requireLogin(); return; }
-          fileInputEl.click();
+        avatarWrap.addEventListener('click', openFilePicker);
+        avatarWrap.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openFilePicker();
+          }
         });
       }
 
