@@ -230,23 +230,14 @@
     <div class="glass tactics-card shadow-field">
       <div class="toolbar">
         <div class="toolbar-left" id="formationWrap">
-          <span class="toolbar-label">阵型</span>
-          <div class="formation-pills" role="group" aria-label="选择阵型">
-            <button type="button" class="formation-pill active" data-formation="4-4-2" aria-pressed="true">4-4-2</button>
-            <button type="button" class="formation-pill" data-formation="4-3-3" aria-pressed="false">4-3-3</button>
-            <button type="button" class="formation-pill" data-formation="3-5-2" aria-pressed="false">3-5-2</button>
-          </div>
-          <select id="formationSelect" class="sr-only" aria-hidden="true">
-            <option value="4-4-2">4-4-2</option>
-            <option value="4-3-3">4-3-3</option>
-            <option value="3-5-2">3-5-2</option>
-          </select>
+          <span class="toolbar-label">分队</span>
+          <div class="text-white/70 text-sm">拖拽队员到对应队伍区域</div>
         </div>
 
         <div class="toolbar-right">
           <p id="tacticsReadOnlyHint" class="hidden text-white/50 text-sm">仅可查看，无编辑权限</p>
           <span id="saveStatus" class="save-status" aria-live="polite"></span>
-          <button type="button" id="btnSavePositions" class="btn btn-primary btn-sm tactics-save-btn hidden">保存</button>
+          <button type="button" id="btnSaveTeams" class="btn btn-primary btn-sm tactics-save-btn">保存分队</button>
         </div>
       </div>
 
@@ -257,10 +248,10 @@
               <div class="goal goal-top" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
               <div class="goal goal-bottom" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
               <div class="field-lines"></div>
-              <div class="players" aria-label="球员层"></div>
+              <div id="teamBands" class="team-bands" aria-label="分队区域"></div>
             </div>
           </div>
-          <div class="tactics-hint">拖拽球员到空位上即可排阵；管理员可以互换任意球员，普通用户只能移动自己。</div>
+          <div class="tactics-hint">把队员拖到对应队伍区域即可分队；候补不参与分队。</div>
         </section>
 
         <aside class="glass roster-card hidden lg:block" id="tacticsRosterAside">
@@ -314,6 +305,27 @@
   </nav>
 
   <script src="/js/fancy-background.js"></script>
+  <style>
+    .team-bands{ position:absolute; inset:0; display:flex; flex-direction:column; gap:0; z-index:3; padding:10px; }
+    .team-band{ flex:1; border:1px dashed rgba(255,255,255,.28); border-radius:14px; background: rgba(0,0,0,.12);
+      padding:10px; display:flex; flex-direction:column; overflow:hidden; }
+    .team-band + .team-band{ margin-top:10px; }
+    .team-band-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .team-band-title{ font-weight:900; color:#fff; font-size:0.95rem; }
+    .team-band-sub{ font-size:0.75rem; color: rgba(255,255,255,.60); }
+    .team-band-drop{ flex:1; display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start; overflow:auto; padding-bottom:6px; }
+
+    .player-token{ width:78px; display:flex; flex-direction:column; align-items:center; gap:6px;
+      padding:8px 8px 10px; border-radius:14px;
+      background: rgba(0,0,0,.20); border: 1px solid rgba(255,255,255,.14);
+      user-select:none; touch-action:none; cursor: grab;
+      box-shadow: 0 10px 22px rgba(0,0,0,.25);
+      }
+    .player-token.dragging{ opacity: .88; cursor: grabbing; transform: scale(0.98); }
+    .player-token img{ width:48px; height:48px; border-radius:999px; object-fit:cover; background: rgba(0,0,0,.15); }
+    .player-token .name{ font-size:0.78rem; color: rgba(255,255,255,.88); max-width:78px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .drop-highlight{ outline: 3px solid rgba(34,197,94,.55); box-shadow: 0 0 0 6px rgba(34,197,94,.14); }
+  </style>
   <script src="/js/tactics-board.js"></script>
   <script>
     (function setBottomNavActive(){

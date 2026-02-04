@@ -86,23 +86,20 @@ export class ActivitiesController {
     return this.activitiesService.updatePositions(id, req.user.sub, dto.positions);
   }
 
-  /** 仅管理员可设置本活动已报名用户的分队（teamNo）。候补不参与分队 */
+  /** 获取本活动已报名用户的分队（teamNo）。候补不参与分队；非管理员只读 */
   @Get(':id/teams')
-  @UseGuards(RolesGuard)
-  @Roles('admin', 'super_admin')
-  getTeams(@Param('id') id: string) {
-    return this.activitiesService.getTeams(id);
+  getTeams(@Param('id') id: string, @Request() req) {
+    return this.activitiesService.getTeams(id, req.user.sub, req.user.role);
   }
 
-  /** 仅管理员可批量更新分队 */
+  /** 批量更新分队：系统管理员或活动创建者可编辑 */
   @Patch(':id/teams')
-  @UseGuards(RolesGuard)
-  @Roles('admin', 'super_admin')
   updateTeams(
     @Param('id') id: string,
+    @Request() req,
     @Body() dto: UpdateTeamsDto,
   ) {
-    return this.activitiesService.updateTeams(id, dto);
+    return this.activitiesService.updateTeams(id, req.user.sub, req.user.role, dto);
   }
 
   /** 仅管理员可编辑活动 */

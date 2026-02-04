@@ -414,10 +414,13 @@ export class ActivitiesService {
     return { message: '出场位置已保存' };
   }
 
-  /** 仅管理员：获取已报名用户的分队信息（候补不包含） */
-  async getTeams(activityId: string) {
+  /** 获取已报名用户的分队信息（候补不包含）；非管理员只读 */
+  async getTeams(activityId: string, currentUserId: string, currentUserRole?: string) {
     const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
     if (!activity) throw new NotFoundException('活动不存在');
+
+    const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+    const canEdit = isSystemAdmin || activity.createdById === currentUserId;
 
     const rows = await this.prisma.attendance.findMany({
       where: {
@@ -433,9 +436,16 @@ export class ActivitiesService {
       orderBy: [{ teamNo: 'asc' }, { updatedAt: 'desc' }],
     });
 
+    const teamCount = (activity as any).teamCount || 2;
+    const teamNamesRaw = (activity as any).teamNames;
+    const teamNames = Array.isArray(teamNamesRaw) ? teamNamesRaw : [];
+
     return {
       activityId,
-      teams: rows.map((r) => ({
+      teamCount,
+      teamNames,
+      canEdit,
+      roster: rows.map((r) => ({
         userId: r.userId,
         teamNo: r.teamNo,
         user: r.user,
@@ -443,15 +453,21 @@ export class ActivitiesService {
     };
   }
 
-  /** 仅管理员：批量更新已报名用户的分队（teamNo）。teamNo 为空则清除分队 */
-  async updateTeams(activityId: string, dto: UpdateTeamsDto) {
+  /** 批量更新已报名用户的分队（teamNo）。teamNo 为空则清除分队 */
+  async updateTeams(activityId: string, currentUserId: string, currentUserRole: string | undefined, dto: UpdateTeamsDto) {
     const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
     if (!activity) throw new NotFoundException('活动不存在');
+
+    const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+    if (activity.createdById !== currentUserId && !isSystemAdmin) {
+      throw new ForbiddenException('无权限修改分队');
+    }
+
+    const teamCount = (activity as any).teamCount || 2;
 
     const assignments = (dto && dto.assignments) || [];
     if (!assignments.length) throw new BadRequestException('assignments 不能为空');
 
-    // Only update registered participants; waitlist does not participate.
     await this.prisma.$transaction(async (tx) => {
       for (const a of assignments) {
         const att = await tx.attendance.findUnique({
@@ -460,14 +476,20 @@ export class ActivitiesService {
         });
         if (!att) continue;
         if (!['registered', 'present', 'late'].includes(att.status)) continue;
+
+        const nextTeamNo = a.teamNo ?? null;
+        if (nextTeamNo != null && (nextTeamNo < 1 || nextTeamNo > teamCount)) {
+          continue;
+        }
+
         await tx.attendance.update({
           where: { id: att.id },
-          data: { teamNo: a.teamNo ?? null },
+          data: { teamNo: nextTeamNo },
         });
       }
     });
 
-    return this.getTeams(activityId);
+    return this.getTeams(activityId, currentUserId, currentUserRole);
   }
 
   async remove(id: string, _userId: string) {
