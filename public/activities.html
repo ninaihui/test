@@ -170,11 +170,22 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-white/80 mb-2">活动人数</label>
-                        <input type="number" id="activityMaxParticipants" min="6" max="99" value="14" required
+                        <label class="block text-white/80 mb-2">活动人数上限</label>
+                        <input type="number" id="activityMaxParticipants" min="1" max="40" value="24" required
                             class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
-                            placeholder="11">
-                        <p class="text-white/50 text-xs mt-1">默认 14 人（含替补）。最少 6 人，最多 99 人</p>
+                            placeholder="24">
+                        <p class="text-white/50 text-xs mt-1">最少 1 人，最多 40 人（用于默认分队数推导）</p>
+                    </div>
+                    <div>
+                        <label class="block text-white/80 mb-2">分队数 <span class="text-white/40 text-sm">（可选）</span></label>
+                        <input type="number" id="activityTeamCount" min="1" max="4" placeholder="留空=自动" 
+                            class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/35 focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
+                        <p class="text-white/50 text-xs mt-1">默认算法：teamCount = ceil(人数上限/12)，最多 4 队</p>
+                    </div>
+                    <div id="teamNamesWrap">
+                        <label class="block text-white/80 mb-2">队伍名称 <span class="text-white/40 text-sm">（可编辑）</span></label>
+                        <div id="teamNamesInputs" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                        <p class="text-white/50 text-xs mt-1">默认：红队 / 蓝队 / 紫队 / 黄队</p>
                     </div>
                     <div>
                         <label class="block text-white/80 mb-2">活动描述 <span class="text-white/40 text-sm">（选填）</span></label>
@@ -231,14 +242,44 @@
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
 
+        function renderTeamNameInputs(count) {
+            var wrap = document.getElementById('teamNamesInputs');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            var defaults = (function(){
+                if (count === 1) return ['队伍'];
+                if (count === 2) return ['红队', '蓝队'];
+                if (count === 3) return ['红队', '蓝队', '紫队'];
+                return ['红队', '蓝队', '紫队', '黄队'];
+            })();
+            for (var i = 0; i < count; i++) {
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.setAttribute('data-team-name', '1');
+                input.className = 'w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/35 focus:outline-none focus:ring-2 focus:ring-cyan-400/50';
+                input.placeholder = '队伍' + (i + 1);
+                input.value = defaults[i] || ('队伍' + (i + 1));
+                wrap.appendChild(input);
+            }
+        }
+        function computeDefaultTeamCount(mp) {
+            var c = Math.ceil((mp || 1) / 12);
+            if (c < 1) c = 1;
+            if (c > 4) c = 4;
+            return c;
+        }
+
         function showCreateActivityModal() {
             document.getElementById('modalTitle').textContent = '创建活动';
             document.getElementById('activityForm').reset();
             document.getElementById('activityError').classList.add('hidden');
             document.getElementById('activityDate').value = getThisWeekSaturday();
             var maxEl = document.getElementById('activityMaxParticipants');
-            if (maxEl) maxEl.value = '14';
+            if (maxEl) maxEl.value = '24';
             document.getElementById('activityTime').value = '19:00';
+            var teamCountEl = document.getElementById('activityTeamCount');
+            if (teamCountEl) teamCountEl.value = '';
+            renderTeamNameInputs(computeDefaultTeamCount(24));
             var locInput = document.getElementById('activityLocation');
             var lastLoc = localStorage.getItem(LAST_LOCATION_KEY);
             if (lastLoc && lastLoc.trim()) {
@@ -251,6 +292,25 @@
             }
             document.getElementById('activityModal').classList.remove('hidden');
         }
+
+        // Update default team count + names when maxParticipants changes (only when teamCount is empty)
+        (function bindTeamCountAuto() {
+            var maxEl = document.getElementById('activityMaxParticipants');
+            var teamCountEl = document.getElementById('activityTeamCount');
+            if (!maxEl || !teamCountEl) return;
+            function refresh() {
+                var mp = parseInt(maxEl.value || '1', 10);
+                if (!mp || mp < 1) mp = 1;
+                if (mp > 40) mp = 40;
+                var tcVal = (teamCountEl.value || '').trim();
+                var tc = tcVal ? parseInt(tcVal, 10) : null;
+                var eff = (tc && tc >= 1 && tc <= 4) ? tc : computeDefaultTeamCount(mp);
+                renderTeamNameInputs(eff);
+            }
+            maxEl.addEventListener('change', refresh);
+            maxEl.addEventListener('input', function(){ if (!teamCountEl.value) refresh(); });
+            teamCountEl.addEventListener('change', refresh);
+        })();
 
         document.getElementById('activityLocation').addEventListener('input', function() {
             var loc = this.value.trim();
@@ -284,13 +344,47 @@
             const activityTime = document.getElementById('activityTime').value;
             const location = document.getElementById('activityLocation').value.trim();
             const description = document.getElementById('activityDescription').value.trim() || undefined;
-            var maxParticipants = 14;
+            var maxParticipants = 24;
             var maxEl = document.getElementById('activityMaxParticipants');
             if (maxEl && maxEl.value !== '') {
                 var n = parseInt(maxEl.value, 10);
-                if (n >= 6 && n <= 99) maxParticipants = n;
-                else if (n >= 1 && n < 6) { maxParticipants = 6; if (maxEl) maxEl.value = '6'; }
+                if (n >= 1 && n <= 40) maxParticipants = n;
+                else if (n < 1) { maxParticipants = 1; if (maxEl) maxEl.value = '1'; }
+                else if (n > 40) { maxParticipants = 40; if (maxEl) maxEl.value = '40'; }
             }
+
+            function computeDefaultTeamCount(mp) {
+                var c = Math.ceil((mp || 1) / 12);
+                if (c < 1) c = 1;
+                if (c > 4) c = 4;
+                return c;
+            }
+            var teamCountEl = document.getElementById('activityTeamCount');
+            var teamCount = null;
+            if (teamCountEl && teamCountEl.value !== '') {
+                var tc = parseInt(teamCountEl.value, 10);
+                if (tc >= 1 && tc <= 4) teamCount = tc;
+            }
+            var effectiveTeamCount = teamCount || computeDefaultTeamCount(maxParticipants);
+
+            function defaultTeamNames(count) {
+                if (count === 1) return ['队伍'];
+                if (count === 2) return ['红队', '蓝队'];
+                if (count === 3) return ['红队', '蓝队', '紫队'];
+                return ['红队', '蓝队', '紫队', '黄队'];
+            }
+            var names = [];
+            var namesWrap = document.getElementById('teamNamesInputs');
+            if (namesWrap) {
+                var inputs = namesWrap.querySelectorAll('input[data-team-name]');
+                inputs.forEach(function(inp){
+                    var v = (inp.value || '').trim();
+                    if (v) names.push(v);
+                });
+            }
+            var defaults = defaultTeamNames(effectiveTeamCount);
+            while (names.length < effectiveTeamCount) names.push(defaults[names.length] || ('队伍' + (names.length + 1)));
+            if (names.length > effectiveTeamCount) names = names.slice(0, effectiveTeamCount);
 
             if (!activityDate || !activityTime || !location) {
                 errorEl.textContent = '请填写日期、时间和地点';
@@ -316,6 +410,8 @@
                         location: location || undefined,
                         description,
                         maxParticipants,
+                        teamCount: teamCount || undefined,
+                        teamNames: names,
                     }),
                 });
                 const data = await res.json().catch(() => ({}));

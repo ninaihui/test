@@ -16,8 +16,31 @@ export class ActivitiesService {
 
   async create(userId: string, createActivityDto: CreateActivityDto) {
     let maxParticipants = createActivityDto.maxParticipants != null ? createActivityDto.maxParticipants : 14;
-    if (maxParticipants < 6) maxParticipants = 6;
-    if (maxParticipants > 99) maxParticipants = 99;
+    if (maxParticipants < 1) maxParticipants = 1;
+    if (maxParticipants > 40) maxParticipants = 40;
+
+    // Default teamCount = clamp(ceil(maxParticipants/12), 1, 4)
+    let teamCount = createActivityDto.teamCount != null ? Number(createActivityDto.teamCount) : Math.ceil(maxParticipants / 12);
+    if (!Number.isFinite(teamCount) || teamCount < 1) teamCount = 1;
+    if (teamCount > 4) teamCount = 4;
+
+    const defaultTeamNamesByCount: Record<number, string[]> = {
+      1: ['队伍'],
+      2: ['红队', '蓝队'],
+      3: ['红队', '蓝队', '紫队'],
+      4: ['红队', '蓝队', '紫队', '黄队'],
+    };
+    let teamNames = (createActivityDto.teamNames || []).map((s) => String(s || '').trim()).filter(Boolean);
+    const defaults = defaultTeamNamesByCount[teamCount] || defaultTeamNamesByCount[2];
+    // Pad/trim
+    if (teamNames.length < teamCount) {
+      for (const d of defaults) {
+        if (teamNames.length >= teamCount) break;
+        if (!teamNames.includes(d)) teamNames.push(d);
+      }
+      while (teamNames.length < teamCount) teamNames.push('队伍' + (teamNames.length + 1));
+    }
+    if (teamNames.length > teamCount) teamNames = teamNames.slice(0, teamCount);
 
     const deadlineAt = createActivityDto.deadlineAt ? new Date(createActivityDto.deadlineAt) : null;
     const activityDate = new Date(createActivityDto.date);
@@ -34,6 +57,8 @@ export class ActivitiesService {
         location: createActivityDto.location,
         venueId: createActivityDto.venueId,
         maxParticipants,
+        teamCount,
+        teamNames,
         createdById: userId,
       },
       include: {

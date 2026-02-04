@@ -52,6 +52,10 @@ model Activity {
   venueId          String?  // 关联场地（优先展示场地名）
   /// 活动人数上限（含替补），默认 14
   maxParticipants  Int      @default(14)
+  /// 分队数量（默认按 maxParticipants 自动推导；范围 1-4）
+  teamCount        Int      @default(2)
+  /// 分队名称（JSON 数组，例如 ["红队","蓝队"]）。可选
+  teamNames        Json?
   createdById      String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
