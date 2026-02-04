@@ -117,11 +117,12 @@
     .field {
       position: relative; width: 100%; height: 100%;
       border-radius: inherit;
-      /* flat 2D grass */
+      /* minimalist pro pitch */
       background:
-        repeating-linear-gradient(180deg, rgba(255,255,255,0.08) 0 18px, rgba(255,255,255,0.03) 18px 36px),
-        linear-gradient(180deg, #2ea15f 0%, #239152 100%);
-      background-color: #239152;
+        linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 82%, rgba(0,0,0,0.18) 100%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0 22px, rgba(255,255,255,0.02) 22px 44px),
+        linear-gradient(180deg, #2aa65f 0%, #1f8f53 100%);
+      background-color: #1f8f53;
     }
 
     .goal { position: absolute; left: 50%; transform: translateX(-50%); width: 42%; height: 12%; min-height: 28px; pointer-events: none; z-index: 1; }
@@ -134,32 +135,33 @@
 
     .field-lines {
       position: absolute; inset: 0; pointer-events: none;
-      /* 2D markings: outer lines + center line + center circle + penalty boxes + spots */
+      /* minimalist markings: thinner, cleaner */
       background:
         /* outer border */
-        linear-gradient(0deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 6% 4% / 88% 2px no-repeat,
-        linear-gradient(0deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 6% 96% / 88% 2px no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 6% 4% / 2px 92% no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 94% 4% / 2px 92% no-repeat,
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 4% / 88% 1.5px no-repeat,
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 96% / 88% 1.5px no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 4% / 1.5px 92% no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 94% 4% / 1.5px 92% no-repeat,
 
         /* center line */
-        linear-gradient(0deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 6% 50% / 88% 2px no-repeat,
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 50% / 88% 1.5px no-repeat,
 
-        /* center circle */
-        radial-gradient(circle at 50% 50%, transparent 0 14%, rgba(255,255,255,0.9) 14% 14.8%, transparent 14.8% 100%),
+        /* center circle + spot */
+        radial-gradient(circle at 50% 50%, transparent 0 14%, rgba(255,255,255,0.85) 14% 14.6%, transparent 14.6% 100%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0 3px, transparent 4px 100%),
 
         /* penalty boxes (top/bottom) */
-        linear-gradient(0deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 25% 10% / 50% 2px no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 25% 10% / 2px 18% no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 75% 10% / 2px 18% no-repeat,
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 10% / 50% 1.5px no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 10% / 1.5px 18% no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 75% 10% / 1.5px 18% no-repeat,
 
-        linear-gradient(0deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 25% 90% / 50% 2px no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 25% 72% / 2px 18% no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.9)) 75% 72% / 2px 18% no-repeat,
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 90% / 50% 1.5px no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 72% / 1.5px 18% no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 75% 72% / 1.5px 18% no-repeat,
 
         /* penalty spots */
-        radial-gradient(circle at 50% 22%, rgba(255,255,255,0.9) 0 4px, transparent 5px 100%),
-        radial-gradient(circle at 50% 78%, rgba(255,255,255,0.9) 0 4px, transparent 5px 100%);
+        radial-gradient(circle at 50% 22%, rgba(255,255,255,0.9) 0 3px, transparent 4px 100%),
+        radial-gradient(circle at 50% 78%, rgba(255,255,255,0.9) 0 3px, transparent 4px 100%);
     }
 
     .players{ position:absolute; inset:0; z-index:2; }
