@@ -171,26 +171,43 @@
                 window.fillPositionSelect(selectEl, maxParticipants);
             }
 
-            // Mark occupied positions (do not disable)
-            try {
-                var occupied = {};
-                regAttendances.forEach(function(a){
-                    if (!a || !a.position) return;
-                    var uid = a.user && a.user.id;
-                    if (currentUser && uid && currentUser.id && uid === currentUser.id) return; // exclude myself
-                    var p = String(a.position).trim();
-                    if (p) occupied[p] = true;
-                });
-                for (var j = 0; j < selectEl.options.length; j++) {
-                    var opt = selectEl.options[j];
-                    var v = (opt.value || '').trim();
-                    if (!v) continue;
-                    // restore base text if previously marked
-                    opt.textContent = opt.textContent.replace(/\s*·\s*已有人\s*$/, '');
-                    if (occupied[v]) {
-                        opt.textContent = opt.textContent + ' · 已有人';
+            function refreshPositionOccupiedHints() {
+                try {
+                    // If team is unassigned (0), do not show occupied hints
+                    var teamEl2 = document.getElementById('registerTeamSelect');
+                    var tn2 = teamEl2 ? parseInt((teamEl2.value || '0'), 10) : 0;
+                    if (!Number.isFinite(tn2) || tn2 < 0) tn2 = 0;
+
+                    var occupied = {};
+                    if (tn2 > 0) {
+                        regAttendances.forEach(function(a){
+                            if (!a || !a.position) return;
+                            var uid = a.user && a.user.id;
+                            if (currentUser && uid && currentUser.id && uid === currentUser.id) return; // exclude myself
+                            var atn = a.teamNo;
+                            if (atn == null) return;
+                            if (typeof atn !== 'number') atn = parseInt(String(atn), 10);
+                            if (atn !== tn2) return;
+                            var p = String(a.position).trim();
+                            if (p) occupied[p] = true;
+                        });
                     }
-                }
+
+                    for (var j = 0; j < selectEl.options.length; j++) {
+                        var opt = selectEl.options[j];
+                        var v = (opt.value || '').trim();
+                        if (!v) continue;
+                        opt.textContent = opt.textContent.replace(/\s*·\s*已有人\s*$/, '');
+                        if (tn2 > 0 && occupied[v]) {
+                            opt.textContent = opt.textContent + ' · 已有人';
+                        }
+                    }
+                } catch (e) {}
+            }
+            refreshPositionOccupiedHints();
+            try {
+                var teamEl3 = document.getElementById('registerTeamSelect');
+                if (teamEl3) teamEl3.addEventListener('change', refreshPositionOccupiedHints);
             } catch (e) {}
 
             var me = currentUser;

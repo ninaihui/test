@@ -268,11 +268,22 @@ export class ActivitiesService {
 
     const pos = position?.trim();
     if (pos) {
-      const samePosition = await this.prisma.attendance.findFirst({
-        where: { activityId, position: pos, status: { in: ['registered', 'present', 'late'] } },
-      });
-      if (samePosition) {
-        throw new ConflictException('位置重复了，请换个位置');
+      // Position conflicts are checked within the same team only.
+      // If team is unassigned (teamNo=null), do not enforce position conflict.
+      const tn = teamNo != null ? Number(teamNo) : 0;
+      const normalizedTeamNoForPosition = Number.isFinite(tn) && tn > 0 ? tn : null;
+      if (normalizedTeamNoForPosition != null) {
+        const samePosition = await this.prisma.attendance.findFirst({
+          where: {
+            activityId,
+            position: pos,
+            teamNo: normalizedTeamNoForPosition,
+            status: { in: ['registered', 'present', 'late'] },
+          },
+        });
+        if (samePosition) {
+          throw new ConflictException('该队该位置已有人，请换个位置');
+        }
       }
     }
 
