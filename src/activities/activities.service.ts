@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { UpdateTeamsDto } from './dto/update-teams.dto';
+import { normalizeEditorUserIds } from './activities.editors';
 
 @Injectable()
 export class ActivitiesService {
@@ -214,6 +215,8 @@ export class ActivitiesService {
         ...updateActivityDto,
         date: updateActivityDto.date ? new Date(updateActivityDto.date) : undefined,
         venueId: updateActivityDto.venueId !== undefined ? updateActivityDto.venueId : undefined,
+        // do not allow editing editorUserIds via this endpoint
+        editorUserIds: undefined,
       },
       include: {
         createdBy: {
@@ -457,7 +460,9 @@ export class ActivitiesService {
     if (!activity) throw new NotFoundException('活动不存在');
 
     const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
-    const canEdit = isSystemAdmin || activity.createdById === currentUserId;
+    const editorsRaw = (activity as any).editorUserIds;
+    const editors = Array.isArray(editorsRaw) ? editorsRaw : [];
+    const canEdit = isSystemAdmin || activity.createdById === currentUserId || editors.includes(currentUserId);
 
     const rows = await this.prisma.attendance.findMany({
       where: {
@@ -496,7 +501,10 @@ export class ActivitiesService {
     if (!activity) throw new NotFoundException('活动不存在');
 
     const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
-    if (activity.createdById !== currentUserId && !isSystemAdmin) {
+    const editorsRaw = (activity as any).editorUserIds;
+    const editors = Array.isArray(editorsRaw) ? editorsRaw : [];
+    const canEdit = isSystemAdmin || activity.createdById === currentUserId || editors.includes(currentUserId);
+    if (!canEdit) {
       throw new ForbiddenException('无权限修改分队');
     }
 
@@ -527,6 +535,20 @@ export class ActivitiesService {
     });
 
     return this.getTeams(activityId, currentUserId, currentUserRole);
+  }
+
+  /** 异常通道：仅网站管理员调用（controller 已限制）。设置本活动额外可编辑者 userId 列表 */
+  async updateEditors(activityId: string, editorUserIds: string[]) {
+    const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
+    if (!activity) throw new NotFoundException('活动不存在');
+
+    const normalized = normalizeEditorUserIds(editorUserIds || []);
+    await this.prisma.activity.update({
+      where: { id: activityId },
+      data: { editorUserIds: normalized },
+    });
+
+    return { activityId, editorUserIds: normalized };
   }
 
   async remove(id: string, _userId: string) {

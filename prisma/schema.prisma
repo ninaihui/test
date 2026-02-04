@@ -58,6 +58,8 @@ model Activity {
   teamCount        Int      @default(2)
   /// 分队名称（JSON 数组，例如 ["红队","蓝队"]）。可选
   teamNames        Json?
+  /// 异常通道：可编辑本活动战术板的额外用户ID列表（JSON 数组）
+  editorUserIds    Json?
   createdById      String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

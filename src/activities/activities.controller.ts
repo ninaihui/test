@@ -13,6 +13,7 @@ import {
 import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
+import { UpdateActivityEditorsDto } from './dto/update-activity-editors.dto';
 import { RegisterActivityDto } from './dto/register-activity.dto';
 import { UpdatePositionsDto } from './dto/update-positions.dto';
 import { UpdateMyPositionDto } from './dto/update-my-position.dto';
@@ -90,7 +91,7 @@ export class ActivitiesController {
     return this.activitiesService.getTeams(id, req.user.sub, req.user.role);
   }
 
-  /** 批量更新分队：系统管理员或活动创建者可编辑 */
+  /** 批量更新分队：系统管理员 / 活动创建者 / 活动协管（异常通道）可编辑 */
   @Patch(':id/teams')
   updateTeams(
     @Param('id') id: string,
@@ -110,6 +111,17 @@ export class ActivitiesController {
     @Body() updateActivityDto: UpdateActivityDto,
   ) {
     return this.activitiesService.update(id, req.user.sub, updateActivityDto, req.user.role);
+  }
+
+  /** 异常通道：仅网站管理员可设置本活动的战术板协管（额外编辑者） */
+  @Patch(':id/editors')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'super_admin')
+  updateEditors(
+    @Param('id') id: string,
+    @Body() dto: UpdateActivityEditorsDto,
+  ) {
+    return this.activitiesService.updateEditors(id, dto.editorUserIds);
   }
 
   /** 仅管理员可删除活动 */
