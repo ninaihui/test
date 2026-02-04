@@ -570,8 +570,11 @@
       var avatar = document.createElement('img');
       avatar.alt = '';
       avatar.className = 'player-avatar';
-      var defaultSrc = isSlotEmpty(p) ? defaultAvatarSvg(p.number, p.color) : defaultAvatarQuestionSvg();
-      avatar.src = p.avatarUrl || defaultSrc;
+      // Prefer user avatar when available; otherwise fall back to jersey-style token.
+      var defaultSrc = defaultAvatarSvg(p.number, p.color);
+      if (isSlotEmpty(p)) defaultSrc = defaultAvatarSvg(p.number, p.color);
+      else defaultSrc = defaultAvatarQuestionSvg();
+      avatar.src = p.avatarUrl ? p.avatarUrl : defaultSrc;
       avatar.onerror = function () { this.src = defaultSrc; };
 
       var label = document.createElement('div');
