@@ -311,7 +311,16 @@
       padding:10px; display:flex; flex-direction:column; overflow:hidden; }
     .team-band + .team-band{ margin-top:10px; }
     .team-band-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .team-band-title-row{ display:flex; align-items:center; gap:8px; }
     .team-band-title{ font-weight:900; color:#fff; font-size:0.95rem; }
+    .team-count-badge{
+      font-size: 0.78rem; font-weight: 900;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.18);
+      color: rgba(255,255,255,.92);
+    }
     .team-band-sub{ font-size:0.75rem; color: rgba(255,255,255,.60); }
     .team-band-drop{ flex:1; display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start; overflow:auto; padding-bottom:6px; }
 
@@ -322,11 +331,56 @@
       box-shadow: 0 10px 22px rgba(0,0,0,.25);
       }
     .player-token.dragging{ opacity: .88; cursor: grabbing; transform: scale(0.98); }
-    .player-token img{ width:48px; height:48px; border-radius:999px; object-fit:cover; background: rgba(0,0,0,.15); }
+
+    /* Team color accents */
+    :root{
+      --team-1: 239,68,68;   /* red */
+      --team-2: 59,130,246;  /* blue */
+      --team-3: 168,85,247;  /* purple */
+      --team-4: 234,179,8;   /* yellow */
+      --team-bench: 148,163,184; /* slate */
+    }
+    .player-token .avatar-media{ width:48px; height:48px; border-radius:999px; object-fit:cover; background: rgba(0,0,0,.15);
+      border: 3px solid rgba(255,255,255,.14);
+      outline: 0 solid transparent;
+      display:block;
+    }
+    .unassigned-user .player-avatar.avatar-media{ border: 3px solid rgba(255,255,255,.14); outline: 0 solid transparent; }
+
+    .avatar-placeholder{
+      display:grid !important;
+      place-items:center;
+      font-weight: 900;
+      color: rgba(255,255,255,.75);
+      background: rgba(15,23,42,.25);
+      letter-spacing: 0.02em;
+    }
+
+    /* stronger, more obvious team rings */
+    .player-token[data-team-no="1"] .avatar-media, .unassigned-user[data-team-no="1"] .avatar-media{
+      border-color: rgba(var(--team-1), .98);
+      box-shadow: 0 0 0 7px rgba(var(--team-1), .18);
+    }
+    .player-token[data-team-no="2"] .avatar-media, .unassigned-user[data-team-no="2"] .avatar-media{
+      border-color: rgba(var(--team-2), .98);
+      box-shadow: 0 0 0 7px rgba(var(--team-2), .18);
+    }
+    .player-token[data-team-no="3"] .avatar-media, .unassigned-user[data-team-no="3"] .avatar-media{
+      border-color: rgba(var(--team-3), .98);
+      box-shadow: 0 0 0 7px rgba(var(--team-3), .18);
+    }
+    .player-token[data-team-no="4"] .avatar-media, .unassigned-user[data-team-no="4"] .avatar-media{
+      border-color: rgba(var(--team-4), .98);
+      box-shadow: 0 0 0 7px rgba(var(--team-4), .18);
+    }
+
+    /* Bench / unassigned subtle */
+    .unassigned-user .avatar-media{ box-shadow: 0 0 0 6px rgba(var(--team-bench), .10); }
+
     .player-token .name{ font-size:0.78rem; color: rgba(255,255,255,.88); max-width:78px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .drop-highlight{ outline: 3px solid rgba(34,197,94,.55); box-shadow: 0 0 0 6px rgba(34,197,94,.14); }
   </style>
-  <script src="/js/tactics-board.js"></script>
+  <script src="/js/tactics-board.js?v=20260205-1"></script>
   <script>
     (function setBottomNavActive(){
       const path = window.location.pathname;
@@ -394,38 +448,8 @@
       if (backdrop) backdrop.addEventListener('click', close);
     })();
 
-    // Mirror unassigned list into mobile drawer whenever it changes.
-    (function mirrorUnassigned(){
-      var desktopWrap = document.getElementById('unassignedWrap');
-      var desktopList = document.getElementById('unassignedUsers');
-      var mobileWrap = document.getElementById('unassignedWrapMobile');
-      var mobileList = document.getElementById('unassignedUsersMobile');
-      var emptyDesktop = document.getElementById('unassignedEmptyHint');
-      var emptyMobile = document.getElementById('unassignedEmptyHintMobile');
-      function sync(){
-        try {
-          if (!desktopWrap || !desktopList || !mobileWrap || !mobileList) return;
-          var has = !desktopWrap.classList.contains('hidden') && desktopList.children.length > 0;
-          if (has) {
-            mobileWrap.classList.remove('hidden');
-            mobileList.innerHTML = '';
-            Array.from(desktopList.children).forEach(function(node){ mobileList.appendChild(node.cloneNode(true)); });
-            if (emptyMobile) emptyMobile.classList.add('hidden');
-            if (emptyDesktop) emptyDesktop.classList.add('hidden');
-          } else {
-            mobileWrap.classList.add('hidden');
-            if (emptyMobile) emptyMobile.classList.remove('hidden');
-            if (emptyDesktop) emptyDesktop.classList.remove('hidden');
-          }
-        } catch (e) {}
-      }
-      // initial + observe
-      sync();
-      if (desktopList && window.MutationObserver) {
-        var mo = new MutationObserver(function(){ sync(); });
-        mo.observe(desktopList, { childList: true, subtree: true });
-      }
-    })();
+    // NOTE: unassigned list is rendered by /public/js/tactics-board.js into both desktop + mobile containers.
+    // Do not clone nodes here; cloning loses drag handlers on mobile.
   </script>
 </body>
 </html>

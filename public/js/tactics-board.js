@@ -55,6 +55,7 @@
     teamNames: ['红队', '蓝队'],
     canEdit: false,
     roster: [], // [{userId, teamNo, user:{username,avatarUrl}}]
+    dirty: false,
   };
 
   function render() {
@@ -82,16 +83,40 @@
       const el = document.createElement('div');
       el.className = 'player-token';
       el.setAttribute('data-user-id', r.userId);
+      el.setAttribute('data-team-no', (r.teamNo != null ? String(r.teamNo) : ''));
 
-      const img = document.createElement('img');
-      img.src = (r.user && r.user.avatarUrl) ? r.user.avatarUrl : '/assets/default-avatar.png';
-      img.alt = r.user && r.user.username ? r.user.username : 'player';
+      // Tap-to-cycle team (helps on mobile when drag is hard)
+      el.addEventListener('click', (ev) => {
+        if (!state.canEdit) return;
+        // If click comes right after a drag end, ignore
+        if (Date.now() - lastDropAt < 250) return;
+        const uid = el.getAttribute('data-user-id');
+        if (!uid) return;
+        cycleUserTeam(uid);
+        ev.stopPropagation();
+      });
+
+      const hasAvatar = !!(r.user && r.user.avatarUrl);
+      let avatarEl;
+      if (hasAvatar) {
+        const img = document.createElement('img');
+        img.className = 'avatar-media';
+        img.src = r.user.avatarUrl;
+        img.alt = r.user && r.user.username ? r.user.username : 'player';
+        avatarEl = img;
+      } else {
+        const ph = document.createElement('div');
+        ph.className = 'avatar-media avatar-placeholder';
+        ph.textContent = '?';
+        ph.setAttribute('aria-label', 'no avatar');
+        avatarEl = ph;
+      }
 
       const name = document.createElement('div');
       name.className = 'name';
       name.textContent = (r.user && r.user.username) ? r.user.username : r.userId;
 
-      el.appendChild(img);
+      el.appendChild(avatarEl);
       el.appendChild(name);
 
       if (!state.canEdit) {
@@ -111,13 +136,26 @@
       header.className = 'team-band-header';
 
       const left = document.createElement('div');
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'team-band-title-row';
+
       const h = document.createElement('div');
       h.className = 'team-band-title';
       h.textContent = title;
+
+      const badge = document.createElement('span');
+      badge.className = 'team-count-badge';
+      badge.textContent = String((byTeam[teamNo] || []).length);
+
+      titleRow.appendChild(h);
+      titleRow.appendChild(badge);
+
       const sub = document.createElement('div');
       sub.className = 'team-band-sub';
-      sub.textContent = '拖拽到这里';
-      left.appendChild(h);
+      sub.textContent = state.canEdit ? '拖拽到这里 / 点击队员可切换队伍' : '只读';
+
+      left.appendChild(titleRow);
       left.appendChild(sub);
 
       header.appendChild(left);
@@ -151,6 +189,22 @@
       saveBtn.classList.toggle('opacity-50', !state.canEdit);
       saveBtn.classList.toggle('cursor-not-allowed', !state.canEdit);
     }
+
+    // Update roster headings with counts
+    const benchCount = bench.length;
+    const rosterTitleEls = document.querySelectorAll('.roster-title');
+    rosterTitleEls.forEach((el) => {
+      if (!el) return;
+      // Only update texts that contain 未选位置/候补
+      const t = (el.textContent || '').trim();
+      if (t.includes('未选位置') || t.includes('候补')) {
+        el.textContent = `未选位置（${benchCount}）`;
+      }
+    });
+
+    // Dirty indicator
+    if (state.dirty) showStatus('未保存');
+
   }
 
   function renderBench(benchList) {
@@ -169,17 +223,29 @@
         const token = document.createElement('div');
         token.className = 'unassigned-user';
         token.setAttribute('data-user-id', r.userId);
+        token.setAttribute('data-team-no', (r.teamNo != null ? String(r.teamNo) : ''));
 
-        const img = document.createElement('img');
-        img.className = 'player-avatar';
-        img.src = (r.user && r.user.avatarUrl) ? r.user.avatarUrl : '/assets/default-avatar.png';
-        img.alt = r.user && r.user.username ? r.user.username : 'player';
+        const hasAvatar = !!(r.user && r.user.avatarUrl);
+        let avatarEl;
+        if (hasAvatar) {
+          const img = document.createElement('img');
+          img.className = 'player-avatar avatar-media';
+          img.src = r.user.avatarUrl;
+          img.alt = r.user && r.user.username ? r.user.username : 'player';
+          avatarEl = img;
+        } else {
+          const ph = document.createElement('div');
+          ph.className = 'player-avatar avatar-media avatar-placeholder';
+          ph.textContent = '?';
+          ph.setAttribute('aria-label', 'no avatar');
+          avatarEl = ph;
+        }
 
         const name = document.createElement('div');
         name.className = 'player-label';
         name.textContent = (r.user && r.user.username) ? r.user.username : r.userId;
 
-        token.appendChild(img);
+        token.appendChild(avatarEl);
         token.appendChild(name);
 
         if (state.canEdit) enableDrag(token);
@@ -202,6 +268,7 @@
   // ===== Drag/Drop (Pointer-based) =====
 
   let drag = null;
+  let lastDropAt = 0;
 
   function findDropTarget(x, y) {
     const el = document.elementFromPoint(x, y);
@@ -301,6 +368,7 @@
       }
     }
 
+    lastDropAt = Date.now();
     drag = null;
   }
 
@@ -308,11 +376,31 @@
     const tc = Math.max(1, Math.min(4, Number(state.teamCount) || 2));
     if (teamNo != null && (teamNo < 1 || teamNo > tc)) return;
 
+    let changed = false;
     state.roster = (state.roster || []).map((r) => {
-      if (r.userId === userId) return { ...r, teamNo: teamNo };
+      if (r.userId === userId) {
+        if ((r.teamNo ?? null) !== (teamNo ?? null)) changed = true;
+        return { ...r, teamNo: teamNo };
+      }
       return r;
     });
+    if (changed) {
+      state.dirty = true;
+    }
     render();
+    if (changed) scheduleAutoSave();
+  }
+
+  function cycleUserTeam(userId) {
+    const tc = Math.max(1, Math.min(4, Number(state.teamCount) || 2));
+    const cur = (state.roster || []).find((r) => r.userId === userId);
+    const curNo = cur ? (cur.teamNo ?? null) : null;
+    // bench -> team1 -> team2 ... -> teamN -> bench
+    let next = null;
+    if (curNo == null) next = 1;
+    else if (curNo >= 1 && curNo < tc) next = curNo + 1;
+    else next = null;
+    setUserTeamNo(userId, next);
   }
 
   // ===== Data =====
@@ -338,6 +426,7 @@
     state.teamNames = data.teamNames || [];
     state.canEdit = !!data.canEdit;
     state.roster = data.roster || [];
+    state.dirty = false;
 
     // Subtitle
     const subtitleEl = document.getElementById('tacticsSubtitle');
@@ -346,9 +435,37 @@
     render();
   }
 
-  async function save() {
+  // ===== Save (manual + auto) =====
+
+  let autoSaveTimer = null;
+  let saving = false;
+  let pendingSave = false;
+
+  function scheduleAutoSave() {
+    if (!state.canEdit) return;
+    if (!state.dirty) return;
+    if (!activityId) return;
+
+    // Debounce: user may drag multiple times
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      // Only auto-save when still dirty
+      if (!state.dirty) return;
+      save({ mode: 'auto' }).catch(() => {
+        // save() already shows status
+      });
+    }, 1200);
+  }
+
+  async function save(opts) {
+    opts = opts || { mode: 'manual' };
     if (!state.canEdit) return;
     if (!activityId) return;
+
+    if (saving) {
+      pendingSave = true;
+      return;
+    }
 
     const tc = Math.max(1, Math.min(4, Number(state.teamCount) || 2));
 
@@ -358,7 +475,14 @@
       return { userId: r.userId };
     });
 
-    saveBtn.disabled = true;
+    saving = true;
+    pendingSave = false;
+
+    if (opts.mode === 'auto') showStatus('自动保存中…');
+    else showStatus('保存中…');
+
+    if (saveBtn) saveBtn.disabled = true;
+
     try {
       const res = await fetch('/activities/' + encodeURIComponent(activityId) + '/teams', {
         method: 'PATCH',
@@ -373,17 +497,38 @@
         showStatus((body && body.message) ? body.message : '保存失败');
         return;
       }
+
+      state.dirty = false;
       showStatus('已保存');
-      // Refresh from server
+
+      // Refresh from server (keeps authoritative ordering & permissions)
       await load();
+    } catch (e) {
+      showStatus('保存失败（网络错误）');
+      // keep dirty = true
     } finally {
-      saveBtn.disabled = !state.canEdit;
+      saving = false;
+      if (saveBtn) saveBtn.disabled = !state.canEdit;
+
+      if (pendingSave && state.dirty) {
+        // Run one more save cycle if changes happened while saving
+        pendingSave = false;
+        scheduleAutoSave();
+      }
     }
   }
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', save);
+    saveBtn.addEventListener('click', () => save({ mode: 'manual' }));
   }
+
+  // Warn on leaving with unsaved changes
+  window.addEventListener('beforeunload', (e) => {
+    if (!state.canEdit) return;
+    if (!state.dirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
 
   load().catch(() => showStatus('加载失败'));
 })();
