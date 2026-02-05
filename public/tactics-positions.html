@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="background:#080d17">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#080d17" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>阵容 - 战术板</title>
+  <link rel="stylesheet" href="/assets/app.css?v=20260130-2" />
+  <style>html,body{background:#080d17;color:#e2e8f0;min-height:100%;margin:0}</style>
+  <style>
+    body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
+      background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
+        url('/assets/login-bg.png') no-repeat center center fixed;
+      background-size: cover; }
+
+    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+    .shadow-field { box-shadow: 0 8px 32px rgba(0,0,0,.35); }
+
+    .shell { max-width: 1100px; margin: 0 auto; padding: 1rem; padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:0.75rem; }
+    .topbar-left{ display:flex; align-items:center; gap:0.75rem; min-width:0; }
+    .title{ margin:0; font-size:1.125rem; font-weight:900; color:#fff; line-height:1.2; }
+    .subtitle{ margin:0.25rem 0 0; font-size:0.8125rem; color:rgba(255,255,255,.62); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .icon-btn{ width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: rgba(255,255,255,.88);
+    }
+
+    .pill-btn{ height:40px; padding:0 0.85rem; border-radius:999px; background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14); color: rgba(255,255,255,.92); font-weight:800; font-size:0.9rem;
+      display:inline-flex; align-items:center; gap:0.5rem; white-space:nowrap;
+    }
+
+    .card{ border-radius: 1.25rem; overflow:hidden; }
+
+    .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:0.75rem;
+      padding: 0.9rem 0.9rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,.08); flex-wrap:wrap; }
+
+    .seg{ display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .seg-btn{ padding:0.55rem 0.9rem; border-radius:999px; font-weight:900; border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.20); color: rgba(255,255,255,.92); min-height:40px; }
+    .seg-btn.active{ background: linear-gradient(135deg, rgba(34,197,94,.52), rgba(45,212,191,.38)); border-color: rgba(34,197,94,.92);
+      box-shadow: 0 0 0 6px rgba(34,197,94,.14);
+    }
+
+    .status{ margin:0; font-size:0.8rem; color: rgba(255,255,255,.70); opacity:0; transition: opacity .2s ease; }
+    .status.show{ opacity: 1; }
+
+    .grid{ display:grid; gap:0.75rem; }
+    @media (min-width:1024px){ .grid{ grid-template-columns: 1fr 320px; align-items:start; } }
+
+    .field-wrap{ position:relative; width:100%; aspect-ratio: 3/4; border-radius:1.25rem; overflow:hidden;
+      box-shadow: 0 10px 36px rgba(0,0,0,.42);
+    }
+
+    .field{ position:relative; width:100%; height:100%; border-radius:inherit;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 82%, rgba(0,0,0,0.18) 100%),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0 22px, rgba(255,255,255,0.02) 22px 44px),
+        linear-gradient(180deg, #2aa65f 0%, #1f8f53 100%);
+    }
+
+    .field-lines{ position:absolute; inset:0; pointer-events:none;
+      background:
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 4% / 88% 1.5px no-repeat,
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 96% / 88% 1.5px no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 4% / 1.5px 92% no-repeat,
+        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 94% 4% / 1.5px 92% no-repeat,
+        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 50% / 88% 1.5px no-repeat,
+        radial-gradient(circle at 50% 50%, transparent 0 14%, rgba(255,255,255,0.85) 14% 14.6%, transparent 14.6% 100%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0 3px, transparent 4px 100%);
+    }
+
+    .slots{ position:absolute; inset:0; z-index:3; }
+
+    .slot{ position:absolute; transform:translate(-50%,-50%); width:84px; display:flex; flex-direction:column; align-items:center; gap:6px;
+      user-select:none; touch-action:none;
+    }
+    .slot .pos{ font-size:0.78rem; font-weight:900; color: rgba(255,255,255,.90); text-shadow:0 2px 10px rgba(0,0,0,0.35); }
+
+    .token{ width:78px; display:flex; flex-direction:column; align-items:center; gap:6px;
+      padding:8px 8px 10px; border-radius:14px; background: rgba(0,0,0,.20); border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 22px rgba(0,0,0,.25);
+      cursor: grab;
+    }
+    .token.dragging{ opacity:.88; cursor: grabbing; transform: scale(0.98); }
+
+    :root{
+      --team-a: 239,68,68;   /* red */
+      --team-b: 59,130,246;  /* blue */
+      --bench: 148,163,184;
+    }
+
+    .avatar-media{ width:48px; height:48px; border-radius:999px; object-fit:cover; display:block;
+      border: 3px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.15);
+    }
+    .avatar-placeholder{ display:grid; place-items:center; font-weight: 900; color: rgba(255,255,255,.75);
+      background: rgba(15,23,42,.25);
+    }
+
+    .token[data-team="A"] .avatar-media{ border-color: rgba(var(--team-a), .98); box-shadow: 0 0 0 7px rgba(var(--team-a), .18); }
+    .token[data-team="B"] .avatar-media{ border-color: rgba(var(--team-b), .98); box-shadow: 0 0 0 7px rgba(var(--team-b), .18); }
+    .token[data-team="bench"] .avatar-media{ box-shadow: 0 0 0 6px rgba(var(--bench), .10); }
+
+    .token .name{ font-size:0.78rem; color: rgba(255,255,255,.88); max-width:78px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    .drop-highlight{ outline: 3px solid rgba(34,197,94,.55); box-shadow: 0 0 0 6px rgba(34,197,94,.14); border-radius:14px; }
+
+    /* roster */
+    .roster-card{ border-radius:1.25rem; overflow:hidden; }
+    .roster-head{ padding:0.9rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .roster-title{ font-weight:900; color:#fff; font-size:0.95rem; }
+    .roster-sub{ font-size:0.78rem; color: rgba(255,255,255,.58); margin-top:0.25rem; }
+    .roster-body{ padding:0.9rem; }
+    .bench-list{ display:flex; flex-wrap:wrap; gap:0.65rem; }
+
+    .hidden{ display:none !important; }
+  </style>
+</head>
+<body>
+  <div class="shell" id="tacticsPositions">
+    <header class="topbar">
+      <div class="topbar-left">
+        <a id="backLink" href="/tactics.html" class="icon-btn" aria-label="返回">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </a>
+        <div style="min-width:0">
+          <h1 class="title" id="pageTitle">阵容</h1>
+          <p class="subtitle" id="pageSub">A队 / B队 两套阵容（按位置）</p>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:0.5rem; align-items:center">
+        <button type="button" id="btnOpenBench" class="pill-btn lg:hidden">候补</button>
+      </div>
+    </header>
+
+    <div class="glass card shadow-field">
+      <div class="toolbar">
+        <div class="seg" id="teamSeg">
+          <button type="button" class="seg-btn active" data-team="A">A队</button>
+          <button type="button" class="seg-btn" data-team="B">B队</button>
+        </div>
+
+        <div class="seg" id="formationSeg">
+          <button type="button" class="seg-btn active" data-formation="4-4-2">4-4-2</button>
+          <button type="button" class="seg-btn" data-formation="4-3-3">4-3-3</button>
+          <button type="button" class="seg-btn" data-formation="3-5-2">3-5-2</button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-left:auto">
+          <span id="saveStatus" class="status" aria-live="polite"></span>
+          <button type="button" id="btnSave" class="pill-btn">保存</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <section class="p-3 sm:p-4">
+          <div class="field-wrap">
+            <div class="field">
+              <div class="field-lines"></div>
+              <div id="slots" class="slots" aria-label="阵容槽位"></div>
+            </div>
+          </div>
+          <div class="text-white/60 text-sm mt-3">拖拽候补到对应位置。点队员可回到候补。</div>
+        </section>
+
+        <aside class="glass roster-card hidden lg:block" id="benchAside">
+          <div class="roster-head">
+            <div class="roster-title" id="benchTitle">候补</div>
+            <div class="roster-sub">拖到场上位置</div>
+          </div>
+          <div class="roster-body">
+            <div id="benchList" class="bench-list"></div>
+            <div id="benchEmpty" class="text-white/60 text-sm">暂无候补</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- mobile bench drawer -->
+  <div id="benchBackdrop" class="drawer-backdrop hidden" aria-hidden="true"></div>
+  <div id="benchDrawer" class="glass drawer hidden" role="dialog" aria-modal="true" aria-label="候补列表">
+    <div class="roster-head" style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+      <div>
+        <div class="roster-title" id="benchTitleMobile">候补</div>
+        <div class="roster-sub">拖到场上位置</div>
+      </div>
+      <button type="button" id="btnCloseBench" class="icon-btn" aria-label="关闭">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="roster-body">
+      <div id="benchListMobile" class="bench-list"></div>
+      <div id="benchEmptyMobile" class="text-white/60 text-sm">暂无候补</div>
+    </div>
+  </div>
+
+  <script src="/js/tactics-positions.js?v=20260205-1"></script>
+</body>
+</html>
