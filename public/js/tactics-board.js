@@ -1,389 +1,602 @@
 /*
-  Tactics Board (Team Split)
-  - Vertical full pitch split into 1..4 horizontal bands (team 1..N)
-  - Bench area for unassigned (teamNo = null)
-  - Drag/drop on mobile + desktop (pointer-based)
-  - Save to DB: PATCH /activities/:id/teams
+  Tactics Board (Formation slots on pitch)
+  - Per team: formation pitch with fixed slot coordinates (like footballgo.club)
+  - Supports formations: 4-4-2 / 4-3-3 / 3-5-2 (others fall back to 4-4-2)
+  - Drag/drop players into slots
+  - Persist to DB: Attendance.teamNo + Attendance.slotNo
+  - Persist formations (per team): Activity.teamFormations[]
+
+  Rules:
+  - Slots on pitch are fixed 11. Extra players stay in subs/bench area.
+  - Read-only for non-admin users (canEdit=false)
 */
 
 (function () {
-  const ROOT_ID = 'tacticsBoard';
   const TOKEN_KEY = 'authToken';
+  const CURRENT_TEAM_KEY = 'team_management:currentTeamId';
 
-  const root = document.getElementById(ROOT_ID);
-  if (!root) return;
+  const boardEl = document.getElementById('tacticsBoard');
+  if (!boardEl) return;
 
-  const bandsEl = root.querySelector('#teamBands');
-  const saveBtn = root.querySelector('#btnSaveTeams');
-  const saveStatus = root.querySelector('#saveStatus');
-  const readOnlyHint = root.querySelector('#tacticsReadOnlyHint');
+  const fieldEl = boardEl.querySelector('.field');
+  const bandsLayer = boardEl.querySelector('.players');
+  const benchEl = document.getElementById('benchPlayers');
 
-  const activityId = (function () {
-    const p = new URLSearchParams(window.location.search);
-    return p.get('activityId');
-  })();
-
-  const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
-  if (!token) {
-    window.location.href = '/login.html';
-    return;
-  }
-
-  function showStatus(text) {
-    if (!saveStatus) return;
-    saveStatus.textContent = text;
-    saveStatus.classList.add('show');
-    clearTimeout(showStatus._t);
-    showStatus._t = setTimeout(() => saveStatus.classList.remove('show'), 1800);
-  }
-
-  function safeJson(res) {
-    return res.text().then((t) => {
-      try { return t ? JSON.parse(t) : null; } catch (e) { return null; }
-    });
-  }
-
-  function getDefaultTeamNames(count) {
-    if (count === 1) return ['队伍'];
-    if (count === 2) return ['红队', '蓝队'];
-    if (count === 3) return ['红队', '蓝队', '紫队'];
-    return ['红队', '蓝队', '紫队', '黄队'];
-  }
-
-  let state = {
-    teamCount: 2,
-    teamNames: ['红队', '蓝队'],
-    canEdit: false,
-    roster: [], // [{userId, teamNo, user:{username,avatarUrl}}]
+  const ui = {
+    activitySelect: document.getElementById('activitySelect'),
+    save: document.getElementById('btnSave'),
+    status: document.getElementById('saveStatus'),
+    editHint: document.getElementById('editHint'),
   };
 
-  function render() {
-    if (!bandsEl) return;
-    bandsEl.innerHTML = '';
+  function flashStatus(text, ms) {
+    if (!ui.status) return;
+    ui.status.textContent = text;
+    ui.status.classList.add('show');
+    clearTimeout(flashStatus._t);
+    flashStatus._t = setTimeout(() => ui.status.classList.remove('show'), ms || 1500);
+  }
 
-    const tc = Math.max(1, Math.min(4, Number(state.teamCount) || 2));
-    let names = Array.isArray(state.teamNames) ? state.teamNames.slice(0) : [];
-    const defaults = getDefaultTeamNames(tc);
-    while (names.length < tc) names.push(defaults[names.length] || ('队伍' + (names.length + 1)));
-    if (names.length > tc) names = names.slice(0, tc);
+  function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  }
 
-    // Group roster by teamNo
-    const byTeam = {};
-    for (let i = 1; i <= tc; i++) byTeam[i] = [];
-    const bench = [];
-
-    (state.roster || []).forEach((r) => {
-      const t = r.teamNo;
-      if (t && t >= 1 && t <= tc) byTeam[t].push(r);
-      else bench.push(r);
+  async function apiFetch(path, opts) {
+    const token = getToken();
+    const res = await fetch(path, {
+      ...(opts || {}),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...((opts && opts.headers) || {}),
+      },
     });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(txt || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
 
-    function mkToken(r) {
-      const el = document.createElement('div');
-      el.className = 'player-token';
-      el.setAttribute('data-user-id', r.userId);
+  function qs() {
+    return new URLSearchParams(window.location.search);
+  }
 
-      const img = document.createElement('img');
-      img.src = (r.user && r.user.avatarUrl) ? r.user.avatarUrl : '/assets/default-avatar.png';
-      img.alt = r.user && r.user.username ? r.user.username : 'player';
+  function getActivityId() {
+    return qs().get('activityId') || '';
+  }
 
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = (r.user && r.user.username) ? r.user.username : r.userId;
+  function setActivityId(id) {
+    const u = new URL(window.location.href);
+    u.searchParams.set('activityId', id);
+    window.location.href = u.toString();
+  }
 
-      el.appendChild(img);
-      el.appendChild(name);
+  function defaultAvatarUrl() {
+    return '/assets/default-avatar.svg';
+  }
 
-      if (!state.canEdit) {
-        el.style.cursor = 'default';
-      } else {
-        enableDrag(el);
-      }
-      return el;
+  const FORMATIONS = ['4-4-2', '4-3-3', '3-5-2'];
+
+  function normalizeFormation(f) {
+    const s = (f || '').trim();
+    if (FORMATIONS.includes(s)) return s;
+    return '4-4-2';
+  }
+
+  function slotPositions(formation) {
+    // slotNo: 1..11
+    // coordinates are percentage positions relative to the pitch container
+    // y: 0(top)->100(bottom) (we defend at bottom)
+    const f = normalizeFormation(formation);
+
+    // shared GK
+    const gk = [{ slotNo: 1, x: 50, y: 86 }];
+
+    if (f === '4-4-2') {
+      return gk.concat([
+        // DEF 2-5
+        { slotNo: 2, x: 20, y: 70 },
+        { slotNo: 3, x: 40, y: 72 },
+        { slotNo: 4, x: 60, y: 72 },
+        { slotNo: 5, x: 80, y: 70 },
+        // MID 6-9
+        { slotNo: 6, x: 15, y: 50 },
+        { slotNo: 7, x: 38, y: 52 },
+        { slotNo: 8, x: 62, y: 52 },
+        { slotNo: 9, x: 85, y: 50 },
+        // ATT 10-11
+        { slotNo: 10, x: 42, y: 28 },
+        { slotNo: 11, x: 58, y: 28 },
+      ]);
     }
 
-    function mkBand(teamNo, title) {
+    if (f === '4-3-3') {
+      return gk.concat([
+        // DEF 2-5
+        { slotNo: 2, x: 20, y: 70 },
+        { slotNo: 3, x: 40, y: 72 },
+        { slotNo: 4, x: 60, y: 72 },
+        { slotNo: 5, x: 80, y: 70 },
+        // MID 6-8
+        { slotNo: 6, x: 28, y: 52 },
+        { slotNo: 7, x: 50, y: 50 },
+        { slotNo: 8, x: 72, y: 52 },
+        // ATT 9-11
+        { slotNo: 9, x: 25, y: 28 },
+        { slotNo: 10, x: 50, y: 24 },
+        { slotNo: 11, x: 75, y: 28 },
+      ]);
+    }
+
+    // 3-5-2
+    return gk.concat([
+      // DEF 2-4
+      { slotNo: 2, x: 28, y: 72 },
+      { slotNo: 3, x: 50, y: 74 },
+      { slotNo: 4, x: 72, y: 72 },
+      // MID 5-9
+      { slotNo: 5, x: 15, y: 52 },
+      { slotNo: 6, x: 32, y: 50 },
+      { slotNo: 7, x: 50, y: 52 },
+      { slotNo: 8, x: 68, y: 50 },
+      { slotNo: 9, x: 85, y: 52 },
+      // ATT 10-11
+      { slotNo: 10, x: 42, y: 28 },
+      { slotNo: 11, x: 58, y: 28 },
+    ]);
+  }
+
+  const state = {
+    activityId: '',
+    teamCount: 2,
+    teamNames: ['队伍1', '队伍2'],
+    teamFormations: ['4-4-2', '4-4-2'],
+    canEdit: false,
+    roster: [], // {attendanceId,userId,username,avatarUrl,number,status,teamNo,slotNo}
+    dirty: new Map(), // attendanceId -> {teamNo, slotNo}
+    formationsDirty: false,
+  };
+
+  function normalizeTeamName(i) {
+    return (state.teamNames[i] || '').trim() || `队伍${i + 1}`;
+  }
+
+  function getTeamPlayers(teamNo) {
+    return state.roster.filter((p) => (p.teamNo || 0) === teamNo);
+  }
+
+  function findByAttendanceId(attendanceId) {
+    return state.roster.find((x) => x.attendanceId === attendanceId);
+  }
+
+  function markDirty(p) {
+    state.dirty.set(p.attendanceId, { teamNo: p.teamNo || 0, slotNo: p.slotNo || 0 });
+  }
+
+  function renderToken(p) {
+    const el = document.createElement('div');
+    el.className = 'player-token';
+    el.dataset.attendanceId = p.attendanceId;
+
+    const img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.src = p.avatarUrl || defaultAvatarUrl();
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = defaultAvatarUrl();
+    };
+
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = p.username || '未命名';
+
+    const no = document.createElement('div');
+    no.className = 'no';
+    no.textContent = p.number ? `#${p.number}` : '';
+
+    el.appendChild(img);
+    el.appendChild(name);
+    el.appendChild(no);
+
+    el.draggable = !!state.canEdit;
+    el.setAttribute('draggable', state.canEdit ? 'true' : 'false');
+
+    if (state.canEdit) {
+      el.addEventListener('dragstart', (e) => {
+        el.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', p.attendanceId);
+      });
+      el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    }
+
+    return el;
+  }
+
+  function attachSlotDrop(slotEl, teamNo, slotNo) {
+    if (!slotEl) return;
+
+    slotEl.addEventListener('dragover', (e) => {
+      if (!state.canEdit) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      slotEl.classList.add('drag-over');
+    });
+
+    slotEl.addEventListener('dragleave', () => slotEl.classList.remove('drag-over'));
+
+    slotEl.addEventListener('drop', (e) => {
+      if (!state.canEdit) return;
+      e.preventDefault();
+      slotEl.classList.remove('drag-over');
+
+      const attendanceId = e.dataTransfer.getData('text/plain');
+      if (!attendanceId) return;
+
+      const dragged = findByAttendanceId(attendanceId);
+      if (!dragged) return;
+
+      // occupant in this slot?
+      const occupant = state.roster.find((p) => (p.teamNo || 0) === teamNo && (p.slotNo || 0) === slotNo);
+      if (occupant && occupant.attendanceId !== dragged.attendanceId) {
+        // bump occupant to subs
+        occupant.slotNo = 0;
+        markDirty(occupant);
+      }
+
+      dragged.teamNo = teamNo;
+      dragged.slotNo = slotNo;
+      markDirty(dragged);
+      render();
+    });
+  }
+
+  function attachTeamSubsDrop(container, teamNo) {
+    if (!container) return;
+
+    container.addEventListener('dragover', (e) => {
+      if (!state.canEdit) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    container.addEventListener('drop', (e) => {
+      if (!state.canEdit) return;
+      e.preventDefault();
+      const attendanceId = e.dataTransfer.getData('text/plain');
+      if (!attendanceId) return;
+      const item = findByAttendanceId(attendanceId);
+      if (!item) return;
+
+      item.teamNo = teamNo;
+      item.slotNo = 0;
+      markDirty(item);
+      render();
+    });
+  }
+
+  function attachGlobalBenchDrop(container) {
+    if (!container) return;
+
+    container.addEventListener('dragover', (e) => {
+      if (!state.canEdit) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    container.addEventListener('drop', (e) => {
+      if (!state.canEdit) return;
+      e.preventDefault();
+      const attendanceId = e.dataTransfer.getData('text/plain');
+      if (!attendanceId) return;
+      const item = findByAttendanceId(attendanceId);
+      if (!item) return;
+
+      item.teamNo = 0;
+      item.slotNo = 0;
+      markDirty(item);
+      render();
+    });
+  }
+
+  function renderPitchSlot(slotNo, pos, occupant, teamNo) {
+    const el = document.createElement('div');
+    el.className = 'pitch-slot';
+    el.style.left = `${pos.x}%`;
+    el.style.top = `${pos.y}%`;
+    el.dataset.teamNo = String(teamNo);
+    el.dataset.slotNo = String(slotNo);
+
+    attachSlotDrop(el, teamNo, slotNo);
+
+    // jersey
+    const jersey = document.createElement('div');
+    jersey.className = 'jersey';
+
+    const num = document.createElement('div');
+    num.className = 'jersey-num';
+    num.textContent = String(slotNo);
+    jersey.appendChild(num);
+
+    el.appendChild(jersey);
+
+    if (occupant) {
+      const avatar = document.createElement('img');
+      avatar.className = 'slot-avatar';
+      avatar.alt = '';
+      avatar.loading = 'lazy';
+      avatar.decoding = 'async';
+      avatar.src = occupant.avatarUrl || defaultAvatarUrl();
+      avatar.onerror = () => {
+        avatar.onerror = null;
+        avatar.src = defaultAvatarUrl();
+      };
+      el.appendChild(avatar);
+
+      const name = document.createElement('div');
+      name.className = 'slot-name';
+      name.textContent = occupant.username || '';
+      el.appendChild(name);
+
+      // make the whole slot draggable by dragging the avatar
+      if (state.canEdit) {
+        el.draggable = false;
+        avatar.draggable = true;
+        avatar.addEventListener('dragstart', (e) => {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', occupant.attendanceId);
+        });
+      }
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'slot-empty';
+      empty.textContent = `空位${slotNo}`;
+      el.appendChild(empty);
+    }
+
+    return el;
+  }
+
+  function renderFormationButtons(i) {
+    const wrap = document.createElement('div');
+    wrap.className = 'formation-buttons';
+
+    const current = normalizeFormation(state.teamFormations[i]);
+
+    for (const f of FORMATIONS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'formation-btn' + (f === current ? ' active' : '');
+      btn.textContent = f;
+      btn.disabled = !state.canEdit;
+      btn.addEventListener('click', () => {
+        state.teamFormations[i] = f;
+        state.formationsDirty = true;
+        render();
+      });
+      wrap.appendChild(btn);
+    }
+
+    return wrap;
+  }
+
+  function render() {
+    if (!bandsLayer) return;
+    bandsLayer.innerHTML = '';
+    if (benchEl) benchEl.innerHTML = '';
+
+    const n = Math.max(2, Math.min(4, state.teamCount || 2));
+    const bandH = 100 / n;
+
+    for (let i = 0; i < n; i++) {
+      const teamNo = i + 1;
+
       const band = document.createElement('div');
       band.className = 'team-band';
-      band.setAttribute('data-team-no', String(teamNo));
+      band.dataset.teamNo = String(teamNo);
+      band.style.top = `${i * bandH}%`;
+      band.style.height = `${bandH}%`;
 
       const header = document.createElement('div');
       header.className = 'team-band-header';
 
-      const left = document.createElement('div');
-      const h = document.createElement('div');
-      h.className = 'team-band-title';
-      h.textContent = title;
-      const sub = document.createElement('div');
-      sub.className = 'team-band-sub';
-      sub.textContent = '拖拽到这里';
-      left.appendChild(h);
-      left.appendChild(sub);
+      const title = document.createElement('div');
+      title.className = 'team-band-title';
+      title.textContent = normalizeTeamName(i);
 
-      header.appendChild(left);
+      const right = document.createElement('div');
+      right.className = 'team-band-right';
 
-      const drop = document.createElement('div');
-      drop.className = 'team-band-drop';
-      drop.setAttribute('data-drop-team-no', String(teamNo));
+      const teamPlayers = getTeamPlayers(teamNo);
+      const count = document.createElement('div');
+      count.className = 'team-band-count';
+      count.textContent = `${teamPlayers.length}人`;
 
-      (byTeam[teamNo] || []).forEach((r) => drop.appendChild(mkToken(r)));
+      right.appendChild(count);
+      header.appendChild(title);
+      header.appendChild(right);
+
+      const formationBar = renderFormationButtons(i);
+
+      // pitch overlay
+      const pitch = document.createElement('div');
+      pitch.className = 'team-pitch';
+
+      const formation = normalizeFormation(state.teamFormations[i]);
+      const positions = slotPositions(formation);
+
+      const bySlot = new Map();
+      for (const p of teamPlayers) {
+        const s = p.slotNo || 0;
+        if (s > 0 && s <= 11) bySlot.set(s, p);
+      }
+
+      for (const p of positions) {
+        pitch.appendChild(renderFormationSlot(p.slotNo, p, bySlot.get(p.slotNo), teamNo));
+      }
+
+      // subs
+      const subs = teamPlayers.filter((p) => !p.slotNo || p.slotNo === 0 || p.slotNo > 11);
+      const subsEl = document.createElement('div');
+      subsEl.className = 'subs';
+      const subsTitle = document.createElement('div');
+      subsTitle.className = 'subs-title';
+      subsTitle.textContent = '替补区（拖拽到球场槽位）';
+      const subsList = document.createElement('div');
+      subsList.className = 'subs-list';
+      attachTeamSubsDrop(subsList, teamNo);
+      for (const p of subs) subsList.appendChild(renderToken(p));
+      subsEl.appendChild(subsTitle);
+      subsEl.appendChild(subsList);
 
       band.appendChild(header);
-      band.appendChild(drop);
+      band.appendChild(formationBar);
+      band.appendChild(pitch);
+      band.appendChild(subsEl);
 
-      return band;
+      bandsLayer.appendChild(band);
     }
 
-    // Create bands (top to bottom = team 1..N)
-    for (let i = 1; i <= tc; i++) {
-      bandsEl.appendChild(mkBand(i, names[i - 1] || ('队伍' + i)));
+    // global bench (unassigned)
+    const benchPlayers = state.roster.filter((p) => !p.teamNo || p.teamNo === 0);
+    if (benchEl) {
+      attachGlobalBenchDrop(benchEl);
+      for (const p of benchPlayers) benchEl.appendChild(renderToken(p));
     }
 
-    // Bench lives in roster panel
-    renderBench(bench);
-
-    // Read-only UI
-    if (readOnlyHint) {
-      readOnlyHint.classList.toggle('hidden', !!state.canEdit);
-    }
-    if (saveBtn) {
-      saveBtn.disabled = !state.canEdit;
-      saveBtn.classList.toggle('opacity-50', !state.canEdit);
-      saveBtn.classList.toggle('cursor-not-allowed', !state.canEdit);
+    if (ui.save) ui.save.disabled = !state.canEdit || (state.dirty.size === 0 && !state.formationsDirty);
+    if (ui.editHint) {
+      ui.editHint.textContent = state.canEdit
+        ? '拖拽球员到球场槽位，点击保存'
+        : '只读：仅管理员/创建者可调整阵型与站位';
     }
   }
 
-  function renderBench(benchList) {
-    // Desktop + mobile containers
-    const d = document.getElementById('unassignedUsers');
-    const m = document.getElementById('unassignedUsersMobile');
-    const wrapD = document.getElementById('unassignedWrap');
-    const wrapM = document.getElementById('unassignedWrapMobile');
-    const emptyD = document.getElementById('unassignedEmptyHint');
-    const emptyM = document.getElementById('unassignedEmptyHintMobile');
-
-    function fill(container) {
-      if (!container) return;
-      container.innerHTML = '';
-      benchList.forEach((r) => {
-        const token = document.createElement('div');
-        token.className = 'unassigned-user';
-        token.setAttribute('data-user-id', r.userId);
-
-        const img = document.createElement('img');
-        img.className = 'player-avatar';
-        img.src = (r.user && r.user.avatarUrl) ? r.user.avatarUrl : '/assets/default-avatar.png';
-        img.alt = r.user && r.user.username ? r.user.username : 'player';
-
-        const name = document.createElement('div');
-        name.className = 'player-label';
-        name.textContent = (r.user && r.user.username) ? r.user.username : r.userId;
-
-        token.appendChild(img);
-        token.appendChild(name);
-
-        if (state.canEdit) enableDrag(token);
-        else token.style.cursor = 'default';
-
-        container.appendChild(token);
-      });
-    }
-
-    const has = benchList && benchList.length;
-    if (wrapD) wrapD.classList.toggle('hidden', !has);
-    if (wrapM) wrapM.classList.toggle('hidden', !has);
-    if (emptyD) emptyD.classList.toggle('hidden', !!has);
-    if (emptyM) emptyM.classList.toggle('hidden', !!has);
-
-    fill(d);
-    fill(m);
+  function renderFormationSlot(slotNo, pos, occupant, teamNo) {
+    return renderPitchSlot(slotNo, pos, occupant, teamNo);
   }
 
-  // ===== Drag/Drop (Pointer-based) =====
-
-  let drag = null;
-
-  function findDropTarget(x, y) {
-    const el = document.elementFromPoint(x, y);
-    if (!el) return null;
-    const drop = el.closest('[data-drop-team-no], #unassignedUsers, #unassignedUsersMobile');
-    return drop;
-  }
-
-  function clearHighlights() {
-    document.querySelectorAll('.drop-highlight').forEach((n) => n.classList.remove('drop-highlight'));
-  }
-
-  function enableDrag(el) {
-    el.addEventListener('pointerdown', (ev) => {
-      if (!state.canEdit) return;
-      ev.preventDefault();
-
-      const target = ev.currentTarget;
-      const rect = target.getBoundingClientRect();
-
-      drag = {
-        source: target,
-        pointerId: ev.pointerId,
-        startX: ev.clientX,
-        startY: ev.clientY,
-        offsetX: ev.clientX - rect.left,
-        offsetY: ev.clientY - rect.top,
-        ghost: null,
-      };
-
-      // ghost
-      const g = target.cloneNode(true);
-      g.classList.add('dragging');
-      g.style.position = 'fixed';
-      g.style.left = (ev.clientX - drag.offsetX) + 'px';
-      g.style.top = (ev.clientY - drag.offsetY) + 'px';
-      g.style.width = rect.width + 'px';
-      g.style.zIndex = 9999;
-      g.style.pointerEvents = 'none';
-      document.body.appendChild(g);
-      drag.ghost = g;
-      target.classList.add('dragging');
-
-      target.setPointerCapture(ev.pointerId);
-    });
-
-    el.addEventListener('pointermove', (ev) => {
-      if (!drag || drag.pointerId !== ev.pointerId) return;
-      if (drag.ghost) {
-        drag.ghost.style.left = (ev.clientX - drag.offsetX) + 'px';
-        drag.ghost.style.top = (ev.clientY - drag.offsetY) + 'px';
-      }
-
-      clearHighlights();
-      const drop = findDropTarget(ev.clientX, ev.clientY);
-      if (drop && drop.getAttribute) {
-        drop.classList.add('drop-highlight');
-      }
-    });
-
-    el.addEventListener('pointerup', (ev) => {
-      if (!drag || drag.pointerId !== ev.pointerId) return;
-      finishDrop(ev.clientX, ev.clientY);
-      try { ev.currentTarget.releasePointerCapture(ev.pointerId); } catch (e) {}
-    });
-
-    el.addEventListener('pointercancel', (ev) => {
-      if (!drag || drag.pointerId !== ev.pointerId) return;
-      finishDrop(null, null, true);
-      try { ev.currentTarget.releasePointerCapture(ev.pointerId); } catch (e) {}
-    });
-  }
-
-  function finishDrop(x, y, cancelled) {
-    clearHighlights();
-    if (!drag) return;
-
-    const source = drag.source;
-    const ghost = drag.ghost;
-
-    if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
-    if (source) source.classList.remove('dragging');
-
-    if (!cancelled && x != null && y != null) {
-      const drop = findDropTarget(x, y);
-      if (drop) {
-        // Determine roster item by userId
-        const userId = source.getAttribute('data-user-id');
-        if (userId) {
-          if (drop.id === 'unassignedUsers' || drop.id === 'unassignedUsersMobile') {
-            setUserTeamNo(userId, null);
-          } else {
-            const tn = parseInt(drop.getAttribute('data-drop-team-no') || '0', 10);
-            setUserTeamNo(userId, (tn >= 1 ? tn : null));
-          }
-        }
-      }
-    }
-
-    drag = null;
-  }
-
-  function setUserTeamNo(userId, teamNo) {
-    const tc = Math.max(1, Math.min(4, Number(state.teamCount) || 2));
-    if (teamNo != null && (teamNo < 1 || teamNo > tc)) return;
-
-    state.roster = (state.roster || []).map((r) => {
-      if (r.userId === userId) return { ...r, teamNo: teamNo };
-      return r;
-    });
-    render();
-  }
-
-  // ===== Data =====
-
-  async function load() {
-    if (!activityId) {
-      showStatus('缺少 activityId');
+  async function loadActivities() {
+    const teamId = localStorage.getItem(CURRENT_TEAM_KEY);
+    if (!teamId) {
+      flashStatus('请先选择球队', 2000);
       return;
     }
 
-    // Use /activities/:id/teams for roster + edit permission + team config
-    const res = await fetch('/activities/' + encodeURIComponent(activityId) + '/teams', {
-      headers: { Authorization: 'Bearer ' + token },
-    });
-    if (!res.ok) {
-      const body = await safeJson(res);
-      showStatus((body && body.message) ? body.message : '加载失败');
+    const list = await apiFetch(`/activities?teamId=${encodeURIComponent(teamId)}`);
+    if (!ui.activitySelect) return;
+
+    ui.activitySelect.innerHTML = '<option value="">选择活动…</option>';
+
+    for (const a of list) {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      const d = a.date ? new Date(a.date) : null;
+      const ds = d ? `${d.getMonth() + 1}/${d.getDate()}` : '';
+      opt.textContent = `${ds} ${a.name}`.trim();
+      ui.activitySelect.appendChild(opt);
+    }
+
+    const current = getActivityId();
+    if (current) {
+      ui.activitySelect.value = current;
       return;
     }
 
-    const data = await res.json();
-    state.teamCount = data.teamCount || 2;
-    state.teamNames = data.teamNames || [];
-    state.canEdit = !!data.canEdit;
-    state.roster = data.roster || [];
+    if (list && list[0]) {
+      setActivityId(list[0].id);
+    }
+  }
 
-    // Subtitle
-    const subtitleEl = document.getElementById('tacticsSubtitle');
-    if (subtitleEl) subtitleEl.textContent = '拖拽分队（会保存到数据库）';
+  async function loadTeams(activityId) {
+    const payload = await apiFetch(`/activities/${encodeURIComponent(activityId)}/teams`);
+
+    state.activityId = activityId;
+    state.teamCount = payload.teamCount || 2;
+    state.teamNames = payload.teamNames || [];
+    state.teamFormations = (payload.teamFormations || []).map(normalizeFormation);
+    state.canEdit = !!payload.canEdit;
+    state.roster = (payload.roster || []).slice().sort((a, b) => {
+      const ta = a.teamNo || 0;
+      const tb = b.teamNo || 0;
+      if (ta !== tb) return ta - tb;
+      const sa = a.slotNo || 0;
+      const sb = b.slotNo || 0;
+      if (sa !== sb) return sa - sb;
+      const na = (a.number || 9999) - (b.number || 9999);
+      if (na !== 0) return na;
+      return (a.username || '').localeCompare(b.username || '');
+    });
+
+    // normalize formations length
+    const n = Math.max(2, Math.min(4, state.teamCount || 2));
+    state.teamFormations = Array.from({ length: n }, (_, i) => normalizeFormation(state.teamFormations[i]));
+
+    state.dirty.clear();
+    state.formationsDirty = false;
 
     render();
+    flashStatus(state.canEdit ? '已加载，可拖拽站位' : '已加载（只读）', 1200);
   }
 
   async function save() {
     if (!state.canEdit) return;
-    if (!activityId) return;
 
-    const tc = Math.max(1, Math.min(4, Number(state.teamCount) || 2));
+    if (state.dirty.size === 0 && !state.formationsDirty) {
+      flashStatus('没有更改', 1200);
+      return;
+    }
 
-    const assignments = (state.roster || []).map((r) => {
-      const t = r.teamNo;
-      if (t && t >= 1 && t <= tc) return { userId: r.userId, teamNo: t };
-      return { userId: r.userId };
+    const assignments = Array.from(state.dirty.entries()).map(([attendanceId, v]) => ({
+      attendanceId,
+      teamNo: v.teamNo,
+      slotNo: v.slotNo,
+    }));
+
+    const body = { assignments };
+    if (state.formationsDirty) body.formations = state.teamFormations.slice(0, 4);
+
+    await apiFetch(`/activities/${encodeURIComponent(state.activityId)}/teams`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
     });
 
-    saveBtn.disabled = true;
-    try {
-      const res = await fetch('/activities/' + encodeURIComponent(activityId) + '/teams', {
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ assignments }),
-      });
-      const body = await safeJson(res);
-      if (!res.ok) {
-        showStatus((body && body.message) ? body.message : '保存失败');
-        return;
-      }
-      showStatus('已保存');
-      // Refresh from server
-      await load();
-    } finally {
-      saveBtn.disabled = !state.canEdit;
+    state.dirty.clear();
+    state.formationsDirty = false;
+    render();
+    flashStatus('已保存阵型/站位', 1600);
+  }
+
+  function wireUi() {
+    ui.activitySelect?.addEventListener('change', () => {
+      const id = ui.activitySelect.value;
+      if (id) setActivityId(id);
+    });
+
+    ui.save?.addEventListener('click', () =>
+      save().catch((e) => flashStatus(`保存失败：${e.message}`, 2500)),
+    );
+
+    // Prevent accidental scroll-jank while dragging
+    if (fieldEl) {
+      fieldEl.addEventListener('dragstart', (e) => e.preventDefault());
     }
   }
 
-  if (saveBtn) {
-    saveBtn.addEventListener('click', save);
+  async function init() {
+    wireUi();
+
+    await loadActivities().catch((e) => flashStatus(`加载活动失败：${e.message}`, 2500));
+
+    const activityId = getActivityId();
+    if (!activityId) return;
+
+    if (ui.activitySelect) ui.activitySelect.value = activityId;
+    await loadTeams(activityId).catch((e) => flashStatus(`加载战术板失败：${e.message}`, 2500));
   }
 
-  load().catch(() => showStatus('加载失败'));
+  init();
 })();

@@ -10,288 +10,110 @@
   <link rel="stylesheet" href="/assets/app.css?v=20260130-2" />
   <style>html,body{background:#080d17;color:#e2e8f0;min-height:100%;margin:0}</style>
   <style>
-    body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
-      background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
-        url('/assets/login-bg.png') no-repeat center center fixed;
-      background-size: cover; }
-
-    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
-    .shadow-field { box-shadow: 0 8px 32px rgba(0,0,0,.35); }
-
-    /* ====== Layout ====== */
-    .tactics-shell { max-width: 1100px; margin: 0 auto; padding: 1rem; padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
-    @media (min-width: 1024px){ .tactics-shell { padding: 1.25rem; } }
-
-    .tactics-topbar {
-      display:flex; align-items:center; gap:0.75rem; justify-content:space-between;
-      margin-bottom: 0.75rem;
+    /* Keep the existing field styles from old index (minimal copy) */
+    .field-wrap { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); }
+    @media (max-width: 640px){ .field-wrap { aspect-ratio: 3/4; max-height: 72vh; } }
+    .field { position: relative; width: 100%; height: 100%; background:
+      linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 12.5%),
+      linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 12.5%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 8%, rgba(255,255,255,0.01) 8% 16%),
+      radial-gradient(circle at 50% 50%, rgba(34,197,94,0.25), transparent 55%),
+      linear-gradient(180deg, #14532d, #052e16);
     }
-
-    .tactics-topbar-left { display:flex; align-items:center; gap:0.75rem; min-width:0; }
-    .tactics-title-wrap { min-width:0; }
-    .tactics-title { margin:0; font-size:1.125rem; font-weight:800; color:#fff; line-height:1.2; }
-    .tactics-subtitle { margin:0.25rem 0 0; font-size:0.8125rem; color:rgba(255,255,255,.62); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-    .icon-btn {
-      width: 44px; height: 44px; border-radius: 999px;
-      display:flex; align-items:center; justify-content:center;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.14);
-      color: rgba(255,255,255,.88);
-      transition: background .15s ease, border-color .15s ease, transform .15s ease;
-      flex-shrink:0;
+    .field-lines{ position:absolute; inset:0; pointer-events:none; opacity:.9; background:
+      linear-gradient(90deg, transparent 49.8%, rgba(255,255,255,0.55) 50%, transparent 50.2%),
+      radial-gradient(circle at 50% 50%, transparent 0 15%, rgba(255,255,255,0.55) 15% 15.4%, transparent 15.4% 100%),
+      linear-gradient(transparent 68%, rgba(255,255,255,0.55) 68% 68.4%, transparent 68.4%),
+      linear-gradient(transparent 31.6%, rgba(255,255,255,0.55) 31.6% 32%, transparent 32%);
     }
-    .icon-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.20); }
-    .icon-btn:active { transform: scale(0.98); }
-
-    .tactics-actions { display:flex; align-items:center; gap:0.5rem; flex-shrink:0; }
-    .pill-btn {
-      height: 40px; padding: 0 0.75rem; border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.14);
-      color: rgba(255,255,255,.92);
-      font-weight: 700; font-size: 0.875rem;
-      display:inline-flex; align-items:center; gap:0.5rem;
-      transition: background .15s ease, border-color .15s ease, transform .15s ease;
-      white-space: nowrap;
-      min-width: 76px;
-      justify-content: center;
-    }
-    .pill-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.20); }
-    .pill-btn:active { transform: scale(0.99); }
-
-    .tactics-grid {
-      display:grid;
-      gap: 0.75rem;
-    }
-    @media (min-width: 1024px){
-      .tactics-grid { grid-template-columns: 1fr 320px; align-items:start; }
-    }
-
-    .tactics-card { border-radius: 1.25rem; overflow:hidden; }
-
-    /* ====== Toolbar (formation + save) ====== */
-    .toolbar {
-      display:flex; align-items:center; justify-content:space-between; gap:0.75rem;
-      padding: 0.9rem 0.9rem 0.75rem;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-    }
-
-    .toolbar-left { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; }
-
-    .toolbar-label { font-size:0.75rem; letter-spacing:0.06em; text-transform:uppercase; color: rgba(255,255,255,.55); }
-
-    .formation-pills { display:flex; gap:0.5rem; flex-wrap:wrap; }
-    .formation-pill {
-      padding: 0.55rem 0.9rem; border-radius: 999px;
-      font-size: 0.9rem; font-weight: 800;
-      border: 1px solid rgba(255,255,255,.22);
-      background: rgba(0,0,0,.22);
-      color: rgba(255,255,255,.92);
-      cursor:pointer;
-      min-height: 40px;
-      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
-    }
-    .formation-pill:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.30); }
-    .formation-pill:active { transform: scale(0.99); }
-    .formation-pill.active {
-      background: linear-gradient(135deg, rgba(34,197,94,.52), rgba(45,212,191,.38));
-      border-color: rgba(34,197,94,.92);
-      box-shadow: 0 0 0 6px rgba(34,197,94,.14);
-    }
-
-    .toolbar-right { display:flex; align-items:center; gap:0.5rem; }
-    .save-status { margin:0; font-size: 0.8rem; color: rgba(255,255,255,.70); opacity:0; transition: opacity .2s ease; }
-    .save-status.show { opacity: 1; }
-
-    /* ====== Field ====== */
-    .field-section { padding: 0; }
-
-    .field-wrap {
-      position: relative; width: 100%;
-      aspect-ratio: 3/4; /* vertical 2D pitch */
-      border-radius: 1.25rem;
-      overflow: hidden;
-      box-shadow: 0 10px 36px rgba(0,0,0,.42);
-    }
-    @media (max-width: 640px){ .field-wrap { max-height: 72vh; } }
-
-    .field {
-      position: relative; width: 100%; height: 100%;
-      border-radius: inherit;
-      /* minimalist pro pitch */
-      background:
-        linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 82%, rgba(0,0,0,0.18) 100%),
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0 22px, rgba(255,255,255,0.02) 22px 44px),
-        linear-gradient(180deg, #2aa65f 0%, #1f8f53 100%);
-      background-color: #1f8f53;
-    }
-
-    .goal { position: absolute; left: 50%; transform: translateX(-50%); width: 42%; height: 12%; min-height: 28px; pointer-events: none; z-index: 1; }
-    .goal-top { top: 0; }
-    .goal-bottom { bottom: 0; }
-    .goal-frame { position: absolute; inset: 0; border: 3px solid #1e293b; border-radius: 4px; background: linear-gradient(180deg, rgba(15,23,42,.85) 0%, rgba(30,41,59,.9) 100%); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
-    .goal-net { position: absolute; inset: 3px; border-radius: 2px; background: repeating-linear-gradient(90deg, transparent 0, transparent 4px, rgba(255,255,255,.12) 4px, rgba(255,255,255,.12) 5px), repeating-linear-gradient(0deg, transparent 0, transparent 4px, rgba(255,255,255,.12) 4px, rgba(255,255,255,.12) 5px); }
-    .goal-top .goal-frame { border-bottom: none; border-radius: 4px 4px 0 0; }
-    .goal-bottom .goal-frame { border-top: none; border-radius: 0 0 4px 4px; }
-
-    .field-lines {
-      position: absolute; inset: 0; pointer-events: none;
-      /* minimalist markings: thinner, cleaner */
-      background:
-        /* outer border */
-        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 4% / 88% 1.5px no-repeat,
-        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 96% / 88% 1.5px no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 4% / 1.5px 92% no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 94% 4% / 1.5px 92% no-repeat,
-
-        /* center line */
-        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 6% 50% / 88% 1.5px no-repeat,
-
-        /* center circle + spot */
-        radial-gradient(circle at 50% 50%, transparent 0 14%, rgba(255,255,255,0.85) 14% 14.6%, transparent 14.6% 100%),
-        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0 3px, transparent 4px 100%),
-
-        /* penalty boxes (top/bottom) */
-        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 10% / 50% 1.5px no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 10% / 1.5px 18% no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 75% 10% / 1.5px 18% no-repeat,
-
-        linear-gradient(0deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 90% / 50% 1.5px no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 25% 72% / 1.5px 18% no-repeat,
-        linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.85)) 75% 72% / 1.5px 18% no-repeat,
-
-        /* penalty spots */
-        radial-gradient(circle at 50% 22%, rgba(255,255,255,0.9) 0 3px, transparent 4px 100%),
-        radial-gradient(circle at 50% 78%, rgba(255,255,255,0.9) 0 3px, transparent 4px 100%);
-    }
-
     .players{ position:absolute; inset:0; z-index:2; }
-    .player{ position:absolute; transform:translate(-50%,-50%); display:grid; place-items:center; gap:6px; width:86px; background:transparent; border:none; cursor:grab; user-select:none; touch-action:none; }
-    .player.dragging{ cursor:grabbing; }
-    .player.selected .player-avatar{ outline:3px solid rgba(16,185,129,0.9); box-shadow:0 0 0 6px rgba(16,185,129,0.25); }
-    .player-avatar{ width:56px; height:56px; border-radius:999px; object-fit: cover; background: rgba(0,0,0,.15); box-shadow:0 18px 30px rgba(0,0,0,0.25); }
-    .player-label{ font-size:12px; color:rgba(255,255,255,0.88); text-shadow:0 2px 10px rgba(0,0,0,0.35); white-space:nowrap; max-width:86px; overflow:hidden; text-overflow:ellipsis; }
 
-    /* ====== Roster panel (unassigned) ====== */
-    .roster-card { border-radius: 1.25rem; overflow: hidden; }
-    .roster-head { padding: 0.9rem; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .roster-title { font-weight: 800; color: #fff; font-size: 0.95rem; }
-    .roster-sub { font-size: 0.78rem; color: rgba(255,255,255,.58); margin-top: 0.25rem; }
+    /* Multi-team bands */
+    .team-band{ position:absolute; left:0; right:0; padding:10px 10px 12px; display:flex; flex-direction:column; gap:8px; }
+    .team-band::before{ content:''; position:absolute; inset:0; background:rgba(2,6,23,0.10); border-top:1px solid rgba(255,255,255,0.15); border-bottom:1px solid rgba(255,255,255,0.10); }
+    .team-band-header{ position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .team-band-title{ font-size:12px; color:rgba(255,255,255,0.9); letter-spacing:.2px; }
+    .team-band-right{ display:flex; align-items:center; gap:10px; }
+    .team-band-count{ font-size:11px; color:rgba(255,255,255,0.55); }
 
-    .unassigned-wrap { padding: 0.9rem; }
-    .unassigned-label { font-size: 0.75rem; letter-spacing:0.06em; text-transform:uppercase; color: rgba(255,255,255,.55); display:block; margin-bottom: 0.6rem; }
-    .unassigned-users { display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: flex-start; min-height: 60px; }
+    .formation-buttons{ position:relative; z-index:1; display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:6px 0 8px; }
+    .formation-btn{ padding:8px 14px; border-radius:999px; border:1px solid rgba(255,255,255,0.18); background:rgba(2,6,23,0.15); color:rgba(255,255,255,0.85); font-size:12px; letter-spacing:.2px; }
+    .formation-btn.active{ border-color: rgba(34,197,94,0.6); box-shadow: 0 0 0 2px rgba(34,197,94,0.15) inset; background: rgba(34,197,94,0.12); }
+    .formation-btn:disabled{ opacity:0.55; }
 
-    .unassigned-user { display:flex; flex-direction:column; align-items:center; gap:6px; width: 84px; padding: 10px 10px 12px;
-      background: rgba(0,0,0,.20); border-radius: 16px; border: 1px dashed rgba(255,255,255,.22);
-      cursor: grab; user-select:none; touch-action:none;
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    .team-pitch{ position:relative; z-index:1; width:100%; aspect-ratio: 16/9; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.14);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(34,197,94,0.25), transparent 55%),
+        linear-gradient(180deg, rgba(20,83,45,0.85), rgba(5,46,22,0.92));
     }
-    .unassigned-user:hover { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.10); transform: translateY(-1px); }
-    .unassigned-user.dragging { cursor: grabbing; opacity: 0.92; }
-    .unassigned-user .player-avatar { width: 52px; height: 52px; border-radius: 999px; object-fit: cover; background: rgba(0,0,0,.15); }
-    .unassigned-user .player-label { font-size: 0.78rem; max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* mobile drawer */
-    .drawer-backdrop{ position:fixed; inset:0; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); display:none; z-index:90; }
-    .drawer{ position:fixed; left:0; right:0; bottom:0; z-index:91; display:none;
-      border-radius: 18px 18px 0 0; overflow:hidden;
-      max-height: 72vh;
+    .team-pitch::before{ content:''; position:absolute; inset:0; pointer-events:none; opacity:.85; background:
+      linear-gradient(90deg, transparent 49.8%, rgba(255,255,255,0.50) 50%, transparent 50.2%),
+      radial-gradient(circle at 50% 50%, transparent 0 15%, rgba(255,255,255,0.50) 15% 15.4%, transparent 15.4% 100%),
+      linear-gradient(transparent 68%, rgba(255,255,255,0.50) 68% 68.4%, transparent 68.4%),
+      linear-gradient(transparent 31.6%, rgba(255,255,255,0.50) 31.6% 32%, transparent 32%);
     }
-    .drawer.open, .drawer-backdrop.open { display:block; }
 
-    .hidden { display:none !important; }
+    .pitch-slot{ position:absolute; transform: translate(-50%, -50%); width:66px; height:84px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:6px; }
+    @media (max-width: 640px){ .pitch-slot{ width:60px; height:78px; } }
+    .pitch-slot.drag-over .jersey{ outline: 2px solid rgba(34,197,94,0.55); box-shadow: 0 0 0 3px rgba(34,197,94,0.18); }
+
+    .jersey{ width:56px; height:52px; border-radius:14px; background: rgba(2,6,23,0.25); border:1px solid rgba(255,255,255,0.22); position:relative; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(2px); }
+    .jersey-num{ font-size:18px; font-weight:900; color: rgba(255,255,255,0.92); text-shadow: 0 2px 10px rgba(0,0,0,0.35); }
+
+    .slot-avatar{ width:34px; height:34px; border-radius:999px; border:2px solid rgba(255,255,255,0.18); box-shadow: 0 10px 22px rgba(0,0,0,0.35); margin-top:-12px; background: rgba(2,6,23,0.35); }
+    .slot-name{ font-size:10px; color: rgba(255,255,255,0.85); max-width:74px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .slot-empty{ font-size:10px; color: rgba(255,255,255,0.45); }
+
+    .subs{ position:relative; z-index:1; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.10); }
+    .subs-title{ font-size:10px; color:rgba(255,255,255,0.45); margin-bottom:6px; }
+    .subs-list{ display:flex; flex-wrap:wrap; gap:8px; min-height:40px; }
+
+    .player-token{ display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(15,23,42,0.65); border:1px solid rgba(255,255,255,0.14); cursor:grab; user-select:none; }
+    .player-token.compact{ width:100%; height:100%; border-radius:10px; justify-content:center; padding:8px 6px; cursor:grab; }
+    .player-token.compact img{ width:26px; height:26px; }
+    .player-token.compact .mini{ font-size:11px; color:rgba(255,255,255,0.9); font-weight:700; }
+
+    .player-token[draggable="false"]{ cursor:default; opacity:0.92; }
+    .player-token.dragging{ opacity:0.65; }
+    .player-token img{ width:28px; height:28px; border-radius:999px; box-shadow:0 8px 20px rgba(0,0,0,0.25); }
+    .player-token .name{ font-size:12px; color:rgba(255,255,255,0.9); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .player-token .no{ font-size:11px; color:rgba(255,255,255,0.6); }
+
+    .bench{ margin-top:14px; padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background:rgba(2,6,23,0.35); }
+    .bench-title{ font-size:12px; color:rgba(255,255,255,0.7); margin-bottom:8px; }
+    .bench-players{ display:flex; flex-wrap:wrap; gap:10px; min-height:44px; }
+
+    .save-status{ margin-top:10px; font-size:12px; color:rgba(255,255,255,0.75); opacity:0; transition:opacity .2s ease; }
+    .save-status.show{ opacity:1; }
   </style>
 </head>
-<body class="min-h-screen text-slate-100 safe-bottom">
+<body class="min-h-screen bg-fifa safe-bottom">
+<!-- Top menu removed: use bottom nav only -->
 
-  <div class="tactics-shell" id="tacticsBoard">
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="glass rounded-2xl p-6" id="tacticsBoard">
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <select id="activitySelect" class="input" style="max-width: 240px">
+          <option value="">选择活动…</option>
+        </select>
+        <button id="btnSave" class="btn-primary">保存分队</button>
+        <span id="editHint" class="text-xs text-white/50"></span>
+      </div>
 
-    <header class="tactics-topbar">
-      <div class="tactics-topbar-left">
-        <a id="tacticsBackLink" href="/activities.html" class="icon-btn" aria-label="返回">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-        </a>
-        <div class="tactics-title-wrap">
-          <h1 class="tactics-title" id="tacticsTitle">战术板</h1>
-          <p class="tactics-subtitle" id="tacticsSubtitle">选择阵型、拖拽调整站位</p>
+      <div class="field-wrap">
+        <div class="field" role="region" aria-label="足球场">
+          <div class="field-lines"></div>
+          <div class="players" aria-label="分队区域"></div>
         </div>
       </div>
 
-      <div class="tactics-actions">
-        <button type="button" id="btnOpenRoster" class="pill-btn lg:hidden" aria-controls="tacticsRosterDrawer" aria-expanded="false">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          队员
-        </button>
-      </div>
-    </header>
-
-    <div class="glass tactics-card shadow-field">
-      <div class="toolbar">
-        <div class="toolbar-left" id="formationWrap">
-          <span class="toolbar-label">分队</span>
-          <div class="text-white/70 text-sm">拖拽队员到对应队伍区域</div>
-        </div>
-
-        <div class="toolbar-right">
-          <p id="tacticsReadOnlyHint" class="hidden text-white/50 text-sm">仅可查看，无编辑权限</p>
-          <span id="saveStatus" class="save-status" aria-live="polite"></span>
-          <button type="button" id="btnSaveTeams" class="btn btn-primary btn-sm tactics-save-btn">保存分队</button>
-        </div>
+      <div class="bench" aria-label="未分队">
+        <div class="bench-title">未分队（拖拽到上方队伍区域）</div>
+        <div class="bench-players" id="benchPlayers"></div>
       </div>
 
-      <div class="tactics-grid">
-        <section class="field-section p-3 sm:p-4">
-          <div class="field-wrap">
-            <div class="field" role="region" aria-label="足球场">
-              <div class="goal goal-top" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
-              <div class="goal goal-bottom" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
-              <div class="field-lines"></div>
-              <div id="teamBands" class="team-bands" aria-label="分队区域"></div>
-            </div>
-          </div>
-          <div class="tactics-hint">把队员拖到对应队伍区域即可分队；候补不参与分队。</div>
-        </section>
-
-        <aside class="glass roster-card hidden lg:block" id="tacticsRosterAside">
-          <div class="roster-head">
-            <div>
-              <div class="roster-title">候补/未选位置</div>
-              <div class="roster-sub">把队员拖到场上空位即可</div>
-            </div>
-          </div>
-          <div id="unassignedWrap" class="unassigned-wrap hidden" aria-label="未选位置">
-            <span class="unassigned-label">未选位置</span>
-            <div id="unassignedUsers" class="unassigned-users"></div>
-          </div>
-          <div class="unassigned-wrap" id="unassignedEmptyHint">
-            <div class="text-white/60 text-sm">暂无未选位置的队员</div>
-          </div>
-        </aside>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Mobile drawer for roster -->
-  <div id="tacticsRosterBackdrop" class="drawer-backdrop" aria-hidden="true"></div>
-  <div id="tacticsRosterDrawer" class="glass drawer" role="dialog" aria-modal="true" aria-label="队员列表">
-    <div class="roster-head">
-      <div>
-        <div class="roster-title">未选位置</div>
-        <div class="roster-sub">拖到场上空位</div>
-      </div>
-      <button type="button" id="btnCloseRoster" class="icon-btn" aria-label="关闭">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div id="unassignedWrapMobile" class="unassigned-wrap hidden">
-      <span class="unassigned-label">未选位置</span>
-      <div id="unassignedUsersMobile" class="unassigned-users"></div>
-    </div>
-    <div class="unassigned-wrap" id="unassignedEmptyHintMobile">
-      <div class="text-white/60 text-sm">暂无未选位置的队员</div>
+      <div id="saveStatus" class="save-status" aria-live="polite"></div>
+      <div class="text-white/60 text-xs mt-2">当前球队：<span id="teamTitle" class="text-white/80">未选择</span></div>
     </div>
   </div>
 
@@ -299,133 +121,32 @@
   <nav class="bottom-nav" aria-label="底部导航">
     <div class="bottom-nav-inner">
       <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">首页</a>
-      <a class="bottom-nav-item" data-nav="activities" href="/activities.html">活动</a>
+      <a class="bottom-nav-item" data-nav="teams" href="/teams.html">球队</a>
+      <a class="bottom-nav-item" data-nav="tactics" href="/tactics.html">战术板</a>
       <a class="bottom-nav-item" data-nav="me" href="/profile.html">我的</a>
     </div>
   </nav>
 
   <script src="/js/fancy-background.js"></script>
-  <style>
-    .team-bands{ position:absolute; inset:0; display:flex; flex-direction:column; gap:0; z-index:3; padding:10px; }
-    .team-band{ flex:1; border:1px dashed rgba(255,255,255,.28); border-radius:14px; background: rgba(0,0,0,.12);
-      padding:10px; display:flex; flex-direction:column; overflow:hidden; }
-    .team-band + .team-band{ margin-top:10px; }
-    .team-band-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-    .team-band-title{ font-weight:900; color:#fff; font-size:0.95rem; }
-    .team-band-sub{ font-size:0.75rem; color: rgba(255,255,255,.60); }
-    .team-band-drop{ flex:1; display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start; overflow:auto; padding-bottom:6px; }
-
-    .player-token{ width:78px; display:flex; flex-direction:column; align-items:center; gap:6px;
-      padding:8px 8px 10px; border-radius:14px;
-      background: rgba(0,0,0,.20); border: 1px solid rgba(255,255,255,.14);
-      user-select:none; touch-action:none; cursor: grab;
-      box-shadow: 0 10px 22px rgba(0,0,0,.25);
-      }
-    .player-token.dragging{ opacity: .88; cursor: grabbing; transform: scale(0.98); }
-    .player-token img{ width:48px; height:48px; border-radius:999px; object-fit:cover; background: rgba(0,0,0,.15); }
-    .player-token .name{ font-size:0.78rem; color: rgba(255,255,255,.88); max-width:78px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .drop-highlight{ outline: 3px solid rgba(34,197,94,.55); box-shadow: 0 0 0 6px rgba(34,197,94,.14); }
-  </style>
   <script src="/js/tactics-board.js"></script>
   <script>
     (function setBottomNavActive(){
       const path = window.location.pathname;
       const map = {
         '/dashboard.html': 'dashboard',
-        '/activities.html': 'activities',
-        '/tactics.html': 'dashboard',
+        '/teams.html': 'teams',
+        '/tactics.html': 'tactics',
         '/profile.html': 'me',
       };
-      const key = map[path] || 'dashboard';
+      const key = map[path] || 'tactics';
       document.querySelectorAll('.bottom-nav-item').forEach(a => {
-        a.classList.remove('active');
         if (a.dataset.nav === key) a.classList.add('active');
       });
     })();
-
     const TOKEN_KEY='authToken';
-    if (!(localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY))) window.location.href='/login.html';
+    if(!localStorage.getItem(TOKEN_KEY)) window.location.href='/login.html';
 
-    // Backlink + title
-    (function setActivityTitleAndBackLink() {
-      var p = new URLSearchParams(window.location.search);
-      var activityId = p.get('activityId');
-      var backLink = document.getElementById('tacticsBackLink');
-      if (backLink && activityId) backLink.href = '/activity-detail.html?activityId=' + encodeURIComponent(activityId);
-      if (!activityId) return;
-      var titleEl = document.getElementById('tacticsTitle');
-      var subtitleEl = document.getElementById('tacticsSubtitle');
-      var token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
-      if (titleEl) titleEl.textContent = '战术板';
-      if (subtitleEl) subtitleEl.textContent = '加载活动…';
-      fetch('/activities/' + activityId, { headers: token ? { Authorization: 'Bearer ' + token } : {} })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (activity) {
-          if (subtitleEl && activity && activity.name) subtitleEl.textContent = '本活动：' + activity.name;
-          else if (subtitleEl) subtitleEl.textContent = '选择阵型、拖拽调整站位';
-        })
-        .catch(function () {
-          if (subtitleEl) subtitleEl.textContent = '选择阵型、拖拽调整站位';
-        });
-    })();
-
-    // Roster drawer
-    (function rosterDrawer(){
-      var btnOpen = document.getElementById('btnOpenRoster');
-      var btnClose = document.getElementById('btnCloseRoster');
-      var drawer = document.getElementById('tacticsRosterDrawer');
-      var backdrop = document.getElementById('tacticsRosterBackdrop');
-      function open(){
-        if (!drawer || !backdrop) return;
-        drawer.classList.add('open');
-        backdrop.classList.add('open');
-        backdrop.setAttribute('aria-hidden','false');
-        if (btnOpen) btnOpen.setAttribute('aria-expanded','true');
-      }
-      function close(){
-        if (!drawer || !backdrop) return;
-        drawer.classList.remove('open');
-        backdrop.classList.remove('open');
-        backdrop.setAttribute('aria-hidden','true');
-        if (btnOpen) btnOpen.setAttribute('aria-expanded','false');
-      }
-      if (btnOpen) btnOpen.addEventListener('click', open);
-      if (btnClose) btnClose.addEventListener('click', close);
-      if (backdrop) backdrop.addEventListener('click', close);
-    })();
-
-    // Mirror unassigned list into mobile drawer whenever it changes.
-    (function mirrorUnassigned(){
-      var desktopWrap = document.getElementById('unassignedWrap');
-      var desktopList = document.getElementById('unassignedUsers');
-      var mobileWrap = document.getElementById('unassignedWrapMobile');
-      var mobileList = document.getElementById('unassignedUsersMobile');
-      var emptyDesktop = document.getElementById('unassignedEmptyHint');
-      var emptyMobile = document.getElementById('unassignedEmptyHintMobile');
-      function sync(){
-        try {
-          if (!desktopWrap || !desktopList || !mobileWrap || !mobileList) return;
-          var has = !desktopWrap.classList.contains('hidden') && desktopList.children.length > 0;
-          if (has) {
-            mobileWrap.classList.remove('hidden');
-            mobileList.innerHTML = '';
-            Array.from(desktopList.children).forEach(function(node){ mobileList.appendChild(node.cloneNode(true)); });
-            if (emptyMobile) emptyMobile.classList.add('hidden');
-            if (emptyDesktop) emptyDesktop.classList.add('hidden');
-          } else {
-            mobileWrap.classList.add('hidden');
-            if (emptyMobile) emptyMobile.classList.remove('hidden');
-            if (emptyDesktop) emptyDesktop.classList.remove('hidden');
-          }
-        } catch (e) {}
-      }
-      // initial + observe
-      sync();
-      if (desktopList && window.MutationObserver) {
-        var mo = new MutationObserver(function(){ sync(); });
-        mo.observe(desktopList, { childList: true, subtree: true });
-      }
-    })();
+    document.getElementById('teamTitle').textContent = localStorage.getItem('team_management:currentTeamName') || '未选择';
   </script>
 </body>
 </html>

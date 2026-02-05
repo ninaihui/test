@@ -1,5 +1,14 @@
-import { IsString, IsNotEmpty, IsOptional, IsDateString, MinLength, IsInt, Min, Max, IsArray } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsDateString,
+  MinLength,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
+} from 'class-validator';
 
 export class CreateActivityDto {
   @IsString({ message: '活动名称必须是字符串' })
@@ -19,32 +28,18 @@ export class CreateActivityDto {
   @IsOptional()
   location?: string;
 
-  @IsString({ message: '场地ID必须是字符串' })
+  @IsString({ message: '球队ID必须是字符串' })
   @IsOptional()
-  venueId?: string;
+  teamId?: string;
 
+  // 战术板/分队
+  @IsInt({ message: '分队数量必须是整数' })
+  @Min(2, { message: '分队数量至少为2' })
+  @Max(4, { message: '分队数量最多为4' })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1, { message: '活动人数至少 1 人' })
-  @Max(40, { message: '活动人数最多 40 人' })
-  maxParticipants?: number;
-
-  /** 可选：手动设置分队数。留空则按 maxParticipants 自动推导 */
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(4)
   teamCount?: number;
 
-  /** 可选：分队名称数组。长度不足会用默认名补齐 */
+  @IsArray({ message: '分队名称必须是数组' })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
   teamNames?: string[];
-
-  @IsOptional()
-  @IsDateString({}, { message: '报名截止时间格式不正确' })
-  deadlineAt?: string;
 }
