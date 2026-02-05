@@ -451,11 +451,9 @@
     const data = await res.json();
     state.activity = data;
 
-    // canEdit: admin or creator or editor
-    // /activities/:id returns createdBy and editorUserIds? we infer in client minimally:
-    // if the positions save fails with forbidden, user will see it.
-    // Still we try to allow UI edit for admins based on token payload? (skipped)
-    state.canEdit = true; // optimistic; server will enforce
+    state.canEdit = !!data.canEdit;
+    if (saveBtn) saveBtn.disabled = !state.canEdit;
+    if (!state.canEdit) showStatus('只读：无编辑权限');
 
     // Build user map from attendances
     const users = {};

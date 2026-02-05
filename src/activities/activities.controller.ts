@@ -44,7 +44,7 @@ export class ActivitiesController {
 
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
-    return this.activitiesService.findOne(id, req.user.sub);
+    return this.activitiesService.findOne(id, req.user.sub, req.user.role);
   }
 
   /** 当前用户报名参加该活动，可传 body.position 指定出场位置 */
@@ -73,16 +73,14 @@ export class ActivitiesController {
     return this.activitiesService.updateMyPosition(id, req.user.sub, dto.position);
   }
 
-  /** 仅管理员可按战术板槽位保存本活动的出场位置 */
+  /** 保存本活动的出场位置（战术板/阵容页）。系统管理员 / 活动创建者 / 活动协管（异常通道）可编辑 */
   @Patch(':id/positions')
-  @UseGuards(RolesGuard)
-  @Roles('admin', 'super_admin')
   updatePositions(
     @Param('id') id: string,
     @Request() req,
     @Body() dto: UpdatePositionsDto,
   ) {
-    return this.activitiesService.updatePositions(id, req.user.sub, dto.positions);
+    return this.activitiesService.updatePositions(id, req.user.sub, req.user.role, dto.positions);
   }
 
   /** 获取本活动已报名用户的分队（teamNo）。候补不参与分队；非管理员只读 */

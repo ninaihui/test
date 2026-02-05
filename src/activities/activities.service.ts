@@ -153,7 +153,7 @@ export class ActivitiesService {
     });
   }
 
-  async findOne(id: string, _userId: string) {
+  async findOne(id: string, userId: string, userRole?: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id },
       include: {
@@ -192,7 +192,12 @@ export class ActivitiesService {
       throw new NotFoundException('活动不存在');
     }
 
-    return activity;
+    const isSystemAdmin = userRole === 'admin' || userRole === 'super_admin';
+    const editorsRaw = (activity as any).editorUserIds;
+    const editors = Array.isArray(editorsRaw) ? editorsRaw : [];
+    const canEdit = isSystemAdmin || activity.createdById === userId || editors.includes(userId);
+
+    return { ...activity, canEdit } as any;
   }
 
   async update(id: string, userId: string, updateActivityDto: UpdateActivityDto, userRole?: string) {
@@ -464,14 +469,25 @@ export class ActivitiesService {
     return { message: '已取消报名' };
   }
 
-  /** 管理员按战术板槽位保存本活动的出场位置（更新各报名记录的 position） */
-  async updatePositions(activityId: string, _adminUserId: string, positions: { userId: string; position: string }[]) {
+  /** 保存本活动的出场位置（更新各报名记录的 position）。系统管理员 / 活动创建者 / 活动协管可编辑 */
+  async updatePositions(
+    activityId: string,
+    currentUserId: string,
+    currentUserRole: string,
+    positions: { userId: string; position: string }[],
+  ) {
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
     });
     if (!activity) {
       throw new NotFoundException('活动不存在');
     }
+    const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+    const editorsRaw = (activity as any).editorUserIds;
+    const editors = Array.isArray(editorsRaw) ? editorsRaw : [];
+    const canEdit = isSystemAdmin || activity.createdById === currentUserId || editors.includes(currentUserId);
+    if (!canEdit) throw new ForbiddenException('无权限保存出场位置');
+
     const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 11;
     if (positions.length > maxParticipants) {
       throw new BadRequestException(`出场人数不能超过活动人数上限（${maxParticipants} 人）`);
