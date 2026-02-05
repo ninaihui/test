@@ -18,6 +18,7 @@
   const saveStatus = root.querySelector('#saveStatus');
   const readOnlyHint = root.querySelector('#tacticsReadOnlyHint');
   const positionsLink = root.querySelector('#btnOpenPositions');
+  // positionsLink removed in merged UI; keep optional
 
   const activityId = (function () {
     const p = new URLSearchParams(window.location.search);
@@ -433,10 +434,7 @@
     const subtitleEl = document.getElementById('tacticsSubtitle');
     if (subtitleEl) subtitleEl.textContent = '拖拽分队（会保存到数据库）';
 
-    // Link to positions page
-    if (positionsLink) {
-      positionsLink.href = '/tactics-positions.html?activityId=' + encodeURIComponent(activityId);
-    }
+    // positions page link removed (merged UI)
 
     render();
   }

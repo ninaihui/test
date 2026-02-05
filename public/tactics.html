@@ -202,6 +202,44 @@
     .drawer.open, .drawer-backdrop.open { display:block; }
 
     .hidden { display:none !important; }
+
+    /* ====== Lineup mode (slots) ====== */
+    .seg{ display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .seg-btn{ padding:0.55rem 0.9rem; border-radius:999px; font-weight:900; border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.20); color: rgba(255,255,255,.92); min-height:40px; }
+    .seg-btn.active{ background: linear-gradient(135deg, rgba(34,197,94,.52), rgba(45,212,191,.38)); border-color: rgba(34,197,94,.92);
+      box-shadow: 0 0 0 6px rgba(34,197,94,.14); }
+
+    .slots{ position:absolute; inset:0; z-index:3; }
+    .slot{ position:absolute; transform:translate(-50%,-50%); width:84px; display:flex; flex-direction:column; align-items:center; gap:6px;
+      user-select:none; touch-action:none; }
+    .slot .pos{ font-size:0.78rem; font-weight:900; color: rgba(255,255,255,.90); text-shadow:0 2px 10px rgba(0,0,0,0.35); }
+
+    .bench-list{ display:flex; flex-wrap:wrap; gap:0.65rem; }
+
+    .token{ width:78px; display:flex; flex-direction:column; align-items:center; gap:6px;
+      padding:8px 8px 10px; border-radius:14px; background: rgba(0,0,0,.20); border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 22px rgba(0,0,0,.25);
+      cursor: grab;
+    }
+    .token.dragging{ opacity:.88; cursor: grabbing; transform: scale(0.98); }
+
+    :root{
+      --team-a: 239,68,68;
+      --team-b: 59,130,246;
+      --bench: 148,163,184;
+    }
+
+    .avatar-media{ width:48px; height:48px; border-radius:999px; object-fit:cover; display:block;
+      border: 3px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.15);
+    }
+
+    .token[data-team="A"] .avatar-media{ border-color: rgba(var(--team-a), .98); box-shadow: 0 0 0 7px rgba(var(--team-a), .18); }
+    .token[data-team="B"] .avatar-media{ border-color: rgba(var(--team-b), .98); box-shadow: 0 0 0 7px rgba(var(--team-b), .18); }
+    .token[data-team="bench"] .avatar-media{ box-shadow: 0 0 0 6px rgba(var(--bench), .10); }
+
+    .token .name{ font-size:0.78rem; color: rgba(255,255,255,.88); max-width:78px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   </style>
 </head>
 <body class="min-h-screen text-slate-100 safe-bottom">
@@ -220,7 +258,8 @@
       </div>
 
       <div class="tactics-actions">
-        <a id="btnOpenPositions" class="pill-btn" href="/tactics-positions.html" style="text-decoration:none">阵容</a>
+        <button type="button" id="btnModeTeams" class="pill-btn" aria-pressed="true">分队</button>
+        <button type="button" id="btnModeLineup" class="pill-btn" aria-pressed="false">阵容</button>
         <button type="button" id="btnOpenRoster" class="pill-btn lg:hidden" aria-controls="tacticsRosterDrawer" aria-expanded="false">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
           队员
@@ -229,48 +268,103 @@
     </header>
 
     <div class="glass tactics-card shadow-field">
-      <div class="toolbar">
-        <div class="toolbar-left" id="formationWrap">
-          <span class="toolbar-label">分队</span>
-          <div class="text-white/70 text-sm">拖拽队员到对应队伍区域</div>
+
+      <!-- Mode: Teams -->
+      <div id="teamsModeRoot">
+        <div class="toolbar">
+          <div class="toolbar-left" id="formationWrap">
+            <span class="toolbar-label">分队</span>
+            <div class="text-white/70 text-sm">拖拽队员到对应队伍区域</div>
+          </div>
+
+          <div class="toolbar-right">
+            <p id="tacticsReadOnlyHint" class="hidden text-white/50 text-sm">仅可查看，无编辑权限</p>
+            <span id="saveStatus" class="save-status" aria-live="polite"></span>
+            <button type="button" id="btnSaveTeams" class="btn btn-primary btn-sm tactics-save-btn">保存分队</button>
+          </div>
         </div>
 
-        <div class="toolbar-right">
-          <p id="tacticsReadOnlyHint" class="hidden text-white/50 text-sm">仅可查看，无编辑权限</p>
-          <span id="saveStatus" class="save-status" aria-live="polite"></span>
-          <button type="button" id="btnSaveTeams" class="btn btn-primary btn-sm tactics-save-btn">保存分队</button>
+        <div class="tactics-grid">
+          <section class="field-section p-3 sm:p-4">
+            <div class="field-wrap">
+              <div class="field" role="region" aria-label="足球场">
+                <div class="goal goal-top" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
+                <div class="goal goal-bottom" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
+                <div class="field-lines"></div>
+                <div id="teamBands" class="team-bands" aria-label="分队区域"></div>
+              </div>
+            </div>
+            <div class="tactics-hint">把队员拖到对应队伍区域即可分队；候补不参与分队。</div>
+          </section>
+
+          <aside class="glass roster-card hidden lg:block" id="tacticsRosterAside">
+            <div class="roster-head">
+              <div>
+                <div class="roster-title">候补/未选位置</div>
+                <div class="roster-sub">把队员拖到场上空位即可</div>
+              </div>
+            </div>
+            <div id="unassignedWrap" class="unassigned-wrap hidden" aria-label="未选位置">
+              <span class="unassigned-label">未选位置</span>
+              <div id="unassignedUsers" class="unassigned-users"></div>
+            </div>
+            <div class="unassigned-wrap" id="unassignedEmptyHint">
+              <div class="text-white/60 text-sm">暂无未选位置的队员</div>
+            </div>
+          </aside>
         </div>
       </div>
 
-      <div class="tactics-grid">
-        <section class="field-section p-3 sm:p-4">
-          <div class="field-wrap">
-            <div class="field" role="region" aria-label="足球场">
-              <div class="goal goal-top" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
-              <div class="goal goal-bottom" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
-              <div class="field-lines"></div>
-              <div id="teamBands" class="team-bands" aria-label="分队区域"></div>
+      <!-- Mode: Lineup -->
+      <div id="lineupModeRoot" class="hidden">
+        <div class="toolbar" style="flex-wrap:wrap;">
+          <div class="toolbar-left" style="gap:0.5rem">
+            <span class="toolbar-label">阵容</span>
+            <div class="seg" id="lineupTeamSeg">
+              <button type="button" class="seg-btn active" data-team="A">A队</button>
+              <button type="button" class="seg-btn" data-team="B">B队</button>
+            </div>
+            <div class="seg" id="lineupFormationSeg">
+              <button type="button" class="seg-btn active" data-formation="4-4-2">4-4-2</button>
+              <button type="button" class="seg-btn" data-formation="4-3-3">4-3-3</button>
+              <button type="button" class="seg-btn" data-formation="3-5-2">3-5-2</button>
             </div>
           </div>
-          <div class="tactics-hint">把队员拖到对应队伍区域即可分队；候补不参与分队。</div>
-        </section>
 
-        <aside class="glass roster-card hidden lg:block" id="tacticsRosterAside">
-          <div class="roster-head">
-            <div>
-              <div class="roster-title">候补/未选位置</div>
-              <div class="roster-sub">把队员拖到场上空位即可</div>
+          <div class="toolbar-right">
+            <span id="lineupSaveStatus" class="save-status" aria-live="polite"></span>
+            <button type="button" id="btnSaveLineup" class="btn btn-primary btn-sm">保存阵容</button>
+          </div>
+        </div>
+
+        <div class="tactics-grid">
+          <section class="field-section p-3 sm:p-4">
+            <div class="field-wrap">
+              <div class="field" role="region" aria-label="阵容足球场">
+                <div class="goal goal-top" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
+                <div class="goal goal-bottom" aria-hidden="true"><div class="goal-frame"><div class="goal-net"></div></div></div>
+                <div class="field-lines"></div>
+                <div id="lineupSlots" class="slots" aria-label="阵容槽位"></div>
+              </div>
             </div>
-          </div>
-          <div id="unassignedWrap" class="unassigned-wrap hidden" aria-label="未选位置">
-            <span class="unassigned-label">未选位置</span>
-            <div id="unassignedUsers" class="unassigned-users"></div>
-          </div>
-          <div class="unassigned-wrap" id="unassignedEmptyHint">
-            <div class="text-white/60 text-sm">暂无未选位置的队员</div>
-          </div>
-        </aside>
+            <div class="tactics-hint">拖拽候补到对应位置；点队员回到候补。阵容会保存。</div>
+          </section>
+
+          <aside class="glass roster-card hidden lg:block">
+            <div class="roster-head">
+              <div>
+                <div class="roster-title" id="lineupBenchTitle">候补</div>
+                <div class="roster-sub">拖到场上位置</div>
+              </div>
+            </div>
+            <div class="unassigned-wrap">
+              <div id="lineupBenchList" class="bench-list"></div>
+              <div id="lineupBenchEmpty" class="text-white/60 text-sm">暂无候补</div>
+            </div>
+          </aside>
+        </div>
       </div>
+
     </div>
 
   </div>
@@ -382,6 +476,37 @@
     .drop-highlight{ outline: 3px solid rgba(34,197,94,.55); box-shadow: 0 0 0 6px rgba(34,197,94,.14); }
   </style>
   <script src="/js/tactics-board.js?v=20260205-1"></script>
+  <script src="/js/tactics-lineup.js?v=20260205-1"></script>
+  <script>
+    (function modeSwitch(){
+      var btnTeams = document.getElementById('btnModeTeams');
+      var btnLineup = document.getElementById('btnModeLineup');
+      var teamsRoot = document.getElementById('teamsModeRoot');
+      var lineupRoot = document.getElementById('lineupModeRoot');
+
+      function setMode(mode){
+        var isTeams = mode === 'teams';
+        if (teamsRoot) teamsRoot.classList.toggle('hidden', !isTeams);
+        if (lineupRoot) lineupRoot.classList.toggle('hidden', isTeams);
+
+        if (btnTeams) btnTeams.setAttribute('aria-pressed', isTeams ? 'true' : 'false');
+        if (btnLineup) btnLineup.setAttribute('aria-pressed', isTeams ? 'false' : 'true');
+        if (btnTeams) btnTeams.classList.toggle('active', isTeams);
+        if (btnLineup) btnLineup.classList.toggle('active', !isTeams);
+
+        // refresh lineup data when switching in
+        if (!isTeams && window.__tacticsLineupReload) {
+          try { window.__tacticsLineupReload(); } catch(e) {}
+        }
+      }
+
+      if (btnTeams) btnTeams.addEventListener('click', function(){ setMode('teams'); });
+      if (btnLineup) btnLineup.addEventListener('click', function(){ setMode('lineup'); });
+
+      // default
+      setMode('teams');
+    })();
+  </script>
   <script>
     (function setBottomNavActive(){
       const path = window.location.pathname;
