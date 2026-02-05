@@ -11,29 +11,30 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  username  String   @unique
-  password  String
+  id              String   @id @default(uuid())
+  email           String   @unique
+  username        String   @unique
+  password        String
   /// 系统角色：user（普通用户） / admin（管理员）
-  role      String   @default("user")
+  role            String   @default("user")
   /// 队长权限（由网站管理在 DB 指定）。队长可创建活动。
-  isCaptain Boolean  @default(false)
-  avatarUrl String?
+  isCaptain       Boolean  @default(false)
+  avatarUrl       String?
   /// 用户自选上场位置（如 守门员、中后卫、前锋 等）
   playingPosition String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  activities   Activity[]
-  attendances  Attendance[]
+  activities  Activity[]
+  attendances Attendance[]
+  lineupSlots ActivityLineupSlot[]
 
   @@map("users")
 }
 
 model Venue {
   id        String   @id @default(uuid())
-  name      String   // 场地名称，如「XX足球公园A场」
+  name      String // 场地名称，如「XX足球公园A场」
   address   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -44,29 +45,31 @@ model Venue {
 }
 
 model Activity {
-  id               String   @id @default(uuid())
-  name             String
-  description      String?
-  date             DateTime
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  date            DateTime
   /// 报名截止时间（可选）。到点后不允许新报名（含候补）。
-  deadlineAt       DateTime?
-  location         String?  // 兼容旧数据或手填地点
-  venueId          String?  // 关联场地（优先展示场地名）
+  deadlineAt      DateTime?
+  location        String? // 兼容旧数据或手填地点
+  venueId         String? // 关联场地（优先展示场地名）
   /// 活动人数上限（含替补），默认 14
-  maxParticipants  Int      @default(14)
+  maxParticipants Int       @default(14)
   /// 分队数量（默认按 maxParticipants 自动推导；范围 1-4）
-  teamCount        Int      @default(2)
+  teamCount       Int       @default(2)
   /// 分队名称（JSON 数组，例如 ["红队","蓝队"]）。可选
-  teamNames        Json?
+  teamNames       Json?
   /// 异常通道：可编辑本活动战术板的额外用户ID列表（JSON 数组）
-  editorUserIds    Json?
-  createdById      String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  editorUserIds   Json?
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  venue       Venue?       @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  createdBy   User                 @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  venue       Venue?               @relation(fields: [venueId], references: [id], onDelete: SetNull)
   attendances Attendance[]
+  lineup      ActivityLineup?
+  lineupSlots ActivityLineupSlot[]
 
   @@map("activities")
 }
@@ -76,16 +79,56 @@ model Attendance {
   userId     String
   activityId String
   status     String   @default("present") // registered=已报名, present=到场, absent=缺席, late=迟到
-  position   String?  // 出场位置（管理员安排），如 前锋、左后卫
+  position   String? // 出场位置（管理员安排），如 前锋、左后卫
   /// 分队编号（仅已报名参与；候补不参与）。从 1 开始：1=蓝队、2=紫队...（可扩展）
   teamNo     Int?
   notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity  Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@unique([userId, activityId])
   @@map("attendances")
+}
+
+/// Activity lineup meta (formation per team)
+model ActivityLineup {
+  id         String   @id @default(uuid())
+  activityId String   @unique
+  /// e.g. "4-4-2"
+  formationA String   @default("4-4-2")
+  formationB String   @default("4-4-2")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  activity Activity             @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  slots    ActivityLineupSlot[]
+
+  @@map("activity_lineups")
+}
+
+/// Lineup slot assignment: one user per (activity, team, slot)
+model ActivityLineupSlot {
+  id         String   @id @default(uuid())
+  lineupId   String
+  activityId String
+  /// "A" or "B"
+  teamKey    String
+  /// e.g. GK/LB/LCB/ST1
+  slotKey    String
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  lineup   ActivityLineup @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  activity Activity       @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, teamKey, slotKey])
+  @@unique([activityId, teamKey, userId])
+  @@index([activityId, teamKey])
+  @@index([lineupId])
+  @@map("activity_lineup_slots")
 }

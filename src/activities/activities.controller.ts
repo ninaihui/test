@@ -18,6 +18,7 @@ import { RegisterActivityDto } from './dto/register-activity.dto';
 import { UpdatePositionsDto } from './dto/update-positions.dto';
 import { UpdateMyPositionDto } from './dto/update-my-position.dto';
 import { UpdateTeamsDto } from './dto/update-teams.dto';
+import { UpdateLineupDto } from './dto/update-lineup.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -73,7 +74,10 @@ export class ActivitiesController {
     return this.activitiesService.updateMyPosition(id, req.user.sub, dto.position);
   }
 
-  /** 保存本活动的出场位置（战术板/阵容页）。系统管理员 / 活动创建者 / 活动协管（异常通道）可编辑 */
+  /**
+   * 兼容旧接口：保存出场位置（旧战术板/阵容页）。
+   * 目前仍保留，但推荐使用 /lineup。
+   */
   @Patch(':id/positions')
   updatePositions(
     @Param('id') id: string,
@@ -81,6 +85,18 @@ export class ActivitiesController {
     @Body() dto: UpdatePositionsDto,
   ) {
     return this.activitiesService.updatePositions(id, req.user.sub, req.user.role, dto.positions);
+  }
+
+  /** 获取阵容（A/B 两套：formation + slot->user） */
+  @Get(':id/lineup')
+  getLineup(@Param('id') id: string, @Request() req) {
+    return this.activitiesService.getLineup(id, req.user.sub, req.user.role);
+  }
+
+  /** 保存阵容（A/B 两套：formation + slot->user）。系统管理员 / 活动创建者 / 活动协管可编辑 */
+  @Patch(':id/lineup')
+  updateLineup(@Param('id') id: string, @Request() req, @Body() dto: UpdateLineupDto) {
+    return this.activitiesService.updateLineup(id, req.user.sub, req.user.role, dto);
   }
 
   /** 获取本活动已报名用户的分队（teamNo）。候补不参与分队；非管理员只读 */

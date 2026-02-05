@@ -321,8 +321,8 @@
           <div class="toolbar-left" style="gap:0.5rem">
             <span class="toolbar-label">阵容</span>
             <div class="seg" id="lineupTeamSeg">
-              <button type="button" class="seg-btn active" data-team="A">A队</button>
-              <button type="button" class="seg-btn" data-team="B">B队</button>
+              <button type="button" class="seg-btn active" data-team="A" id="lineupTeamBtnA">A队</button>
+              <button type="button" class="seg-btn" data-team="B" id="lineupTeamBtnB">B队</button>
             </div>
             <div class="seg" id="lineupFormationSeg">
               <button type="button" class="seg-btn active" data-formation="4-4-2">4-4-2</button>
@@ -333,6 +333,7 @@
 
           <div class="toolbar-right">
             <span id="lineupSaveStatus" class="save-status" aria-live="polite"></span>
+            <button type="button" id="btnExportLineup" class="btn btn-outline btn-sm">导出图片</button>
             <button type="button" id="btnSaveLineup" class="btn btn-primary btn-sm">保存阵容</button>
           </div>
         </div>

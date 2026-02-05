@@ -19,6 +19,7 @@
 
   const slotsEl = document.getElementById('lineupSlots');
   const saveBtn = document.getElementById('btnSaveLineup');
+  const exportBtn = document.getElementById('btnExportLineup');
   const saveStatus = document.getElementById('lineupSaveStatus');
   const teamSeg = document.getElementById('lineupTeamSeg');
   const formationSeg = document.getElementById('lineupFormationSeg');
@@ -88,7 +89,7 @@
   let state = {
     canEdit: false,
     activeTeam: 'A',
-    formation: '4-4-2',
+    formation: { A: '4-4-2', B: '4-4-2' },
     activityAttendances: [],
     activityUsers: {},
     lineup: { A: {}, B: {} },
@@ -233,17 +234,7 @@
     }, 1200);
   }
 
-  function encodePosition(team, slotKey){
-    return `${team}:${slotKey}`;
-  }
-
-  function decodePosition(pos){
-    if (!pos) return null;
-    const s = String(pos).trim();
-    const m = s.match(/^([AB]):([A-Z0-9]+)$/);
-    if (!m) return null;
-    return { team: m[1], slotKey: m[2] };
-  }
+  // (removed) encoded position helpers; lineup uses dedicated /lineup API + tables.
 
   async function save(opts){
     opts = opts || {mode:'manual'};
@@ -251,15 +242,11 @@
     if (!activityId) return;
     if (saving) { pendingSave = true; return; }
 
-    const positions = [];
-    for (const team of ['A','B']) {
-      const lineup = state.lineup[team] || {};
-      for (const slotKey of Object.keys(lineup)) {
-        const uid = lineup[slotKey];
-        if (!uid) continue;
-        positions.push({ userId: uid, position: encodePosition(team, slotKey) });
-      }
-    }
+    const teamKey = state.activeTeam;
+    const lineup = state.lineup[teamKey] || {};
+    const slots = Object.keys(lineup)
+      .map((slotKey)=>({ slotKey, userId: lineup[slotKey] }))
+      .filter((x)=>x.userId);
 
     saving = true;
     pendingSave = false;
@@ -267,13 +254,13 @@
     if (saveBtn) saveBtn.disabled = true;
 
     try {
-      const res = await fetch('/activities/' + encodeURIComponent(activityId) + '/positions', {
+      const res = await fetch('/activities/' + encodeURIComponent(activityId) + '/lineup', {
         method: 'PATCH',
         headers: {
           Authorization: 'Bearer ' + token,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ positions }),
+        body: JSON.stringify({ teamKey, formation: state.formation[teamKey] || '4-4-2', slots }),
       });
       const body = await safeJson(res);
       if (!res.ok) {
@@ -335,7 +322,7 @@
   function renderSlots(){
     if (!slotsEl) return;
     slotsEl.innerHTML = '';
-    const slots = FORMATIONS[state.formation] || FORMATIONS['4-4-2'];
+    const slots = FORMATIONS[state.formation[state.activeTeam] || '4-4-2'] || FORMATIONS['4-4-2'];
 
     for (const s of slots) {
       const wrapper = document.createElement('div');
@@ -417,7 +404,7 @@
   async function load(){
     if (!activityId) { showStatus('缺少 activityId'); return; }
 
-    const res = await fetch('/activities/' + encodeURIComponent(activityId), {
+    const res = await fetch('/activities/' + encodeURIComponent(activityId) + '/lineup', {
       headers: { Authorization: 'Bearer ' + token },
     });
     if (!res.ok) {
@@ -428,24 +415,40 @@
 
     const data = await res.json();
     state.canEdit = !!data.canEdit;
+    state.teamNames = Array.isArray(data.teamNames) ? data.teamNames : [];
     if (saveBtn) saveBtn.disabled = !state.canEdit;
 
-    const atts = Array.isArray(data.attendances) ? data.attendances : [];
+    // update team labels
+    var btnA = document.getElementById('lineupTeamBtnA');
+    var btnB = document.getElementById('lineupTeamBtnB');
+    if (btnA) btnA.textContent = (state.teamNames[0] ? String(state.teamNames[0]) : 'A队');
+    if (btnB) btnB.textContent = (state.teamNames[1] ? String(state.teamNames[1]) : 'B队');
+
+    // load roster for bench from /activities/:id (need users + teamNo)
+    const r2 = await fetch('/activities/' + encodeURIComponent(activityId), { headers: { Authorization: 'Bearer ' + token } });
+    const activity = r2.ok ? await r2.json() : null;
+    const atts = activity && Array.isArray(activity.attendances) ? activity.attendances : [];
     state.activityAttendances = atts;
 
     const users = {};
     atts.forEach((a)=>{ if (a && a.user) users[a.userId] = a.user; });
     state.activityUsers = users;
 
+    // formations
+    state.formation = { A: (data.formation && data.formation.A) ? data.formation.A : '4-4-2', B: (data.formation && data.formation.B) ? data.formation.B : '4-4-2' };
+
     state.lineup = { A: {}, B: {} };
     state.assigned = {};
 
-    atts.forEach((a)=>{
-      const decoded = decodePosition(a.position);
-      if (!decoded) return;
-      const { team, slotKey } = decoded;
-      state.lineup[team][slotKey] = a.userId;
-      state.assigned[a.userId] = { team, slotKey };
+    const slots = Array.isArray(data.slots) ? data.slots : [];
+    slots.forEach((s)=>{
+      if (!s || !s.teamKey || !s.slotKey || !s.userId) return;
+      const team = String(s.teamKey);
+      const slotKey = String(s.slotKey);
+      const uid = String(s.userId);
+      if (team !== 'A' && team !== 'B') return;
+      state.lineup[team][slotKey] = uid;
+      state.assigned[uid] = { team, slotKey };
     });
 
     state.dirty = false;
@@ -463,6 +466,9 @@
       if (!t) return;
       state.activeTeam = t;
       Array.from(teamSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-team') === t));
+      // sync formation buttons
+      const f = state.formation[t] || '4-4-2';
+      Array.from(formationSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-formation') === f));
       render();
     });
   }
@@ -473,9 +479,10 @@
       if (!btn) return;
       const f = btn.getAttribute('data-formation');
       if (!f) return;
-      state.formation = f;
+      state.formation[state.activeTeam] = f;
       Array.from(formationSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-formation') === f));
       render();
+      scheduleAutoSave();
     });
   }
 
@@ -487,6 +494,98 @@
     e.preventDefault();
     e.returnValue = '';
   });
+
+  function teamLabel(team){
+    // Prefer activity.teamNames if present; fallback A/B
+    // Note: in DB teamNo starts at 1; we map A->1, B->2.
+    const a = state.teamNames && state.teamNames[0] ? String(state.teamNames[0]) : 'A队';
+    const b = state.teamNames && state.teamNames[1] ? String(state.teamNames[1]) : 'B队';
+    return team === 'A' ? a : b;
+  }
+
+  async function exportPng(){
+    if (!slotsEl) return;
+
+    const team = state.activeTeam;
+    const formation = state.formation[team] || '4-4-2';
+    const slots = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+
+    const width = 1080;
+    const height = 1440;
+
+    // Build simple SVG (pitch + players)
+    const pitch = `
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2aa65f"/>
+          <stop offset="1" stop-color="#1f8f53"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="${width}" height="${height}" fill="url(#g)"/>
+      <rect x="60" y="60" width="${width-120}" height="${height-120}" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="4"/>
+      <line x1="60" y1="${height/2}" x2="${width-60}" y2="${height/2}" stroke="rgba(255,255,255,0.85)" stroke-width="4"/>
+      <circle cx="${width/2}" cy="${height/2}" r="140" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="4"/>
+      <circle cx="${width/2}" cy="${height/2}" r="10" fill="rgba(255,255,255,0.9)"/>
+    `;
+
+    const title = `${teamLabel(team)}  ${formation}`;
+
+    function esc(s){
+      return String(s||'').replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    const playersSvg = slots.map((p)=>{
+      const uid = (state.lineup[team]||{})[p.key];
+      const u = uid ? (state.activityUsers||{})[uid] : null;
+      const name = u && u.username ? u.username : '';
+      const x = Math.round((p.x/100) * width);
+      const y = Math.round((p.y/100) * height);
+      const r = 48;
+      const ring = team === 'A' ? 'rgba(239,68,68,0.95)' : 'rgba(59,130,246,0.95)';
+      return `
+        <g>
+          <circle cx="${x}" cy="${y}" r="${r}" fill="rgba(0,0,0,0.22)" stroke="${ring}" stroke-width="8"/>
+          <text x="${x}" y="${y+6}" text-anchor="middle" font-size="44" font-weight="800" fill="rgba(255,255,255,0.92)">${esc(p.label)}</text>
+          <text x="${x}" y="${y+92}" text-anchor="middle" font-size="28" font-weight="700" fill="rgba(255,255,255,0.92)">${esc(name)}</text>
+        </g>
+      `;
+    }).join('');
+
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+        ${pitch}
+        <rect x="0" y="0" width="${width}" height="120" fill="rgba(0,0,0,0.28)"/>
+        <text x="54" y="78" font-size="44" font-weight="900" fill="white">${esc(title)}</text>
+        <text x="54" y="110" font-size="26" fill="rgba(255,255,255,0.75)">导出自阵容页</text>
+        ${playersSvg}
+      </svg>`;
+
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((png)=>{
+        if (!png) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(png);
+        a.download = `lineup-${team}-${formation}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+      }, 'image/png');
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); showStatus('导出失败'); };
+    img.src = url;
+  }
+
+  if (exportBtn) exportBtn.addEventListener('click', exportPng);
 
   // Expose reload for mode switch
   window.__tacticsLineupReload = load;

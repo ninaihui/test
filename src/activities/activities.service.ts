@@ -512,6 +512,154 @@ export class ActivitiesService {
     return { message: '出场位置已保存' };
   }
 
+  /** 获取阵容（A/B：formation + slots）。若旧数据存在（attendance.position 编码），会自动迁移到新表。 */
+  async getLineup(activityId: string, currentUserId: string, currentUserRole?: string) {
+    const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
+    if (!activity) throw new NotFoundException('活动不存在');
+
+    const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+    const editorsRaw = (activity as any).editorUserIds;
+    const editors = Array.isArray(editorsRaw) ? editorsRaw : [];
+    const canEdit = isSystemAdmin || activity.createdById === currentUserId || editors.includes(currentUserId);
+
+    let lineup = await this.prisma.activityLineup.findUnique({
+      where: { activityId },
+      include: { slots: true },
+    });
+
+    // Auto-migrate old encoded lineup stored in Attendance.position: "A:GK" / "B:ST1" ...
+    if (!lineup) {
+      const rows = await this.prisma.attendance.findMany({
+        where: { activityId, status: { in: ['registered', 'present', 'late'] } },
+        select: { userId: true, position: true },
+      });
+      const encoded = rows
+        .map((r) => ({ userId: r.userId, pos: (r.position || '').trim() }))
+        .filter((x) => /^([AB]):([A-Z0-9]+)$/.test(x.pos));
+
+      if (encoded.length) {
+        lineup = await this.prisma.activityLineup.create({
+          data: {
+            activityId,
+            formationA: '4-4-2',
+            formationB: '4-4-2',
+            slots: {
+              create: encoded.map((x) => {
+                const m = x.pos.match(/^([AB]):([A-Z0-9]+)$/)!;
+                return {
+                  activityId,
+                  teamKey: m[1],
+                  slotKey: m[2],
+                  userId: x.userId,
+                };
+              }),
+            },
+          },
+          include: { slots: true },
+        });
+      }
+    }
+
+    if (!lineup) {
+      lineup = await this.prisma.activityLineup.create({
+        data: { activityId, formationA: '4-4-2', formationB: '4-4-2' },
+        include: { slots: true },
+      });
+    }
+
+    const teamNamesRaw = (activity as any).teamNames;
+    const teamNames = Array.isArray(teamNamesRaw) ? teamNamesRaw : [];
+
+    return {
+      activityId,
+      canEdit,
+      teamNames,
+      formation: { A: lineup.formationA, B: lineup.formationB },
+      slots: lineup.slots.map((s) => ({ teamKey: s.teamKey, slotKey: s.slotKey, userId: s.userId })),
+    };
+  }
+
+  /** 保存阵容（A/B：formation + slots）。系统管理员 / 活动创建者 / 活动协管可编辑 */
+  async updateLineup(
+    activityId: string,
+    currentUserId: string,
+    currentUserRole: string,
+    dto: { teamKey: 'A' | 'B'; formation?: string; slots: { slotKey: string; userId: string }[] },
+  ) {
+    const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
+    if (!activity) throw new NotFoundException('活动不存在');
+
+    const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+    const editorsRaw = (activity as any).editorUserIds;
+    const editors = Array.isArray(editorsRaw) ? editorsRaw : [];
+    const canEdit = isSystemAdmin || activity.createdById === currentUserId || editors.includes(currentUserId);
+    if (!canEdit) throw new ForbiddenException('无权限保存阵容');
+
+    const teamKey = dto.teamKey;
+    const slots = Array.isArray(dto.slots) ? dto.slots : [];
+
+    // Validate: no duplicates
+    const slotKeys = new Set<string>();
+    const userIds = new Set<string>();
+    for (const s of slots) {
+      const sk = String(s.slotKey || '').trim();
+      const uid = String(s.userId || '').trim();
+      if (!sk || !uid) continue;
+      if (slotKeys.has(sk)) throw new BadRequestException('同一位置不能重复分配');
+      if (userIds.has(uid)) throw new BadRequestException('同一队员不能重复分配');
+      slotKeys.add(sk);
+      userIds.add(uid);
+    }
+
+    // Ensure users belong to this activity (registered/present/late)
+    const attendanceRows = await this.prisma.attendance.findMany({
+      where: {
+        activityId,
+        status: { in: ['registered', 'present', 'late'] },
+        userId: { in: Array.from(userIds) },
+      },
+      select: { userId: true },
+    });
+    const okUserIds = new Set(attendanceRows.map((r) => r.userId));
+    for (const uid of userIds) {
+      if (!okUserIds.has(uid)) throw new BadRequestException('阵容中包含未报名用户');
+    }
+
+    const formation = (dto.formation || '').trim();
+
+    const lineup = await this.prisma.activityLineup.upsert({
+      where: { activityId },
+      create: {
+        activityId,
+        formationA: teamKey === 'A' && formation ? formation : '4-4-2',
+        formationB: teamKey === 'B' && formation ? formation : '4-4-2',
+      },
+      update: {
+        formationA: teamKey === 'A' && formation ? formation : undefined,
+        formationB: teamKey === 'B' && formation ? formation : undefined,
+      },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.activityLineupSlot.deleteMany({ where: { lineupId: lineup.id, teamKey } });
+      const createData = slots
+        .map((s) => ({ slotKey: String(s.slotKey || '').trim(), userId: String(s.userId || '').trim() }))
+        .filter((s) => s.slotKey && s.userId)
+        .map((s) => ({
+          lineupId: lineup.id,
+          activityId,
+          teamKey,
+          slotKey: s.slotKey,
+          userId: s.userId,
+        }));
+      if (createData.length) {
+        await tx.activityLineupSlot.createMany({ data: createData });
+      }
+    });
+
+    return { message: '阵容已保存' };
+  }
+
   /** 当前用户保存本场自己的出场位置（普通用户战术板保存用） */
   async updateMyPosition(activityId: string, userId: string, position: string) {
     const activity = await this.prisma.activity.findUnique({
