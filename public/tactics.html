@@ -374,19 +374,27 @@
   <div id="tacticsRosterDrawer" class="glass drawer" role="dialog" aria-modal="true" aria-label="队员列表">
     <div class="roster-head">
       <div>
-        <div class="roster-title">未选位置</div>
-        <div class="roster-sub">拖到场上空位</div>
+        <div class="roster-title" id="rosterDrawerTitle">未选位置</div>
+        <div class="roster-sub" id="rosterDrawerSub">拖到场上空位</div>
       </div>
       <button type="button" id="btnCloseRoster" class="icon-btn" aria-label="关闭">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
+
+    <!-- Teams mode drawer -->
     <div id="unassignedWrapMobile" class="unassigned-wrap hidden">
       <span class="unassigned-label">未选位置</span>
       <div id="unassignedUsersMobile" class="unassigned-users"></div>
     </div>
     <div class="unassigned-wrap" id="unassignedEmptyHintMobile">
       <div class="text-white/60 text-sm">暂无未选位置的队员</div>
+    </div>
+
+    <!-- Lineup mode drawer -->
+    <div id="lineupBenchWrapMobile" class="unassigned-wrap hidden">
+      <div id="lineupBenchListMobile" class="bench-list"></div>
+      <div id="lineupBenchEmptyMobile" class="text-white/60 text-sm">暂无候补</div>
     </div>
   </div>
 
@@ -494,19 +502,46 @@
         if (btnTeams) btnTeams.classList.toggle('active', isTeams);
         if (btnLineup) btnLineup.classList.toggle('active', !isTeams);
 
+        // mobile drawer content switch
+        var drawerTitle = document.getElementById('rosterDrawerTitle');
+        var drawerSub = document.getElementById('rosterDrawerSub');
+        var unWrap = document.getElementById('unassignedWrapMobile');
+        var unEmpty = document.getElementById('unassignedEmptyHintMobile');
+        var benchWrap = document.getElementById('lineupBenchWrapMobile');
+        if (isTeams) {
+          if (drawerTitle) drawerTitle.textContent = '未选位置';
+          if (drawerSub) drawerSub.textContent = '拖到场上空位';
+          if (unWrap) unWrap.classList.remove('hidden');
+          if (unEmpty) unEmpty.classList.remove('hidden');
+          if (benchWrap) benchWrap.classList.add('hidden');
+          if (btnOpen) btnOpen.textContent = '队员';
+        } else {
+          if (drawerTitle) drawerTitle.textContent = '候补';
+          if (drawerSub) drawerSub.textContent = '拖到场上位置';
+          if (unWrap) unWrap.classList.add('hidden');
+          if (unEmpty) unEmpty.classList.add('hidden');
+          if (benchWrap) benchWrap.classList.remove('hidden');
+          if (btnOpen) btnOpen.textContent = '候补';
+        }
+
         // refresh lineup data when switching in
         if (!isTeams && window.__tacticsLineupReload) {
           try { window.__tacticsLineupReload(); } catch(e) {}
         }
+
+        try { localStorage.setItem('tacticsMode', isTeams ? 'teams' : 'lineup'); } catch(e){}
       }
 
       if (btnTeams) btnTeams.addEventListener('click', function(){ setMode('teams'); });
       if (btnLineup) btnLineup.addEventListener('click', function(){ setMode('lineup'); });
 
-      // default: read query ?mode=lineup
+      // default: query ?mode=lineup else localStorage tacticsMode
       var p = new URLSearchParams(window.location.search);
       var m = p.get('mode');
-      setMode(m === 'lineup' ? 'lineup' : 'teams');
+      var remembered = null;
+      try { remembered = localStorage.getItem('tacticsMode'); } catch(e) {}
+      var initial = (m === 'lineup') ? 'lineup' : (remembered === 'lineup' ? 'lineup' : 'teams');
+      setMode(initial);
     })();
   </script>
   <script>
@@ -574,6 +609,9 @@
       if (btnOpen) btnOpen.addEventListener('click', open);
       if (btnClose) btnClose.addEventListener('click', close);
       if (backdrop) backdrop.addEventListener('click', close);
+
+      // expose for mode switch
+      window.__tacticsDrawer = { open: open, close: close };
     })();
 
     // NOTE: unassigned list is rendered by /public/js/tactics-board.js into both desktop + mobile containers.

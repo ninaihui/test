@@ -27,6 +27,10 @@
   const benchEmpty = document.getElementById('lineupBenchEmpty');
   const benchTitle = document.getElementById('lineupBenchTitle');
 
+  // mobile drawer
+  const benchListMobile = document.getElementById('lineupBenchListMobile');
+  const benchEmptyMobile = document.getElementById('lineupBenchEmptyMobile');
+
   function showStatus(t){
     if (!saveStatus) return;
     saveStatus.textContent = t;
@@ -371,7 +375,6 @@
   }
 
   function renderBench(){
-    if (!benchList) return;
     const users = state.activityUsers || {};
     const attendances = state.activityAttendances || [];
     const activeTeam = state.activeTeam;
@@ -386,16 +389,22 @@
       bench.push({ userId: uid, user: users[uid], team: belong });
     }
 
-    benchList.innerHTML = '';
+    function fill(container, emptyEl){
+      if (!container) return;
+      container.innerHTML = '';
+      if (!bench.length) {
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        return;
+      }
+      if (emptyEl) emptyEl.classList.add('hidden');
+      for (const b of bench) {
+        container.appendChild(mkToken(b.userId, b.team, b.user));
+      }
+    }
+
     if (benchTitle) benchTitle.textContent = `候补（${bench.length}）`;
-    if (!bench.length) {
-      if (benchEmpty) benchEmpty.classList.remove('hidden');
-      return;
-    }
-    if (benchEmpty) benchEmpty.classList.add('hidden');
-    for (const b of bench) {
-      benchList.appendChild(mkToken(b.userId, b.team, b.user));
-    }
+    fill(benchList, benchEmpty);
+    fill(benchListMobile, benchEmptyMobile);
   }
 
   function render(){
