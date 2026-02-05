@@ -342,7 +342,7 @@
             html += '</div>';
 
             var countText = regAttendances.length + '/' + totalSlots + '人' + (waitAttendances.length > 0 ? (' · 候补' + waitAttendances.length) : '');
-            html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + countText + '</span></span><a href="/tactics.html?activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">战术板</a></div>';
+            html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + countText + '</span></span><a href="/tactics.html?v=20260205-merge&activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">战术板</a></div>';
             if (regAttendances.length === 0 && waitAttendances.length === 0) {
                 html += '<div class="text-white/50 text-sm">暂无报名</div>';
             } else {

@@ -503,8 +503,10 @@
       if (btnTeams) btnTeams.addEventListener('click', function(){ setMode('teams'); });
       if (btnLineup) btnLineup.addEventListener('click', function(){ setMode('lineup'); });
 
-      // default
-      setMode('teams');
+      // default: read query ?mode=lineup
+      var p = new URLSearchParams(window.location.search);
+      var m = p.get('mode');
+      setMode(m === 'lineup' ? 'lineup' : 'teams');
     })();
   </script>
   <script>

@@ -200,6 +200,14 @@
     </div>
   </div>
 
-  <script src="/js/tactics-positions.js?v=20260205-1"></script>
+  <script>
+    // This page has been merged into /tactics.html (tabs). Keep as backward-compatible redirect.
+    (function(){
+      var p = new URLSearchParams(window.location.search);
+      var activityId = p.get('activityId');
+      var url = '/tactics.html?v=20260205-merge&mode=lineup' + (activityId ? ('&activityId=' + encodeURIComponent(activityId)) : '');
+      window.location.replace(url);
+    })();
+  </script>
 </body>
 </html>
