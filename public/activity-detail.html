@@ -105,7 +105,15 @@
             var position = (selectEl.value || '').trim();
             var teamEl = document.getElementById('registerTeamSelect');
             var teamNo = teamEl ? parseInt((teamEl.value || '0'), 10) : 0;
+            if (!Number.isFinite(teamNo) || teamNo < 0) teamNo = 0;
             if (!activityId) return;
+
+            // If team or position is unselected, confirm with user.
+            if (teamNo === 0 || !position) {
+                var msg = '你选择了未定队伍或未定位置。\n\n队伍和位置可能会由队长指定。\n\n仍然要报名吗？';
+                if (!confirm(msg)) return;
+            }
+
             document.getElementById('registerModalOverlay').classList.remove('show');
             var body = {};
             if (position && position.trim()) body.position = position.trim();

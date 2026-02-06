@@ -769,6 +769,12 @@
         var teamNo = teamEl ? parseInt((teamEl.value || '0'), 10) : 0;
         if (!Number.isFinite(teamNo) || teamNo < 0) teamNo = 0;
 
+        // 未定队伍/未定位置：提醒用户（队长可能会指定）
+        if (teamNo === 0 || !position) {
+          var msg = '你选择了未定队伍或未定位置。\n\n队伍和位置可能会由队长指定。\n\n仍然要报名吗？';
+          if (!confirm(msg)) return;
+        }
+
         // 同队位置重复校验（与详情页一致：只在选择了队伍时校验；并排除自己）
         if (position && teamNo > 0) {
           var hasSame = (registerModalAttendances || []).some(function (a) {
