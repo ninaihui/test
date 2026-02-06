@@ -28,8 +28,25 @@ model User {
   activities  Activity[]
   attendances Attendance[]
   lineupSlots ActivityLineupSlot[]
+  photos      Photo[]
 
   @@map("users")
+}
+
+model Photo {
+  id          String   @id @default(uuid())
+  /// public url path, e.g. /uploads/photos/xxx.jpg
+  url         String
+  activityId  String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  activity  Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  createdBy User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([activityId])
+  @@map("photos")
 }
 
 model Venue {
@@ -70,6 +87,7 @@ model Activity {
   attendances Attendance[]
   lineup      ActivityLineup?
   lineupSlots ActivityLineupSlot[]
+  photos      Photo[]
 
   @@map("activities")
 }

@@ -34,6 +34,9 @@ services:
     ports:
       # expose API only to localhost; public traffic should go through Nginx (HTTPS)
       - "127.0.0.1:3000:3000"
+    volumes:
+      # persist uploaded photos on host
+      - ./data/uploads:/app/public/uploads
 
 volumes:
   postgres_data:

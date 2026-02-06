@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>展示 - footballgo.club</title>
+  <link rel="stylesheet" href="/assets/app.css?v=20260206-1" />
+  <style>
+    body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
+      background: radial-gradient(1200px 800px at 20% 0%, rgba(56,189,248,.18), transparent 55%),
+                  radial-gradient(900px 700px at 80% 10%, rgba(34,197,94,.14), transparent 55%),
+                  linear-gradient(180deg, rgba(0,8,24,.66) 0%, rgba(0,4,16,.80) 100%),
+                  url('/assets/login-bg.png') no-repeat center center fixed;
+      background-size: cover; }
+
+    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+
+    .hero { position: relative; overflow: hidden; border-radius: 1.25rem; padding: 1.25rem; }
+    .hero:before { content:''; position:absolute; inset:-2px; background: radial-gradient(700px 400px at 20% 10%, rgba(59,130,246,.22), transparent 55%),
+                                                radial-gradient(700px 400px at 90% 0%, rgba(168,85,247,.18), transparent 55%);
+      pointer-events:none; }
+    .hero-inner { position: relative; z-index: 1; display:flex; flex-direction:column; gap: .75rem; }
+    .hero-title { font-size: 1.4rem; font-weight: 900; color: #fff; letter-spacing: .2px; }
+    .hero-sub { color: rgba(255,255,255,.70); font-size: .95rem; }
+
+    .grid { display:grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 900px){ .grid { grid-template-columns: 1.1fr .9fr; } }
+
+    .gallery { border-radius: 1.25rem; overflow:hidden; }
+    .masonry { columns: 2; column-gap: .75rem; padding: .75rem; }
+    @media (min-width: 900px){ .masonry { columns: 3; } }
+    .photo { break-inside: avoid; margin: 0 0 .75rem; border-radius: 1rem; overflow:hidden; border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+    }
+    .photo img { width:100%; height:auto; display:block; }
+    .photo .meta { padding: .5rem .65rem; font-size: .78rem; color: rgba(255,255,255,.65); display:flex; justify-content:space-between; gap:.5rem; }
+
+    .section-title { font-size: .9rem; font-weight: 800; color: rgba(255,255,255,.85); margin: 0 0 .5rem; }
+
+    .activity { padding: .85rem; border-radius: 1.1rem; border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.20);
+      display:flex; gap:.75rem; align-items:flex-start; justify-content:space-between;
+    }
+    .activity .name { font-weight: 900; color:#fff; }
+    .activity .meta { font-size: .82rem; color: rgba(255,255,255,.68); margin-top: .15rem; }
+
+    .top-actions { display:flex; gap:.6rem; align-items:center; justify-content:flex-end; }
+    .btn-soft { padding: .55rem .8rem; border-radius: 999px; background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12); color:#fff; text-decoration:none; font-weight:800; font-size:.88rem; }
+    .btn-soft:hover { background: rgba(255,255,255,.14); }
+
+    .upload { margin-top: .75rem; padding:.85rem; border-radius:1.1rem; border:1px dashed rgba(255,255,255,.18); display:none; }
+    .upload .row{ display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
+    input[type=file]{ color: rgba(255,255,255,.8); }
+  </style>
+</head>
+<body class="min-h-screen safe-bottom-nav">
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="top-actions">
+      <a class="btn-soft" href="/login.html">登录</a>
+      <a class="btn-soft" href="/dashboard.html">进入管理</a>
+    </div>
+
+    <section class="glass hero">
+      <div class="hero-inner">
+        <div class="hero-title">footballgo.club</div>
+        <div class="hero-sub">近期活动 + 照片墙</div>
+      </div>
+    </section>
+
+    <div class="grid mt-4">
+      <section class="glass gallery">
+        <div class="p-4 pb-0">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <h2 class="section-title">照片墙</h2>
+            <div class="text-white/60 text-xs" id="photoHint">最新上传的照片</div>
+          </div>
+        </div>
+        <div id="uploadBox" class="upload">
+          <div class="row">
+            <strong style="color:#fff;">队长上传</strong>
+            <input id="photoFile" type="file" accept="image/*" />
+            <button id="btnUpload" class="btn btn-primary btn-sm">上传</button>
+            <span id="uploadStatus" class="text-white/60 text-xs"></span>
+          </div>
+          <div class="text-white/50 text-xs mt-2">仅 admin/super_admin 可上传；图片会公开展示。</div>
+        </div>
+        <div id="masonry" class="masonry"></div>
+      </section>
+
+      <aside class="glass" style="border-radius:1.25rem; padding:1rem;">
+        <h2 class="section-title">近期活动</h2>
+        <div id="recentActivities" class="space-y-3"></div>
+      </aside>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" aria-label="底部导航">
+    <div class="bottom-nav-inner">
+      <a class="bottom-nav-item active" data-nav="showcase" href="/showcase.html">展示</a>
+      <a class="bottom-nav-item" data-nav="dashboard" href="/dashboard.html">管理</a>
+      <a class="bottom-nav-item" data-nav="activities" href="/activities.html">活动</a>
+    </div>
+  </nav>
+
+  <script>
+    const TOKEN_KEY = 'authToken';
+    const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+
+    function fmt(iso){
+      try{
+        const d = new Date(iso);
+        return (d.getMonth()+1) + '月' + d.getDate() + '号 ' + d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+      }catch(e){return '—'}
+    }
+
+    async function loadPhotos(){
+      const el = document.getElementById('masonry');
+      el.innerHTML = '<div class="text-white/50 text-sm" style="padding:.75rem;">加载中…</div>';
+      const res = await fetch('/public/photos?limit=30').catch(()=>null);
+      if (!res || !res.ok){ el.innerHTML = '<div class="text-white/50 text-sm" style="padding:.75rem;">暂无照片</div>'; return; }
+      const list = await res.json().catch(()=>[]);
+      if (!Array.isArray(list) || list.length===0){ el.innerHTML = '<div class="text-white/50 text-sm" style="padding:.75rem;">暂无照片</div>'; return; }
+      el.innerHTML = '';
+      list.forEach(p=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'photo';
+        const img = document.createElement('img');
+        img.loading='lazy';
+        img.decoding='async';
+        img.src = p.url;
+        wrap.appendChild(img);
+        const meta = document.createElement('div');
+        meta.className='meta';
+        meta.innerHTML = `<span>${p.createdAt?fmt(p.createdAt):''}</span><span>${p.activityId?('活动#'+String(p.activityId).slice(0,6)):' '}</span>`;
+        wrap.appendChild(meta);
+        el.appendChild(wrap);
+      });
+    }
+
+    async function loadRecentActivities(){
+      const el = document.getElementById('recentActivities');
+      el.innerHTML = '<div class="text-white/50 text-sm">加载中…</div>';
+      const res = await fetch('/public/activities?limit=6').catch(()=>null);
+      if (!res || !res.ok){ el.innerHTML = '<div class="text-white/50 text-sm">暂无活动</div>'; return; }
+      const list = await res.json().catch(()=>[]);
+      if (!Array.isArray(list) || list.length===0){ el.innerHTML = '<div class="text-white/50 text-sm">暂无活动</div>'; return; }
+      el.innerHTML='';
+      list.forEach(a=>{
+        const div = document.createElement('div');
+        div.className='activity';
+        div.innerHTML = `<div><div class="name">${(a.name||'未命名')}</div><div class="meta">${(a.location||'—')} · ${fmt(a.date)}</div></div><a class="btn-soft" href="/activity-detail.html?id=${a.id}">详情</a>`;
+        el.appendChild(div);
+      });
+    }
+
+    function canUpload(){
+      try{
+        const u = JSON.parse(localStorage.getItem('user')||'null');
+        return !!(u && (u.role === 'admin' || u.role === 'super_admin'));
+      }catch(e){return false}
+    }
+
+    async function bindUpload(){
+      const box = document.getElementById('uploadBox');
+      if (!box) return;
+      if (!token || !canUpload()) return;
+      box.style.display = 'block';
+
+      const btn = document.getElementById('btnUpload');
+      const fileEl = document.getElementById('photoFile');
+      const status = document.getElementById('uploadStatus');
+      btn.addEventListener('click', async ()=>{
+        if (!fileEl.files || !fileEl.files[0]) { status.textContent='请选择图片'; return; }
+        status.textContent='上传中…';
+        btn.disabled=true;
+        try{
+          const fd = new FormData();
+          fd.append('file', fileEl.files[0]);
+          const r = await fetch('/photos/upload', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+          const body = await r.json().catch(()=>({}));
+          if (!r.ok) { status.textContent = body.message || '上传失败'; return; }
+          status.textContent='已上传';
+          fileEl.value='';
+          await loadPhotos();
+        }catch(e){ status.textContent='网络错误'; }
+        finally{ btn.disabled=false; }
+      });
+    }
+
+    (async function init(){
+      await Promise.all([loadPhotos(), loadRecentActivities()]);
+      bindUpload();
+    })();
+  </script>
+</body>
+</html>
