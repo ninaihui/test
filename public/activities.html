@@ -202,7 +202,7 @@
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                         </svg>
-                        保存
+                        创建
                     </button>
                 </div>
             </form>
@@ -274,6 +274,8 @@
 
         function showCreateActivityModal() {
             document.getElementById('modalTitle').textContent = '创建活动';
+            var btn = document.getElementById('activitySubmitBtn');
+            if (btn) btn.lastChild.textContent = '创建';
             document.getElementById('activityForm').reset();
             document.getElementById('activityError').classList.add('hidden');
             document.getElementById('activityDate').value = getThisWeekSaturday();
