@@ -227,9 +227,22 @@
             if (!id) return;
             content.innerHTML = '<div class="text-center py-8 text-white/50 text-sm">加载中…</div>';
             fetch('/activities/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } })
-                .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('加载失败')); })
+                .then(function(r) {
+                    if (r.status === 401) {
+                        // token expired/invalid
+                        window.location.href = '/login.html';
+                        return Promise.reject(new Error('未登录'));
+                    }
+                    return r.ok ? r.json() : r.text().then(function(t){
+                        try { var j = t ? JSON.parse(t) : null; return Promise.reject(new Error((j && j.message) ? j.message : '加载失败')); }
+                        catch(e){ return Promise.reject(new Error('加载失败')); }
+                    });
+                })
                 .then(function(activity) { renderActivity(activity); })
-                .catch(function() { content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">加载失败，<a href="/activities.html" class="text-cyan-400 underline">返回活动列表</a></div>'; });
+                .catch(function(err) {
+                    var msg = (err && err.message) ? err.message : '加载失败';
+                    content.innerHTML = '<div class="text-center py-8 text-red-300 text-sm">' + msg + '，<a href="/activities.html" class="text-cyan-400 underline">返回活动列表</a></div>';
+                });
         }
 
         function showToast(message) {
