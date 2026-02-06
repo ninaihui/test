@@ -123,7 +123,7 @@
         function openRegisterModal(activity) {
             var activityId = activity && activity.id;
             var attendances = (activity && activity.attendances) || [];
-            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14;
+            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14; // used for lineup gate (>=8)
             var teamCount = (activity && activity.teamCount != null) ? activity.teamCount : Math.ceil((maxParticipants || 1) / 12);
             if (teamCount < 1) teamCount = 1;
             if (teamCount > 4) teamCount = 4;
@@ -342,7 +342,9 @@
             html += '</div>';
 
             var countText = regAttendances.length + '/' + totalSlots + '人' + (waitAttendances.length > 0 ? (' · 候补' + waitAttendances.length) : '');
-            html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + countText + '</span></span><a href="/tactics.html?v=20260206-lineup&activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">阵容</a></div>';
+            html += '<div class="pt-4 border-t border-white/10"><div class="flex items-center justify-between gap-2 mb-2 flex-wrap"><span class="text-white/80 text-sm font-medium">报名名单 <span class="text-white/60 text-sm tabular-nums">' + countText + '</span></span>';
+html += (maxParticipants >= 8) ? ('<a href="/tactics.html?v=20260206-lineup&activityId=' + (activity.id || '') + '" class="btn btn-primary btn-sm shrink-0 font-semibold">阵容</a>') : ('<span class="text-white/50 text-xs">人数上限<8：不展示阵容</span>');
+html += '</div>';
             if (regAttendances.length === 0 && waitAttendances.length === 0) {
                 html += '<div class="text-white/50 text-sm">暂无报名</div>';
             } else {
