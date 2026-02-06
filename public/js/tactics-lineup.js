@@ -351,7 +351,15 @@
     const ph = document.createElement('div');
     ph.className = 'avatar-media jersey';
 
-    const color = team === 'A' ? 'rgba(239,68,68,0.92)' : (team === 'B' ? 'rgba(59,130,246,0.92)' : 'rgba(148,163,184,0.65)');
+    const color = (team === '1' || team === 'A')
+      ? 'rgba(239,68,68,0.92)'
+      : ((team === '2' || team === 'B')
+          ? 'rgba(59,130,246,0.92)'
+          : (team === '3'
+              ? 'rgba(168,85,247,0.92)'
+              : (team === '4'
+                  ? 'rgba(234,179,8,0.92)'
+                  : 'rgba(148,163,184,0.65)')));
 
     const num = jerseyNo != null ? String(jerseyNo) : '';
     ph.innerHTML = `
@@ -777,7 +785,15 @@
       const x = Math.round((p.x/100) * width);
       const y = Math.round((p.y/100) * height);
       const r = 54;
-      const ring = team === 'A' ? 'rgba(239,68,68,0.95)' : 'rgba(59,130,246,0.95)';
+      const ring = (team === '1' || team === 'A')
+        ? 'rgba(239,68,68,0.95)'
+        : ((team === '2' || team === 'B')
+            ? 'rgba(59,130,246,0.95)'
+            : (team === '3'
+                ? 'rgba(168,85,247,0.95)'
+                : (team === '4'
+                    ? 'rgba(234,179,8,0.95)'
+                    : 'rgba(148,163,184,0.85)')));
       const img = uid ? avatarData[uid] : null;
 
       const clipId = `c_${team}_${p.key}`;
