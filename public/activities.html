@@ -151,6 +151,11 @@
             <form id="activityForm" class="flex flex-col flex-1 min-h-0 overflow-hidden">
                 <div class="overflow-y-auto overflow-x-hidden px-4 sm:p-6 pt-0 space-y-4 flex-1 min-h-0 overscroll-contain">
                     <div>
+                        <label class="block text-white/80 mb-2">活动名字</label>
+                        <input type="text" id="activityName" required placeholder="例如：周末踢球"
+                            class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
+                    </div>
+                    <div>
                         <label class="block text-white/80 mb-2">活动日期</label>
                         <input type="date" id="activityDate" required 
                             class="w-full bg-black/25 border border-white/20 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400/50">
@@ -215,6 +220,7 @@
     <script>
         const authToken = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'));
         const LAST_LOCATION_KEY = 'team_management:lastActivityLocation';
+        const LAST_ACTIVITY_NAME_KEY = 'team_management:lastActivityName';
         var currentUser = null;
         try {
             var u = localStorage.getItem('user');
@@ -278,6 +284,14 @@
             if (btn) btn.lastChild.textContent = '创建';
             document.getElementById('activityForm').reset();
             document.getElementById('activityError').classList.add('hidden');
+
+            // default name = last created name (fallback 周末踢球)
+            var nameEl = document.getElementById('activityName');
+            if (nameEl) {
+                var lastName = localStorage.getItem(LAST_ACTIVITY_NAME_KEY);
+                nameEl.value = (lastName && lastName.trim()) ? lastName.trim() : '周末踢球';
+            }
+
             document.getElementById('activityDate').value = getThisWeekSaturday();
             var maxEl = document.getElementById('activityMaxParticipants');
             if (maxEl) maxEl.value = '24';
@@ -345,6 +359,7 @@
             const btn = document.getElementById('activitySubmitBtn');
             errorEl.classList.add('hidden');
 
+            const name = (document.getElementById('activityName') && document.getElementById('activityName').value) ? document.getElementById('activityName').value.trim() : '';
             const activityDate = document.getElementById('activityDate').value;
             const activityTime = document.getElementById('activityTime').value;
             const location = document.getElementById('activityLocation').value.trim();
@@ -391,14 +406,12 @@
             while (names.length < effectiveTeamCount) names.push(defaults[names.length] || ('队伍' + (names.length + 1)));
             if (names.length > effectiveTeamCount) names = names.slice(0, effectiveTeamCount);
 
-            if (!activityDate || !activityTime || !location) {
-                errorEl.textContent = '请填写日期、时间和地点';
+            if (!name || !activityDate || !activityTime || !location) {
+                errorEl.textContent = '请填写活动名字、日期、时间和地点';
                 errorEl.classList.remove('hidden');
                 return;
             }
 
-            // 活动名称自动生成为「周末踢球」
-            const name = '周末踢球';
             const dateStr = activityDate + 'T' + activityTime + ':00';
 
             btn.disabled = true;
@@ -422,6 +435,7 @@
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     localStorage.setItem(LAST_LOCATION_KEY, location);
+                    localStorage.setItem(LAST_ACTIVITY_NAME_KEY, name);
                     closeActivityModal();
                     loadActivities();
                 } else {
