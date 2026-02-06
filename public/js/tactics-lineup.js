@@ -23,6 +23,7 @@
   const saveStatus = document.getElementById('lineupSaveStatus');
   const teamSeg = document.getElementById('lineupTeamSeg');
   const formationSeg = document.getElementById('lineupFormationSeg');
+  const formationSelect = document.getElementById('lineupFormationSelect');
 
   const benchList = document.getElementById('lineupBenchList');
   const benchEmpty = document.getElementById('lineupBenchEmpty');
@@ -612,9 +613,9 @@
       if (!state.teamSizes[state.activeTeam]) state.activeTeam = '1';
       // rebuild team tabs
       renderTeamTabs(tc);
-      // keep formation seg in sync
+      // keep formation select in sync
       const f0 = state.formation[state.activeTeam] || '4-4-2';
-      Array.from(formationSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-formation') === f0));
+      if (formationSelect) formationSelect.value = f0;
 
     }
     if (!state.canLineup) {
@@ -699,21 +700,18 @@
       if (!t) return;
       state.activeTeam = t;
       Array.from(teamSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-team') === t));
-      // sync formation buttons
+      // sync formation select
       const f = state.formation[t] || '4-4-2';
-      Array.from(formationSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-formation') === f));
+      if (formationSelect) formationSelect.value = f;
       render();
     });
   }
 
-  if (formationSeg) {
-    formationSeg.addEventListener('click', (ev)=>{
-      const btn = ev.target && ev.target.closest ? ev.target.closest('[data-formation]') : null;
-      if (!btn) return;
-      const f = btn.getAttribute('data-formation');
+  if (formationSelect) {
+    formationSelect.addEventListener('change', ()=>{
+      const f = (formationSelect.value || '').trim();
       if (!f) return;
       state.formation[state.activeTeam] = f;
-      Array.from(formationSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-formation') === f));
       render();
       scheduleAutoSave();
     });
