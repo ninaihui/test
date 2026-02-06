@@ -281,14 +281,28 @@
 
   // ===== render =====
   function mkAvatar(user){
-    const hasAvatar = !!(user && user.avatarUrl);
+    const url = user && user.avatarUrl ? String(user.avatarUrl) : '';
+    const hasAvatar = !!url;
+
     if (hasAvatar) {
       const img = document.createElement('img');
       img.className = 'avatar-media';
-      img.src = user.avatarUrl;
-      img.alt = user.username || 'player';
+      img.alt = (user && user.username) ? user.username : 'player';
+      // normalize relative url
+      img.src = url.startsWith('/') ? (window.location.origin + url) : url;
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.referrerPolicy = 'no-referrer';
+      img.addEventListener('error', ()=>{
+        // fallback to placeholder
+        const ph = document.createElement('div');
+        ph.className = 'avatar-media avatar-placeholder';
+        ph.textContent = '?';
+        img.replaceWith(ph);
+      }, { once: true });
       return img;
     }
+
     const ph = document.createElement('div');
     ph.className = 'avatar-media avatar-placeholder';
     ph.textContent = '?';
