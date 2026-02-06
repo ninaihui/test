@@ -280,7 +280,7 @@
   }
 
   // ===== render =====
-  function mkAvatar(user){
+  function mkAvatar(user, team, jerseyNo){
     const url = user && user.avatarUrl ? String(user.avatarUrl) : '';
     const hasAvatar = !!url;
 
@@ -294,28 +294,35 @@
       img.decoding = 'async';
       img.referrerPolicy = 'no-referrer';
       img.addEventListener('error', ()=>{
-        // fallback to placeholder
-        const ph = document.createElement('div');
-        ph.className = 'avatar-media avatar-placeholder';
-        ph.textContent = '?';
-        img.replaceWith(ph);
+        img.replaceWith(mkAvatar(null, team, jerseyNo));
       }, { once: true });
       return img;
     }
 
+    // jersey placeholder (team color)
     const ph = document.createElement('div');
     ph.className = 'avatar-media avatar-placeholder';
-    ph.textContent = '?';
+
+    const color = team === 'A' ? 'rgba(239,68,68,0.92)' : (team === 'B' ? 'rgba(59,130,246,0.92)' : 'rgba(148,163,184,0.65)');
+
+    const num = jerseyNo != null ? String(jerseyNo) : '';
+    ph.innerHTML = `
+      <svg width="42" height="42" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M22 9l-10 6-6 10 10 6v24c0 4 3 7 7 7h18c4 0 7-3 7-7V31l10-6-6-10-10-6-8 6h-4l-8-6z" fill="${color}" stroke="rgba(255,255,255,0.55)" stroke-width="2"/>
+        ${num ? `<text x="32" y="40" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,0.92)">${num}</text>` : ''}
+      </svg>
+    `;
+
     return ph;
   }
 
-  function mkToken(userId, team, user){
+  function mkToken(userId, team, user, jerseyNo){
     const el = document.createElement('div');
     el.className = 'token';
     el.setAttribute('data-user-id', userId);
     el.setAttribute('data-team', team || 'bench');
 
-    el.appendChild(mkAvatar(user));
+    el.appendChild(mkAvatar(user, team, jerseyNo));
 
     const name = document.createElement('div');
     name.className = 'name';
@@ -353,7 +360,8 @@
       const uid = (state.lineup[state.activeTeam] || {})[s.key];
       if (uid) {
         const u = (state.activityUsers || {})[uid];
-        wrapper.appendChild(mkToken(uid, state.activeTeam, u));
+        // jerseyNo = slot order number in current formation
+        wrapper.appendChild(mkToken(uid, state.activeTeam, u, slots.indexOf(s) + 1));
       } else {
         const placeholder = document.createElement('div');
         placeholder.className = 'token';
@@ -399,6 +407,7 @@
       }
       if (emptyEl) emptyEl.classList.add('hidden');
       for (const b of bench) {
+        // bench: jerseyNo not needed
         container.appendChild(mkToken(b.userId, b.team, b.user));
       }
     }
@@ -668,7 +677,10 @@
 
       const clipId = `c_${team}_${p.key}`;
       const imgEl = img ? `<image href="${img}" x="${x-r+6}" y="${y-r+6}" width="${(r-6)*2}" height="${(r-6)*2}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>` : '';
-      const placeholder = !img ? `<text x="${x}" y="${y+10}" text-anchor="middle" font-size="54" font-weight="900" fill="rgba(255,255,255,0.85)">?</text>` : '';
+      const placeholder = !img ? `
+        <path d="M${x-40} ${y-44} l-12 8-10 16 18 10v38c0 6 4 10 10 10h68c6 0 10-4 10-10V${y-10}l18-10-10-16-12-8-16 12h-8l-16-12z" fill="${ring}" opacity="0.9"/>
+        <text x="${x}" y="${y+18}" text-anchor="middle" font-size="54" font-weight="900" fill="rgba(255,255,255,0.92)">?</text>
+      ` : '';
 
       return `
         <g>
