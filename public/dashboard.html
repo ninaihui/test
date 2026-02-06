@@ -140,10 +140,13 @@
     </div>
   </div>
 
-  <!-- 报名弹窗：选择出场位置 -->
+  <!-- 报名弹窗：队伍 + 出场位置（与活动详情页保持一致） -->
   <div id="registerModalOverlay" class="register-modal-overlay" aria-hidden="true">
     <div class="register-modal" role="dialog" aria-labelledby="registerModalTitle" aria-modal="true">
-      <h3 id="registerModalTitle">选择出场位置</h3>
+      <h3 id="registerModalTitle">报名设置</h3>
+      <select id="registerTeamSelect" class="modal-select" aria-label="队伍">
+        <option value="0">未定</option>
+      </select>
       <select id="registerPositionSelect" class="modal-select" aria-label="出场位置">
         <option value="">未选择</option>
         <optgroup label="守门员">
@@ -642,23 +645,97 @@
   function openRegisterModal(activity) {
     var overlay = document.getElementById('registerModalOverlay');
     var selectEl = document.getElementById('registerPositionSelect');
-    if (!overlay || !selectEl) return;
+    var teamEl = document.getElementById('registerTeamSelect');
+    if (!overlay || !selectEl || !teamEl) return;
+
     var activityId = activity && activity.id;
     var attendances = (activity && activity.attendances) || [];
-    var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14;
+    var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14; // used for lineup gate (>=8)
+    var teamCount = (activity && activity.teamCount != null) ? activity.teamCount : Math.ceil((maxParticipants || 1) / 12);
+    if (teamCount < 1) teamCount = 1;
+    if (teamCount > 4) teamCount = 4;
+    var teamCap = Math.ceil((maxParticipants || 1) / teamCount);
+    var teamNames = (activity && activity.teamNames && Array.isArray(activity.teamNames)) ? activity.teamNames : [];
+    var defaultNames = teamCount === 1 ? ['队伍'] : (teamCount === 2 ? ['红队','蓝队'] : (teamCount === 3 ? ['红队','蓝队','紫队'] : ['红队','蓝队','紫队','黄队']));
+    while (teamNames.length < teamCount) teamNames.push(defaultNames[teamNames.length] || ('队伍' + (teamNames.length + 1)));
+    if (teamNames.length > teamCount) teamNames = teamNames.slice(0, teamCount);
+
+    var regAttendances = attendances.filter(function(a){ return a && (a.status === 'registered' || a.status === 'present' || a.status === 'late'); });
+    var teamCounts = {};
+    for (var i = 1; i <= teamCount; i++) teamCounts[i] = 0;
+    regAttendances.forEach(function(a){
+      var tn = a.teamNo;
+      if (tn == null) return;
+      if (typeof tn !== 'number') tn = parseInt(String(tn), 10);
+      if (tn >= 1 && tn <= teamCount) teamCounts[tn] = (teamCounts[tn] || 0) + 1;
+    });
+
+    teamEl.innerHTML = '';
+    var opt0 = document.createElement('option');
+    opt0.value = '0';
+    opt0.textContent = '未定';
+    teamEl.appendChild(opt0);
+    for (var t = 1; t <= teamCount; t++) {
+      var opt = document.createElement('option');
+      opt.value = String(t);
+      var used = teamCounts[t] || 0;
+      opt.textContent = (teamNames[t-1] || ('队伍' + t)) + '（' + used + '/' + teamCap + '）' + (used >= teamCap ? ' 已满' : '');
+      teamEl.appendChild(opt);
+    }
+    teamEl.value = '0';
+
     registerModalActivityId = activityId;
     registerModalAttendances = attendances;
+
     if (typeof window.fillPositionSelect === 'function') {
       window.fillPositionSelect(selectEl, maxParticipants);
     }
+
+    function refreshPositionOccupiedHints() {
+      try {
+        var tn2 = teamEl ? parseInt((teamEl.value || '0'), 10) : 0;
+        if (!Number.isFinite(tn2) || tn2 < 0) tn2 = 0;
+
+        var occupied = {};
+        if (tn2 > 0) {
+          regAttendances.forEach(function(a){
+            if (!a || !a.position) return;
+            var uid = a.user && a.user.id;
+            if (currentUser && uid && currentUser.id && uid === currentUser.id) return;
+            var atn = a.teamNo;
+            if (atn == null) return;
+            if (typeof atn !== 'number') atn = parseInt(String(atn), 10);
+            if (atn !== tn2) return;
+            var p = String(a.position).trim();
+            if (p) occupied[p] = true;
+          });
+        }
+
+        for (var j = 0; j < selectEl.options.length; j++) {
+          var o = selectEl.options[j];
+          var v = (o.value || '').trim();
+          if (!v) continue;
+          o.textContent = o.textContent.replace(/\s*·\s*已有人\s*$/, '');
+          if (tn2 > 0 && occupied[v]) o.textContent = o.textContent + ' · 已有人';
+        }
+      } catch (e) {}
+    }
+    refreshPositionOccupiedHints();
+    try { teamEl.addEventListener('change', refreshPositionOccupiedHints); } catch (e) {}
+
     var me = null;
     try {
       var userStr = localStorage.getItem(USER_KEY);
       if (userStr) me = JSON.parse(userStr);
     } catch (e) {}
     var defaultPos = (me && me.playingPosition && String(me.playingPosition).trim()) ? String(me.playingPosition).trim() : '';
-    selectEl.value = defaultPos;
-    if (selectEl.value !== defaultPos) selectEl.value = '';
+    selectEl.value = defaultPos || '';
+    var hasOption = false;
+    for (var k = 0; k < selectEl.options.length; k++) {
+      if (selectEl.options[k].value === defaultPos) { hasOption = true; break; }
+    }
+    if (!hasOption && defaultPos) selectEl.value = '';
+
     overlay.classList.add('show');
     overlay.setAttribute('aria-hidden', 'false');
   }
@@ -688,18 +765,33 @@
       confirmBtn.addEventListener('click', async function () {
         if (!registerModalActivityId) { closeRegisterModal(); return; }
         var position = (selectEl.value || '').trim();
-        if (position) {
+        var teamEl = document.getElementById('registerTeamSelect');
+        var teamNo = teamEl ? parseInt((teamEl.value || '0'), 10) : 0;
+        if (!Number.isFinite(teamNo) || teamNo < 0) teamNo = 0;
+
+        // 同队位置重复校验（与详情页一致：只在选择了队伍时校验；并排除自己）
+        if (position && teamNo > 0) {
           var hasSame = (registerModalAttendances || []).some(function (a) {
+            if (!a) return false;
+            var atn = a.teamNo;
+            if (atn == null) return false;
+            if (typeof atn !== 'number') atn = parseInt(String(atn), 10);
+            if (atn !== teamNo) return false;
+            var uid = a.user && a.user.id;
+            if (currentUser && uid && currentUser.id && uid === currentUser.id) return false;
             return (a.position || '').trim() === position;
           });
           if (hasSame) {
-            alert('位置重复了，请换个位置');
+            alert('同队位置重复了，请换个位置');
             return;
           }
         }
+
         confirmBtn.disabled = true;
         try {
-          var body = position ? { position: position } : {};
+          var body = {};
+          if (position) body.position = position;
+          if (Number.isFinite(teamNo) && teamNo >= 0) body.teamNo = teamNo;
           var r = await fetch('/activities/' + registerModalActivityId + '/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
