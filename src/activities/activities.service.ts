@@ -627,7 +627,7 @@ export class ActivitiesService {
     activityId: string,
     currentUserId: string,
     currentUserRole: string,
-    dto: { teamKey: 'A' | 'B'; formation?: string; slots: { slotKey: string; userId: string }[] },
+    dto: { teamKey: 'A' | 'B' | '1' | '2' | '3' | '4'; formation?: string; slots: { slotKey: string; userId: string }[] },
   ) {
     const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
     if (!activity) throw new NotFoundException('活动不存在');
