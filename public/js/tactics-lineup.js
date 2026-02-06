@@ -112,6 +112,27 @@
     return Math.max(a, Math.min(b, n));
   }
 
+  function getFormationOptionsForTeam(teamKey){
+    const size = clamp((state.teamSizes && state.teamSizes[teamKey]) ? state.teamSizes[teamKey] : 11, 8, 11);
+    // lightweight mapping (no dedicated 8/9/10-man formation library):
+    // - 11: all base formations
+    // - 10: prefer wider shapes
+    // - 8-9: keep simplest option(s)
+    if (size >= 11) return ['4-4-2','4-3-3','3-5-2'];
+    if (size === 10) return ['4-3-3','3-5-2'];
+    if (size === 9) return ['4-3-3','3-5-2'];
+    return ['4-3-3'];
+  }
+
+  function syncFormationSelect(teamKey){
+    if (!formationSelect) return;
+    const opts = getFormationOptionsForTeam(teamKey);
+    const cur = state.formation[teamKey] || '4-4-2';
+    formationSelect.innerHTML = opts.map(f=>`<option value="${f}">${f}</option>`).join('');
+    formationSelect.value = opts.includes(cur) ? cur : opts[0];
+    if (!opts.includes(cur)) state.formation[teamKey] = formationSelect.value;
+  }
+
   function getSlotsForTeam(teamKey){
     const formation = state.formation[teamKey] || '4-4-2';
     const raw = FORMATIONS[formation] || FORMATIONS['4-4-2'];
@@ -613,9 +634,8 @@
       if (!state.teamSizes[state.activeTeam]) state.activeTeam = '1';
       // rebuild team tabs
       renderTeamTabs(tc);
-      // keep formation select in sync
-      const f0 = state.formation[state.activeTeam] || '4-4-2';
-      if (formationSelect) formationSelect.value = f0;
+      // keep formation select in sync (options depend on team size)
+      syncFormationSelect(state.activeTeam);
 
     }
     if (!state.canLineup) {
@@ -700,9 +720,8 @@
       if (!t) return;
       state.activeTeam = t;
       Array.from(teamSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-team') === t));
-      // sync formation select
-      const f = state.formation[t] || '4-4-2';
-      if (formationSelect) formationSelect.value = f;
+      // sync formation select (options depend on team size)
+      syncFormationSelect(t);
       render();
     });
   }
@@ -715,6 +734,9 @@
       render();
       scheduleAutoSave();
     });
+    // initial options
+    syncFormationSelect(state.activeTeam);
+
   }
 
   if (saveBtn) saveBtn.addEventListener('click', ()=>save({mode:'manual'}));
