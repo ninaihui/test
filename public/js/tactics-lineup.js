@@ -138,7 +138,7 @@
     teamSizes: { '1': 11, '2': 11 },
     activityAttendances: [],
     activityUsers: {},
-    lineup: { A: {}, B: {} },
+    lineup: { '1': {}, '2': {}, '3': {}, '4': {} },
     assigned: {},
     dirty: false,
   };
@@ -238,7 +238,7 @@
   function unassignUser(userId){
     const cur = state.assigned[userId];
     if (!cur) return;
-    delete state.lineup[cur.team][cur.slotKey];
+    if (state.lineup[cur.team]) delete state.lineup[cur.team][cur.slotKey];
     delete state.assigned[userId];
     state.dirty = true;
     render();
@@ -246,8 +246,10 @@
   }
 
   function assignToSlot(userId, team, slotKey){
+    if (!state.lineup[team]) state.lineup[team] = {};
     const existingUid = state.lineup[team][slotKey];
     const cur = state.assigned[userId];
+    if (cur && !state.lineup[cur.team]) state.lineup[cur.team] = {};
 
     if (cur && cur.team === team && cur.slotKey === slotKey) return;
 
@@ -362,10 +364,11 @@
                   : 'rgba(148,163,184,0.65)')));
 
     const num = jerseyNo != null ? String(jerseyNo) : '';
+    const label = num ? num : '?';
     ph.innerHTML = `
       <svg width="42" height="42" viewBox="0 0 64 64" aria-hidden="true">
         <path d="M22 9l-10 6-6 10 10 6v24c0 4 3 7 7 7h18c4 0 7-3 7-7V31l10-6-6-10-10-6-8 6h-4l-8-6z" fill="${color}" stroke="rgba(255,255,255,0.55)" stroke-width="2"/>
-        ${num ? `<text x="32" y="40" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,0.92)">${num}</text>` : ''}
+        <text x="32" y="40" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,0.92)">${label}</text>
       </svg>
     `;
 
@@ -644,6 +647,7 @@
       const uid = String(s.userId);
       const allowed = team === '1' ? allowedA : (team === '2' ? allowedB : new Set(getSlotsForTeam(team).map(x=>x.key)));
       if (!allowed.has(slotKey)) return; // ignore slots not used by current team size
+      if (!state.lineup[team]) state.lineup[team] = {};
       state.lineup[team][slotKey] = uid;
       state.assigned[uid] = { team, slotKey };
     });
