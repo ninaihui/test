@@ -227,7 +227,7 @@
     /* On-pitch tokens: show big avatar as primary */
     .slot .token{ background: transparent; border-color: transparent; box-shadow: none; padding: 0; width: 84px; }
     .slot .token .name{ font-size:0.78rem; }
-    .slot .avatar-media{ width:56px; height:56px; }
+    .slot .avatar-media{ width:56px; height:56px; border-width:2px; }
 
     :root{
       --team-a: 239,68,68;
@@ -240,9 +240,10 @@
       background: rgba(0,0,0,.15);
     }
 
-    .token[data-team="A"] .avatar-media{ border-color: rgba(var(--team-a), .98); box-shadow: 0 0 0 7px rgba(var(--team-a), .18); }
-    .token[data-team="B"] .avatar-media{ border-color: rgba(var(--team-b), .98); box-shadow: 0 0 0 7px rgba(var(--team-b), .18); }
-    .token[data-team="bench"] .avatar-media{ box-shadow: 0 0 0 6px rgba(var(--bench), .10); }
+    /* remove ring frame (user requested). Keep subtle border only. */
+    .token[data-team="A"] .avatar-media{ border-color: rgba(var(--team-a), .70); box-shadow: none; }
+    .token[data-team="B"] .avatar-media{ border-color: rgba(var(--team-b), .70); box-shadow: none; }
+    .token[data-team="bench"] .avatar-media{ box-shadow: none; }
 
     .token .name{ font-size:0.78rem; color: rgba(255,255,255,.88); max-width:78px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   </style>
