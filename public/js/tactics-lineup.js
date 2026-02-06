@@ -520,19 +520,26 @@
   }
 
   function autoFillFromRegistration(){
-    // Only fill when current lineup (A and B) are empty or mostly empty.
-    const filledCount = (team)=>Object.keys(state.lineup[team] || {}).length;
-    if (filledCount('A') + filledCount('B') > 0) return;
+    const filledCount = (team)=>Object.keys((state.lineup && state.lineup[team]) || {}).length;
+
+    const teams = Object.keys(state.teamSizes || {}).filter(k=>k !== 'bench');
+    if (!teams.length) return;
+
+    // Only fill when all teams are empty (avoid overriding manual lineup)
+    const alreadyFilled = teams.reduce((sum,t)=>sum + filledCount(t), 0);
+    if (alreadyFilled > 0) return;
 
     const atts = state.activityAttendances || [];
-    for (const team of ['A','B']) {
+    for (const team of teams) {
+      if (!state.lineup[team]) state.lineup[team] = {};
       const formation = state.formation[team] || '4-4-2';
       const slots = getSlotsForTeam(team);
       const availableSlotKeys = new Set(slots.map(s=>s.key));
 
       // Fill by attendance.position (registration-selected position)
+      const teamNo = Number(team);
       const teamUsers = atts
-        .filter(a => a && a.userId && (a.teamNo === (team === 'A' ? 1 : 2)) && a.status !== 'waitlist')
+        .filter(a => a && a.userId && Number(a.teamNo) === teamNo && a.status !== 'waitlist')
         .map(a => ({ userId: a.userId, pos: a.position }));
 
       for (const tu of teamUsers) {
@@ -550,7 +557,12 @@
     }
 
     // If we filled anything, mark dirty and autosave (if allowed)
-    if (filledCount('A') + filledCount('B') > 0) {
+    let anyFilled = false;
+    const teams2 = Object.keys(state.teamSizes || {}).filter(k=>k !== 'bench');
+    for (const t of teams2) {
+      if (filledCount(t) > 0) { anyFilled = true; break; }
+    }
+    if (anyFilled) {
       state.dirty = true;
       if (state.canEdit) scheduleAutoSave();
     }
@@ -632,7 +644,7 @@
       '4': (f['4'] ? String(f['4']) : '4-4-2'),
     };
 
-    state.lineup = { A: {}, B: {} };
+    state.lineup = { '1': {}, '2': {}, '3': {}, '4': {} };
     state.assigned = {};
 
     const slots = Array.isArray(data.slots) ? data.slots : [];
