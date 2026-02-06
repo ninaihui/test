@@ -88,6 +88,7 @@
 
   let state = {
     canEdit: false,
+    canLineup: true,
     activeTeam: 'A',
     formation: { A: '4-4-2', B: '4-4-2' },
     activityAttendances: [],
@@ -530,6 +531,20 @@
     // load roster for bench from /activities/:id (need users + teamNo)
     const r2 = await fetch('/activities/' + encodeURIComponent(activityId), { headers: { Authorization: 'Bearer ' + token } });
     const activity = r2.ok ? await r2.json() : null;
+
+    // lineup availability rule: maxParticipants >= 8
+    const maxParticipants = activity && activity.maxParticipants != null ? Number(activity.maxParticipants) : 14;
+    state.canLineup = Number.isFinite(maxParticipants) ? (maxParticipants >= 8) : true;
+    if (!state.canLineup) {
+      showStatus('人数上限低于 8：不展示阵容/不管理位置');
+      if (saveBtn) saveBtn.disabled = true;
+      if (exportBtn) exportBtn.disabled = true;
+      if (slotsEl) slotsEl.innerHTML = '<div style="padding:14px;color:rgba(255,255,255,.75);font-weight:800">人数上限低于 8：不展示阵容，也无需管理位置</div>';
+      state.activityAttendances = [];
+      state.activityUsers = {};
+      return;
+    }
+
     const atts = activity && Array.isArray(activity.attendances) ? activity.attendances : [];
     state.activityAttendances = atts;
 
@@ -555,7 +570,7 @@
     });
 
     // Auto-fill empty slots from registration position (e.g. "中后卫") if lineup empty.
-    autoFillFromRegistration();
+    if (state.canLineup !== false) autoFillFromRegistration();
 
     state.dirty = false;
     if (!state.canEdit) showStatus('只读：无编辑权限');

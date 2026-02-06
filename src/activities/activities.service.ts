@@ -197,7 +197,10 @@ export class ActivitiesService {
     const editors = Array.isArray(editorsRaw) ? editorsRaw : [];
     const canEdit = isSystemAdmin || activity.createdById === userId || editors.includes(userId);
 
-    return { ...activity, canEdit } as any;
+    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
+    const canLineup = maxParticipants >= 8;
+
+    return { ...activity, canEdit, canLineup } as any;
   }
 
   async update(id: string, userId: string, updateActivityDto: UpdateActivityDto, userRole?: string) {
@@ -570,9 +573,25 @@ export class ActivitiesService {
     const teamNamesRaw = (activity as any).teamNames;
     const teamNames = Array.isArray(teamNamesRaw) ? teamNamesRaw : [];
 
+    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
+    const canLineup = maxParticipants >= 8;
+
+    if (!canLineup) {
+      return {
+        activityId,
+        canEdit: false,
+        canLineup: false,
+        teamNames,
+        formation: { A: '4-4-2', B: '4-4-2' },
+        slots: [],
+        message: '活动人数上限低于 8：不会展示阵容，也无需管理位置',
+      } as any;
+    }
+
     return {
       activityId,
       canEdit,
+      canLineup: true,
       teamNames,
       formation: { A: lineup.formationA, B: lineup.formationB },
       slots: lineup.slots.map((s) => ({ teamKey: s.teamKey, slotKey: s.slotKey, userId: s.userId })),
@@ -588,6 +607,11 @@ export class ActivitiesService {
   ) {
     const activity = await this.prisma.activity.findUnique({ where: { id: activityId } });
     if (!activity) throw new NotFoundException('活动不存在');
+
+    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
+    if (maxParticipants < 8) {
+      throw new BadRequestException('活动人数上限低于 8：不会展示阵容，也无需管理位置');
+    }
 
     const isSystemAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
     const editorsRaw = (activity as any).editorUserIds;
