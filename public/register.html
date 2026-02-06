@@ -119,7 +119,7 @@
         if (response.ok) {
           successDiv.textContent = '注册成功，正在进入首页…';
           successDiv.classList.remove('hidden');
-          setTimeout(function() { window.location.href = '/showcase.html'; }, 900);
+          setTimeout(function() { window.location.href = '/dashboard.html'; }, 900);
         } else {
           errorDiv.textContent = result.message || '注册失败，请检查输入';
           errorDiv.classList.remove('hidden');
