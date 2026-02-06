@@ -64,11 +64,11 @@
     <section class="glass hero">
       <div class="hero-inner">
         <div class="hero-title">footballgo.club</div>
-        <div class="hero-sub">球队展示页（公开）｜照片墙 + 近期活动（静态占位，下一步再接动态）</div>
+        <div class="hero-sub">球队展示页（公开）｜照片墙 + 近期活动（先静态占位，后续再接真实数据）</div>
         <div class="flex items-center gap-2 flex-wrap mt-1">
-          <a class="btn-soft" href="/activities.html">活动</a>
+          <a class="btn btn-primary btn-sm" href="/activities.html" style="border-radius:999px; padding:.62rem .95rem; font-weight:950;">查看活动</a>
           <a class="btn-soft" href="/login.html">登录</a>
-          <span class="tag">Public</span>
+          <span class="tag">公开</span>
         </div>
       </div>
     </section>
@@ -113,6 +113,13 @@
       </aside>
     </div>
 
+  </div>
+
+  <!-- Sticky CTA (mobile) -->
+  <div style="position: fixed; left: 0; right: 0; bottom: 0; padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom)); z-index: 50; pointer-events: none;">
+    <div style="max-width: 980px; margin: 0 auto; display:flex; justify-content:center;">
+      <a href="/activities.html" class="btn btn-primary" style="pointer-events:auto; width: min(520px, 100%); border-radius: 999px; padding: 0.9rem 1rem; font-weight: 950; box-shadow: 0 18px 44px rgba(0,0,0,.45);">查看活动报名</a>
+    </div>
   </div>
 </body>
 </html>
