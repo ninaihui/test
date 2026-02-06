@@ -11,7 +11,8 @@ const DEBUG_LOG_PATH = join(process.cwd(), 'public', 'debug.log');
 export class AppController {
   @Get()
   getHello(@Res() res: Response) {
-    res.sendFile(join(PUBLIC_DIR, 'login.html'));
+    // Root path serves the public showcase page (展示页)
+    return res.redirect('/showcase.html');
   }
 
   @Get('login.html')
