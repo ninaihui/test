@@ -588,14 +588,38 @@ export class ActivitiesService {
       } as any;
     }
 
+    const teamCount = (activity as any).teamCount != null ? Number((activity as any).teamCount) : 2;
+    const tc = Number.isFinite(teamCount) && teamCount >= 1 ? Math.min(4, Math.max(1, teamCount)) : 2;
+
+    const formationsRaw = (lineup as any).formations;
+    const formations = formationsRaw && typeof formationsRaw === 'object' ? formationsRaw : {};
+
+    // Backward compat: map A/B -> 1/2
+    const formationByTeam: Record<string, string> = {};
+    for (let i = 1; i <= tc; i++) {
+      const k = String(i);
+      const v = (formations as any)[k];
+      if (typeof v === 'string' && v.trim()) formationByTeam[k] = v.trim();
+    }
+    if (!formationByTeam['1']) formationByTeam['1'] = lineup.formationA || '4-4-2';
+    if (!formationByTeam['2']) formationByTeam['2'] = lineup.formationB || '4-4-2';
+
+    const slots = lineup.slots.map((s) => {
+      let tk = String(s.teamKey || '').trim();
+      if (tk === 'A') tk = '1';
+      if (tk === 'B') tk = '2';
+      return { teamKey: tk, slotKey: s.slotKey, userId: s.userId };
+    });
+
     return {
       activityId,
       canEdit,
       canLineup: true,
+      teamCount: tc,
       teamNames,
-      formation: { A: lineup.formationA, B: lineup.formationB },
-      slots: lineup.slots.map((s) => ({ teamKey: s.teamKey, slotKey: s.slotKey, userId: s.userId })),
-    };
+      formation: formationByTeam,
+      slots,
+    } as any;
   }
 
   /** 保存阵容（A/B：formation + slots）。系统管理员 / 活动创建者 / 活动协管可编辑 */
@@ -619,8 +643,17 @@ export class ActivitiesService {
     const canEdit = isSystemAdmin || activity.createdById === currentUserId || editors.includes(currentUserId);
     if (!canEdit) throw new ForbiddenException('无权限保存阵容');
 
-    const teamKey = dto.teamKey;
+    let teamKey: string = String(dto.teamKey || '').trim();
+    if (teamKey === 'A') teamKey = '1';
+    if (teamKey === 'B') teamKey = '2';
     const slots = Array.isArray(dto.slots) ? dto.slots : [];
+
+    const teamCount = (activity as any).teamCount != null ? Number((activity as any).teamCount) : 2;
+    const tc = Number.isFinite(teamCount) && teamCount >= 1 ? Math.min(4, Math.max(1, teamCount)) : 2;
+    const tn = Number(teamKey);
+    if (!Number.isFinite(tn) || tn < 1 || tn > tc) {
+      throw new BadRequestException('队伍不合法');
+    }
 
     // Validate: no duplicates
     const slotKeys = new Set<string>();
@@ -655,12 +688,20 @@ export class ActivitiesService {
       where: { activityId },
       create: {
         activityId,
-        formationA: teamKey === 'A' && formation ? formation : '4-4-2',
-        formationB: teamKey === 'B' && formation ? formation : '4-4-2',
+        // keep defaults for backward compat
+        formationA: teamKey === '1' && formation ? formation : '4-4-2',
+        formationB: teamKey === '2' && formation ? formation : '4-4-2',
+        formations: formation ? ({ [teamKey]: formation } as any) : undefined,
       },
       update: {
-        formationA: teamKey === 'A' && formation ? formation : undefined,
-        formationB: teamKey === 'B' && formation ? formation : undefined,
+        formationA: teamKey === '1' && formation ? formation : undefined,
+        formationB: teamKey === '2' && formation ? formation : undefined,
+        formations: formation
+          ? ({
+              ...(((await this.prisma.activityLineup.findUnique({ where: { activityId }, select: { formations: true } })) as any)?.formations || {}),
+              [teamKey]: formation,
+            } as any)
+          : undefined,
       },
     });
 

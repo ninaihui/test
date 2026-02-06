@@ -97,9 +97,11 @@ model Attendance {
 model ActivityLineup {
   id         String   @id @default(uuid())
   activityId String   @unique
-  /// e.g. "4-4-2"
+  /// Backward-compatible defaults for 2-team mode
   formationA String   @default("4-4-2")
   formationB String   @default("4-4-2")
+  /// New: formations by teamKey ("1".."4"), e.g. {"1":"4-4-2","2":"3-5-2"}
+  formations Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

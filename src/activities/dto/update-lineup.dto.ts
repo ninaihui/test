@@ -12,8 +12,8 @@ class LineupSlotItem {
 
 export class UpdateLineupDto {
   @IsString()
-  @IsIn(['A', 'B'])
-  teamKey: 'A' | 'B';
+  @IsIn(['A', 'B', '1', '2', '3', '4'])
+  teamKey: 'A' | 'B' | '1' | '2' | '3' | '4';
 
   @IsOptional()
   @IsString()

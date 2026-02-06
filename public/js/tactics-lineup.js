@@ -133,9 +133,9 @@
   let state = {
     canEdit: false,
     canLineup: true,
-    activeTeam: 'A',
-    formation: { A: '4-4-2', B: '4-4-2' },
-    teamSizes: { A: 11, B: 11 },
+    activeTeam: '1',
+    formation: { '1': '4-4-2', '2': '4-4-2', '3': '4-4-2', '4': '4-4-2' },
+    teamSizes: { '1': 11, '2': 11 },
     activityAttendances: [],
     activityUsers: {},
     lineup: { A: {}, B: {} },
@@ -429,9 +429,8 @@
 
   function getTeamOfUser(userId){
     const a = (state.activityAttendances || []).find((r)=>r.userId === userId);
-    const tn = a ? a.teamNo : null;
-    if (tn === 1) return 'A';
-    if (tn === 2) return 'B';
+    const tn = a ? Number(a.teamNo) : 0;
+    if (Number.isFinite(tn) && tn >= 1) return String(tn);
     return 'bench';
   }
 
@@ -570,11 +569,7 @@
     state.teamNames = Array.isArray(data.teamNames) ? data.teamNames : [];
     if (saveBtn) saveBtn.disabled = !state.canEdit;
 
-    // update team labels
-    var btnA = document.getElementById('lineupTeamBtnA');
-    var btnB = document.getElementById('lineupTeamBtnB');
-    if (btnA) btnA.textContent = (state.teamNames[0] ? String(state.teamNames[0]) : 'A队');
-    if (btnB) btnB.textContent = (state.teamNames[1] ? String(state.teamNames[1]) : 'B队');
+    // team labels are rendered by renderTeamTabs
 
     // load roster for bench from /activities/:id (need users + teamNo)
     const r2 = await fetch('/activities/' + encodeURIComponent(activityId), { headers: { Authorization: 'Bearer ' + token } });
@@ -587,10 +582,17 @@
     // team size caps derived from activity settings (maxParticipants + teamCount)
     // Map A->teamNo=1, B->teamNo=2
     if (activity) {
-      state.teamSizes = {
-        A: getTeamSizeCap(activity, 1),
-        B: getTeamSizeCap(activity, 2),
-      };
+      const tc = (activity.teamCount != null && Number(activity.teamCount) >= 1) ? Math.min(4, Math.max(1, Number(activity.teamCount))) : 2;
+      const sizes = {};
+      for (let i = 1; i <= tc; i++) sizes[String(i)] = getTeamSizeCap(activity, i);
+      state.teamSizes = sizes;
+      if (!state.teamSizes[state.activeTeam]) state.activeTeam = '1';
+      // rebuild team tabs
+      renderTeamTabs(tc);
+      // keep formation seg in sync
+      const f0 = state.formation[state.activeTeam] || '4-4-2';
+      Array.from(formationSeg.querySelectorAll('.seg-btn')).forEach((b)=>b.classList.toggle('active', b.getAttribute('data-formation') === f0));
+
     }
     if (!state.canLineup) {
       showStatus('人数上限低于 8：不展示阵容/不管理位置');
@@ -610,21 +612,29 @@
     state.activityUsers = users;
 
     // formations
-    state.formation = { A: (data.formation && data.formation.A) ? data.formation.A : '4-4-2', B: (data.formation && data.formation.B) ? data.formation.B : '4-4-2' };
+    // formations per teamKey ("1".."4")
+    const f = (data && data.formation && typeof data.formation === 'object') ? data.formation : {};
+    state.formation = {
+      '1': (f['1'] ? String(f['1']) : '4-4-2'),
+      '2': (f['2'] ? String(f['2']) : '4-4-2'),
+      '3': (f['3'] ? String(f['3']) : '4-4-2'),
+      '4': (f['4'] ? String(f['4']) : '4-4-2'),
+    };
 
     state.lineup = { A: {}, B: {} };
     state.assigned = {};
 
     const slots = Array.isArray(data.slots) ? data.slots : [];
-    const allowedA = new Set(getSlotsForTeam('A').map(s=>s.key));
-    const allowedB = new Set(getSlotsForTeam('B').map(s=>s.key));
+    const allowedA = new Set(getSlotsForTeam('1').map(s=>s.key));
+    const allowedB = new Set(getSlotsForTeam('2').map(s=>s.key));
     slots.forEach((s)=>{
       if (!s || !s.teamKey || !s.slotKey || !s.userId) return;
-      const team = String(s.teamKey);
+      let team = String(s.teamKey);
+      if (team === 'A') team = '1';
+      if (team === 'B') team = '2';
       const slotKey = String(s.slotKey);
       const uid = String(s.userId);
-      if (team !== 'A' && team !== 'B') return;
-      const allowed = team === 'A' ? allowedA : allowedB;
+      const allowed = team === '1' ? allowedA : (team === '2' ? allowedB : new Set(getSlotsForTeam(team).map(x=>x.key)));
       if (!allowed.has(slotKey)) return; // ignore slots not used by current team size
       state.lineup[team][slotKey] = uid;
       state.assigned[uid] = { team, slotKey };
@@ -640,6 +650,23 @@
   }
 
   // ===== UI wiring =====
+  function renderTeamTabs(teamCount){
+    if (!teamSeg) return;
+    const tc = clamp(teamCount || 2, 1, 4);
+    teamSeg.innerHTML = '';
+
+    for (let i = 1; i <= tc; i++) {
+      const k = String(i);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'seg-btn';
+      btn.setAttribute('data-team', k);
+      btn.textContent = teamLabel(k);
+      btn.classList.toggle('active', state.activeTeam === k);
+      teamSeg.appendChild(btn);
+    }
+  }
+
   if (teamSeg) {
     teamSeg.addEventListener('click', (ev)=>{
       const btn = ev.target && ev.target.closest ? ev.target.closest('[data-team]') : null;
@@ -677,12 +704,10 @@
     e.returnValue = '';
   });
 
-  function teamLabel(team){
-    // Prefer activity.teamNames if present; fallback A/B
-    // Note: in DB teamNo starts at 1; we map A->1, B->2.
-    const a = state.teamNames && state.teamNames[0] ? String(state.teamNames[0]) : 'A队';
-    const b = state.teamNames && state.teamNames[1] ? String(state.teamNames[1]) : 'B队';
-    return team === 'A' ? a : b;
+  function teamLabel(teamKey){
+    const i = Math.max(1, Math.floor(Number(teamKey) || 1));
+    const name = state.teamNames && state.teamNames[i - 1] ? String(state.teamNames[i - 1]) : ('队伍' + i);
+    return name;
   }
 
   async function exportPng(){
