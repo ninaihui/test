@@ -301,7 +301,7 @@
 
     // jersey placeholder (team color)
     const ph = document.createElement('div');
-    ph.className = 'avatar-media avatar-placeholder';
+    ph.className = 'avatar-media jersey';
 
     const color = team === 'A' ? 'rgba(239,68,68,0.92)' : (team === 'B' ? 'rgba(59,130,246,0.92)' : 'rgba(148,163,184,0.65)');
 
@@ -367,7 +367,11 @@
         placeholder.className = 'token';
         placeholder.style.cursor = state.canEdit ? 'pointer' : 'default';
         placeholder.setAttribute('data-team', state.activeTeam);
-        placeholder.innerHTML = '<div class="avatar-media avatar-placeholder">+</div><div class="name">空位</div>';
+        placeholder.appendChild(mkAvatar(null, state.activeTeam, '+'));
+        const nm = document.createElement('div');
+        nm.className = 'name';
+        nm.textContent = '空位';
+        placeholder.appendChild(nm);
         wrapper.appendChild(placeholder);
       }
 

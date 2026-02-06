@@ -239,11 +239,12 @@
       border: 3px solid rgba(255,255,255,.14);
       background: rgba(0,0,0,.15);
     }
+    .avatar-media.jersey{ border-radius:14px; border:none; background: transparent; }
 
     /* remove ring frame (user requested). Keep subtle border only. */
-    .token[data-team="A"] .avatar-media{ border-color: rgba(var(--team-a), .70); box-shadow: none; }
-    .token[data-team="B"] .avatar-media{ border-color: rgba(var(--team-b), .70); box-shadow: none; }
-    .token[data-team="bench"] .avatar-media{ box-shadow: none; }
+    .token[data-team="A"] .avatar-media:not(.jersey){ border-color: rgba(var(--team-a), .70); box-shadow: none; }
+    .token[data-team="B"] .avatar-media:not(.jersey){ border-color: rgba(var(--team-b), .70); box-shadow: none; }
+    .token[data-team="bench"] .avatar-media:not(.jersey){ box-shadow: none; }
 
     .token .name{ font-size:0.78rem; color: rgba(255,255,255,.88); max-width:78px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   </style>
