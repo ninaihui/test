@@ -408,6 +408,82 @@
     fill(benchListMobile, benchEmptyMobile);
   }
 
+  function normalizePosText(s){
+    return String(s || '').trim().toUpperCase()
+      .replace(/\s+/g,'')
+      .replace(/　/g,'');
+  }
+
+  function slotCandidatesForPosition(posText, formation){
+    const p = normalizePosText(posText);
+    if (!p) return [];
+
+    // Chinese + common abbreviations
+    if (/(门将|守门员|GK)/.test(p)) return ['GK'];
+
+    if (/(左后卫|左边后卫|LB)/.test(p)) return ['LB'];
+    if (/(右后卫|右边后卫|RB)/.test(p)) return ['RB'];
+
+    // Center backs
+    if (/(中后卫|中卫|CB|后卫)/.test(p)) return ['LCB','RCB','CB'];
+
+    // Wing backs
+    if (/(左翼卫|LWB)/.test(p)) return ['LWB','LB'];
+    if (/(右翼卫|RWB)/.test(p)) return ['RWB','RB'];
+
+    // Midfield
+    if (/(后腰|防守中场|DM|CDM)/.test(p)) return ['CM','LCM','RCM'];
+    if (/(中场|中前卫|CM)/.test(p)) return ['CM','LCM','RCM'];
+    if (/(左中场|LM)/.test(p)) return ['LM'];
+    if (/(右中场|RM)/.test(p)) return ['RM'];
+
+    // Wingers
+    if (/(左边锋|左翼|LW)/.test(p)) return ['LW','LM'];
+    if (/(右边锋|右翼|RW)/.test(p)) return ['RW','RM'];
+
+    // Forwards
+    if (/(前锋|中锋|ST|CF)/.test(p)) return ['ST','ST1','ST2'];
+
+    return [];
+  }
+
+  function autoFillFromRegistration(){
+    // Only fill when current lineup (A and B) are empty or mostly empty.
+    const filledCount = (team)=>Object.keys(state.lineup[team] || {}).length;
+    if (filledCount('A') + filledCount('B') > 0) return;
+
+    const atts = state.activityAttendances || [];
+    for (const team of ['A','B']) {
+      const formation = state.formation[team] || '4-4-2';
+      const slots = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+      const availableSlotKeys = new Set(slots.map(s=>s.key));
+
+      // Fill by attendance.position (registration-selected position)
+      const teamUsers = atts
+        .filter(a => a && a.userId && (a.teamNo === (team === 'A' ? 1 : 2)) && a.status !== 'waitlist')
+        .map(a => ({ userId: a.userId, pos: a.position }));
+
+      for (const tu of teamUsers) {
+        if (state.assigned[tu.userId]) continue;
+        const cands = slotCandidatesForPosition(tu.pos, formation);
+        for (const sk of cands) {
+          if (!availableSlotKeys.has(sk)) continue;
+          if (state.lineup[team][sk]) continue;
+          // assign
+          state.lineup[team][sk] = tu.userId;
+          state.assigned[tu.userId] = { team, slotKey: sk };
+          break;
+        }
+      }
+    }
+
+    // If we filled anything, mark dirty and autosave (if allowed)
+    if (filledCount('A') + filledCount('B') > 0) {
+      state.dirty = true;
+      if (state.canEdit) scheduleAutoSave();
+    }
+  }
+
   function render(){
     renderSlots();
     renderBench();
@@ -464,6 +540,9 @@
       state.lineup[team][slotKey] = uid;
       state.assigned[uid] = { team, slotKey };
     });
+
+    // Auto-fill empty slots from registration position (e.g. "中后卫") if lineup empty.
+    autoFillFromRegistration();
 
     state.dirty = false;
     if (!state.canEdit) showStatus('只读：无编辑权限');
@@ -548,19 +627,58 @@
       return String(s||'').replace(/[&<>"']/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
 
+    async function toDataUrl(url){
+      if (!url) return null;
+      try {
+        const abs = url.startsWith('/') ? (window.location.origin + url) : url;
+        const res = await fetch(abs, { mode: 'cors', credentials: 'omit' });
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        return await new Promise((resolve)=>{
+          const r = new FileReader();
+          r.onload = ()=>resolve(String(r.result||''));
+          r.onerror = ()=>resolve(null);
+          r.readAsDataURL(blob);
+        });
+      } catch(e){
+        return null;
+      }
+    }
+
+    // Preload avatars as data URLs (avoid canvas taint). External URLs may fail; fallback to placeholder.
+    const avatarData = {};
+    for (const p of slots) {
+      const uid = (state.lineup[team]||{})[p.key];
+      const u = uid ? (state.activityUsers||{})[uid] : null;
+      const url = u && u.avatarUrl ? String(u.avatarUrl) : '';
+      if (uid && url && !avatarData[uid]) {
+        avatarData[uid] = await toDataUrl(url);
+      }
+    }
+
     const playersSvg = slots.map((p)=>{
       const uid = (state.lineup[team]||{})[p.key];
       const u = uid ? (state.activityUsers||{})[uid] : null;
       const name = u && u.username ? u.username : '';
       const x = Math.round((p.x/100) * width);
       const y = Math.round((p.y/100) * height);
-      const r = 48;
+      const r = 54;
       const ring = team === 'A' ? 'rgba(239,68,68,0.95)' : 'rgba(59,130,246,0.95)';
+      const img = uid ? avatarData[uid] : null;
+
+      const clipId = `c_${team}_${p.key}`;
+      const imgEl = img ? `<image href="${img}" x="${x-r+6}" y="${y-r+6}" width="${(r-6)*2}" height="${(r-6)*2}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>` : '';
+      const placeholder = !img ? `<text x="${x}" y="${y+10}" text-anchor="middle" font-size="54" font-weight="900" fill="rgba(255,255,255,0.85)">?</text>` : '';
+
       return `
         <g>
-          <circle cx="${x}" cy="${y}" r="${r}" fill="rgba(0,0,0,0.22)" stroke="${ring}" stroke-width="8"/>
-          <text x="${x}" y="${y+6}" text-anchor="middle" font-size="44" font-weight="800" fill="rgba(255,255,255,0.92)">${esc(p.label)}</text>
-          <text x="${x}" y="${y+92}" text-anchor="middle" font-size="28" font-weight="700" fill="rgba(255,255,255,0.92)">${esc(name)}</text>
+          <defs>
+            <clipPath id="${clipId}"><circle cx="${x}" cy="${y}" r="${r-6}"/></clipPath>
+          </defs>
+          <circle cx="${x}" cy="${y}" r="${r}" fill="rgba(0,0,0,0.22)" stroke="${ring}" stroke-width="10"/>
+          ${imgEl}
+          ${placeholder}
+          <text x="${x}" y="${y+102}" text-anchor="middle" font-size="28" font-weight="800" fill="rgba(255,255,255,0.92)">${esc(name)}</text>
         </g>
       `;
     }).join('');
