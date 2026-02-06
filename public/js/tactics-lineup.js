@@ -86,11 +86,56 @@
     ],
   };
 
+  // For smaller team sizes (8-10), we trim a base 11-slot formation by a removal priority list.
+  const TRIM_PRIORITY = {
+    '4-4-2': ['ST2','RM','LM','RCM','LCM','RB','LB'],
+    '4-3-3': ['RW','LW','CM','RCM','LCM','RB','LB'],
+    '3-5-2': ['ST2','RWB','LWB','RCM','LCM','CB'],
+  };
+
+  function getTeamSizeCap(activity, teamNo){
+    const maxP = activity && activity.maxParticipants != null ? Number(activity.maxParticipants) : 14;
+    const teamCount = activity && activity.teamCount != null ? Number(activity.teamCount) : 2;
+    const tc = (Number.isFinite(teamCount) && teamCount >= 1) ? teamCount : 2;
+    const mp = (Number.isFinite(maxP) && maxP >= 1) ? maxP : 14;
+
+    const base = Math.floor(mp / tc);
+    const rem = mp % tc;
+    const idx = Math.max(1, Math.floor(Number(teamNo) || 1));
+    return base + (idx <= rem ? 1 : 0);
+  }
+
+  function clamp(n, a, b){
+    n = Number(n);
+    if (!Number.isFinite(n)) return a;
+    return Math.max(a, Math.min(b, n));
+  }
+
+  function getSlotsForTeam(teamKey){
+    const formation = state.formation[teamKey] || '4-4-2';
+    const raw = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+    const size = clamp((state.teamSizes && state.teamSizes[teamKey]) ? state.teamSizes[teamKey] : 11, 8, 11);
+    if (size >= raw.length) return raw;
+
+    const remove = TRIM_PRIORITY[formation] || [];
+    const keep = raw.slice();
+    let needRemove = raw.length - size;
+    for (const rk of remove) {
+      if (needRemove <= 0) break;
+      const i = keep.findIndex((x)=>x.key === rk);
+      if (i >= 0) { keep.splice(i,1); needRemove--; }
+    }
+    // fallback: remove from end
+    while (needRemove > 0 && keep.length > size) { keep.pop(); needRemove--; }
+    return keep;
+  }
+
   let state = {
     canEdit: false,
     canLineup: true,
     activeTeam: 'A',
     formation: { A: '4-4-2', B: '4-4-2' },
+    teamSizes: { A: 11, B: 11 },
     activityAttendances: [],
     activityUsers: {},
     lineup: { A: {}, B: {} },
@@ -245,7 +290,9 @@
 
     const teamKey = state.activeTeam;
     const lineup = state.lineup[teamKey] || {};
+    const allowed = new Set(getSlotsForTeam(teamKey).map(s=>s.key));
     const slots = Object.keys(lineup)
+      .filter((slotKey)=>allowed.has(slotKey))
       .map((slotKey)=>({ slotKey, userId: lineup[slotKey] }))
       .filter((x)=>x.userId);
 
@@ -344,7 +391,7 @@
   function renderSlots(){
     if (!slotsEl) return;
     slotsEl.innerHTML = '';
-    const slots = FORMATIONS[state.formation[state.activeTeam] || '4-4-2'] || FORMATIONS['4-4-2'];
+    const slots = getSlotsForTeam(state.activeTeam);
 
     for (const s of slots) {
       const wrapper = document.createElement('div');
@@ -362,7 +409,7 @@
       if (uid) {
         const u = (state.activityUsers || {})[uid];
         // jerseyNo = slot order number in current formation
-        wrapper.appendChild(mkToken(uid, state.activeTeam, u, slots.indexOf(s) + 1));
+        wrapper.appendChild(mkToken(uid, state.activeTeam, u, slots.findIndex(x=>x.key===s.key) + 1));
       } else {
         const placeholder = document.createElement('div');
         placeholder.className = 'token';
@@ -417,7 +464,8 @@
       }
     }
 
-    if (benchTitle) benchTitle.textContent = `候补（${bench.length}）`;
+    const cap = (state.teamSizes && state.teamSizes[activeTeam]) ? state.teamSizes[activeTeam] : '';
+    if (benchTitle) benchTitle.textContent = `候补（${bench.length}）${cap ? (' · 本队上限' + cap + '人') : ''}`;
     fill(benchList, benchEmpty);
     fill(benchListMobile, benchEmptyMobile);
   }
@@ -469,7 +517,7 @@
     const atts = state.activityAttendances || [];
     for (const team of ['A','B']) {
       const formation = state.formation[team] || '4-4-2';
-      const slots = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+      const slots = getSlotsForTeam(team);
       const availableSlotKeys = new Set(slots.map(s=>s.key));
 
       // Fill by attendance.position (registration-selected position)
@@ -535,6 +583,15 @@
     // lineup availability rule: maxParticipants >= 8
     const maxParticipants = activity && activity.maxParticipants != null ? Number(activity.maxParticipants) : 14;
     state.canLineup = Number.isFinite(maxParticipants) ? (maxParticipants >= 8) : true;
+
+    // team size caps derived from activity settings (maxParticipants + teamCount)
+    // Map A->teamNo=1, B->teamNo=2
+    if (activity) {
+      state.teamSizes = {
+        A: getTeamSizeCap(activity, 1),
+        B: getTeamSizeCap(activity, 2),
+      };
+    }
     if (!state.canLineup) {
       showStatus('人数上限低于 8：不展示阵容/不管理位置');
       if (saveBtn) saveBtn.disabled = true;
@@ -559,12 +616,16 @@
     state.assigned = {};
 
     const slots = Array.isArray(data.slots) ? data.slots : [];
+    const allowedA = new Set(getSlotsForTeam('A').map(s=>s.key));
+    const allowedB = new Set(getSlotsForTeam('B').map(s=>s.key));
     slots.forEach((s)=>{
       if (!s || !s.teamKey || !s.slotKey || !s.userId) return;
       const team = String(s.teamKey);
       const slotKey = String(s.slotKey);
       const uid = String(s.userId);
       if (team !== 'A' && team !== 'B') return;
+      const allowed = team === 'A' ? allowedA : allowedB;
+      if (!allowed.has(slotKey)) return; // ignore slots not used by current team size
       state.lineup[team][slotKey] = uid;
       state.assigned[uid] = { team, slotKey };
     });
@@ -629,7 +690,7 @@
 
     const team = state.activeTeam;
     const formation = state.formation[team] || '4-4-2';
-    const slots = FORMATIONS[formation] || FORMATIONS['4-4-2'];
+    const slots = getSlotsForTeam(team);
 
     const width = 1080;
     const height = 1440;
