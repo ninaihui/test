@@ -476,7 +476,7 @@
       timeEl.className = '';
       var venueText = (venueDisplay && venueDisplay.length > 15) ? venueDisplay.slice(0, 15) + '…' : (venueDisplay || '—');
       venueEl.innerHTML = locationIcon + '<span>' + escapeHtml(venueText) + '</span>';
-      timeEl.innerHTML = clockIcon + '<span>' + escapeHtml(formatActivityDate(activity.date)) + '</span>';
+      timeEl.textContent = formatActivityDate(activity.date);
 
       loadWeatherForActivity(activity, venueDisplay);
 
