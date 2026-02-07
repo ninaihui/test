@@ -462,6 +462,19 @@
             var timePart = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
             return datePart + ' ' + timePart;
         }
+        function getDayChip(iso) {
+            try {
+                if (!iso) return { m: '', d: '', wd: '' };
+                var dt = new Date(iso);
+                var m = String(dt.getMonth() + 1);
+                var day = String(dt.getDate());
+                var wds = ['日','一','二','三','四','五','六'];
+                var wd = '周' + (wds[dt.getDay()] || '');
+                return { m: m, d: day, wd: wd };
+            } catch (e) {
+                return { m: '', d: '', wd: '' };
+            }
+        }
         function formatDateTimeLocal(iso) {
             if (!iso) return '';
             var d = new Date(iso);
@@ -520,8 +533,16 @@
                     }
                     var isFull = (registeredCount >= total);
                     var fullBadge = isFull ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/10 text-white/70">已满</span>' : '';
+                    var chip = getDayChip(a.date);
+                    var dayChip = '<div class="shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-white/10 bg-white/5">'
+                      + '<div class="text-white/70 text-[11px] font-semibold">' + (chip.wd || '') + '</div>'
+                      + '<div class="text-white text-lg font-black leading-none" style="margin-top:2px">' + (chip.d || '') + '</div>'
+                      + '<div class="text-white/55 text-[11px] font-semibold" style="margin-top:2px">' + (chip.m ? (chip.m + '月') : '') + '</div>'
+                      + '</div>';
+
                     var row = '<div class="activity-list-item flex justify-between items-center gap-2 py-4 px-4 hover:bg-white/5 transition">' +
                         '<a href="/activity-detail.html?activityId=' + (a.id || '') + '" class="min-w-0 flex-1 flex items-center gap-4">' +
+                        dayChip +
                         '<div class="min-w-0 flex-1"><div class="flex items-center gap-2 flex-wrap"><span class="text-white font-medium min-w-0">' + nameEsc + '</span>' + registeredBadge + fullBadge + '</div>' +
                         '<div class="text-white/60 text-sm mt-0.5">' + venueEsc + ' · ' + formatActivityDate(a.date) + ' · <span class="tabular-nums">' + countText + '</span></div></div>' +
                         '<span class="nav-arrow text-sm shrink-0"><span>查看</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span></a>';
