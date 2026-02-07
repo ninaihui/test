@@ -268,6 +268,12 @@
       // #endregion
       if (!res.ok) {
         console.warn('首页：/auth/me 返回', res.status);
+        if (res.status === 401) {
+          try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          requireLogin('token 失效（/auth/me 401）');
+          return;
+        }
         requireLogin('/auth/me 返回 ' + res.status);
         return;
       }
@@ -451,7 +457,14 @@
 
     try {
       const res = await fetch('/activities?upcoming=1', { headers: { Authorization: 'Bearer ' + token } });
-      if (!res.ok) return;
+      if (!res.ok) {
+        if (res.status === 401) {
+          try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          requireLogin('token 失效（/activities 401）');
+        }
+        return;
+      }
       const activities = await res.json();
       const list = Array.isArray(activities) ? activities : [];
       const first = list[0];
@@ -468,6 +481,12 @@
       }
       const detailRes = await fetch('/activities/' + first.id, { headers: { Authorization: 'Bearer ' + token } });
       if (!detailRes.ok) {
+        if (detailRes.status === 401) {
+          try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          requireLogin('token 失效（/activities/:id 401）');
+          return;
+        }
         var cardEl = document.getElementById('weekendCard');
         var weatherBg = document.getElementById('weekendCardWeatherBg');
         if (cardEl) delete cardEl.dataset.activityId;
@@ -637,7 +656,14 @@
 
     try {
       const res = await fetch('/activities', { headers: { Authorization: 'Bearer ' + token } });
-      if (!res.ok) return;
+      if (!res.ok) {
+        if (res.status === 401) {
+          try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+          requireLogin('token 失效（/activities 401）');
+        }
+        return;
+      }
       const activities = await res.json();
       const list = Array.isArray(activities) ? activities : [];
 
