@@ -17,11 +17,16 @@
     .welcome-card { padding: 1rem 1.25rem; }
     .welcome-card a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem; }
     .welcome-card a:hover { opacity: 0.95; }
-    /* 下一场活动主卡片：天气作为背景层 */
-    .next-card { position: relative; padding: 1.25rem; overflow: hidden; }
+    /* 下一场活动主卡片：更像展示页的“高级玻璃卡” */
+    .next-card { position: relative; padding: 1.25rem; overflow: hidden; border-radius: 1.25rem; }
+    .next-card:before{ content:''; position:absolute; inset:-2px;
+      background: radial-gradient(700px 380px at 18% 8%, rgba(59,130,246,.22), transparent 55%),
+                  radial-gradient(700px 380px at 90% 0%, rgba(168,85,247,.16), transparent 55%);
+      pointer-events:none; z-index: 0;
+    }
     .next-card-weather-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; display: flex; align-items: flex-start; justify-content: flex-end; padding: 0; overflow: hidden; }
     .next-card-weather-bg .weather-bg-icon { font-size: 7rem; line-height: 1; opacity: 0.12; transform: translate(6%, -6%); }
-    .next-card-weather-bg .weather-bg-temp { position: absolute; right: 1.15rem; top: 0.85rem; font-size: 2rem; font-weight: 700; color: rgba(255,255,255,.15); }
+    .next-card-weather-bg .weather-bg-temp { position: absolute; right: 1.15rem; top: 0.85rem; font-size: 2rem; font-weight: 800; color: rgba(255,255,255,.16); }
     .next-card-content { position: relative; z-index: 1; }
     #weekendCard[data-activity-id] { cursor: pointer; }
     .next-card .next-card-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; font-size: 0.875rem; color: rgba(255,255,255,.7); }
@@ -113,9 +118,9 @@
               <div class="roster-label"><span>已报名队员</span><span id="weekendRosterCount" class="roster-count">0/11</span></div>
               <div id="weekendRosterNames" class="roster-names"></div>
             </div>
-            <div class="cta">
+            <div class="cta" style="border-top-color: rgba(255,255,255,.12)">
               <span id="weekendStatus" class="text-white/60 text-sm">—</span>
-              <button type="button" id="weekendRegisterBtn" class="btn btn-primary btn-sm hidden">报名</button>
+              <button type="button" id="weekendRegisterBtn" class="btn btn-primary hidden" style="border-radius:999px; padding:.62rem .95rem; font-weight:950;">报名</button>
             </div>
           </div>
         </div>
