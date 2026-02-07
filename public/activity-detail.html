@@ -12,8 +12,11 @@
                 radial-gradient(900px 480px at 85% 0%, rgba(16,185,129,.12), transparent 55%),
                 linear-gradient(180deg, #070A12 0%, #0B1530 100%);
             background-attachment: fixed; }
-        .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
-        .glass input, .glass select, .glass textarea { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.2); color: #e2e8f0; }
+        .glass { background: rgba(255,255,255,.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.10);
+            box-shadow: 0 18px 40px rgba(0,0,0,.35);
+        }
+        .glass input, .glass select, .glass textarea { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #e2e8f0; }
         .detail-nav-icon { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
         .register-modal-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 1rem; }
         .register-modal-overlay.show { display: flex; }
