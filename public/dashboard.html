@@ -139,6 +139,8 @@
               <span id="weekendVenue">—</span>
               <span class="next-card-meta-sep"> · </span>
               <span id="weekendTime" class="meta-item">—</span>
+              <span class="next-card-meta-sep"> · </span>
+              <span id="weekendWeatherBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-xs font-semibold">—</span>
             </div>
             <div id="weekendRoster" class="hidden">
               <div class="roster-label"><span>已报名队员</span><span id="weekendRosterCount" class="roster-count">0/11</span></div>
@@ -428,6 +430,20 @@
         '<span class="weather-bg-icon" aria-hidden="true">' + weatherCodeToIcon(code) + '</span>' +
         (tempStr ? '<span class="weather-bg-temp">' + tempStr + '</span>' : '') +
         dots;
+
+      // B 方案：信息徽章（不抢背景层）
+      try {
+        var badgeEl = document.getElementById('weekendWeatherBadge');
+        if (badgeEl) {
+          if (tempStr) {
+            badgeEl.textContent = weatherCodeToIcon(code) + ' ' + tempStr;
+            badgeEl.classList.remove('hidden');
+          } else {
+            badgeEl.classList.add('hidden');
+          }
+        }
+      } catch (e) {}
+
     } catch (e) {
       setError();
     }
