@@ -119,10 +119,41 @@
   </div>
 
   <!-- Sticky CTA (mobile) -->
-  <div style="position: fixed; left: 0; right: 0; bottom: 0; padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom)); z-index: 50; pointer-events: none;">
+  <div id="stickyCtaWrap" style="position: fixed; left: 0; right: 0; bottom: 0; padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom)); z-index: 50; pointer-events: none; transition: transform .22s ease, opacity .22s ease; will-change: transform, opacity;">
     <div style="max-width: 980px; margin: 0 auto; display:flex; justify-content:center;">
       <a href="/activities.html" class="btn btn-primary" style="pointer-events:auto; width: min(520px, 100%); border-radius: 999px; padding: 0.9rem 1rem; font-weight: 950; box-shadow: 0 18px 44px rgba(0,0,0,.45);">查看活动报名</a>
     </div>
   </div>
+
+  <script>
+    // Hide sticky CTA when user scrolls down; show when scrolls up (mobile-friendly)
+    (function(){
+      var wrap = document.getElementById('stickyCtaWrap');
+      if (!wrap) return;
+      var lastY = window.scrollY || 0;
+      var hidden = false;
+      function setHidden(h){
+        if (hidden === h) return;
+        hidden = h;
+        wrap.style.opacity = h ? '0' : '1';
+        wrap.style.transform = h ? 'translateY(18px)' : 'translateY(0)';
+      }
+      var ticking = false;
+      window.addEventListener('scroll', function(){
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function(){
+          var y = window.scrollY || 0;
+          var dy = y - lastY;
+          // near top: always show
+          if (y < 40) setHidden(false);
+          else if (dy > 6) setHidden(true);
+          else if (dy < -6) setHidden(false);
+          lastY = y;
+          ticking = false;
+        });
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>
