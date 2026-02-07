@@ -123,10 +123,11 @@
           <div id="weekendContent" class="next-card-content hidden">
             <div class="flex items-start justify-between gap-3">
               <div id="weekendName" class="text-white font-semibold text-lg min-w-0">—</div>
-              <div id="weekendTime" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-xs font-semibold shrink-0" style="margin-top:2px">—</div>
             </div>
             <div class="next-card-meta" style="margin-top: .35rem">
               <span id="weekendVenue">—</span>
+              <span class="next-card-meta-sep"> · </span>
+              <span id="weekendTime" class="meta-item">—</span>
             </div>
             <div id="weekendRoster" class="hidden">
               <div class="roster-label"><span>已报名队员</span><span id="weekendRosterCount" class="roster-count">0/11</span></div>
@@ -472,8 +473,7 @@
       var locationIcon = '<span class="meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span>';
       var clockIcon = '<span class="meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>';
       venueEl.className = 'meta-item';
-      // weekendTime 现在是标题旁的“时间胶囊”，样式在 HTML 里写死
-      timeEl.className = '';
+      timeEl.className = 'meta-item';
       var venueText = (venueDisplay && venueDisplay.length > 15) ? venueDisplay.slice(0, 15) + '…' : (venueDisplay || '—');
       venueEl.innerHTML = locationIcon + '<span>' + escapeHtml(venueText) + '</span>';
       timeEl.textContent = formatActivityDate(activity.date);
