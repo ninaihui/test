@@ -47,7 +47,15 @@
     .next-card .roster-label { font-size: 0.75rem; color: rgba(255,255,255,.5); margin-top: 0.75rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem; }
     .next-card .roster-count { font-size: 0.75rem; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
     .next-card .roster-names { font-size: 0.8125rem; color: rgba(255,255,255,.75); line-height: 1.4; }
-    .next-card .roster-names .name-tag { display: inline-block; margin: 0.125rem 0.25rem 0.125rem 0; padding: 0.125rem 0.5rem; background: rgba(255,255,255,.08); border-radius: 0.5rem; }
+    .next-card .roster-names .name-tag { display: inline-flex; align-items: center; margin: 0.125rem 0.25rem 0.125rem 0;
+      padding: 0.18rem 0.55rem; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10);
+      border-radius: 999px; font-size: 0.75rem; color: rgba(255,255,255,.82);
+    }
+
+    /* 简约大气：危险按钮更克制（不抢主操作） */
+    .btn-danger-soft { background: rgba(239,68,68,.10) !important; border: 1px solid rgba(239,68,68,.32) !important; color: rgba(254,202,202,.95) !important; box-shadow: none !important; }
+    .btn-danger-soft:hover { background: rgba(239,68,68,.14) !important; border-color: rgba(239,68,68,.46) !important; }
+
     /* 活动列表项：星期与箭头留出边距，不贴边 */
     .activity-row { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,.08); text-decoration: none; color: inherit; transition: background .15s; }
     .activity-row:last-child { border-bottom: none; }
@@ -125,7 +133,7 @@
             </div>
             <div class="cta" style="border-top-color: rgba(255,255,255,.12)">
               <span id="weekendStatus" class="text-white/60 text-sm">—</span>
-              <button type="button" id="weekendRegisterBtn" class="btn btn-primary hidden" style="border-radius:999px; padding:.62rem .95rem; font-weight:950;">报名</button>
+              <button type="button" id="weekendRegisterBtn" class="btn btn-primary hidden" style="border-radius:999px; padding:.56rem .88rem; font-weight:800;">报名</button>
             </div>
           </div>
         </div>
@@ -555,7 +563,8 @@
         statusEl.classList.remove('hidden');
         btnEl.classList.remove('hidden');
         btnEl.classList.remove('btn-primary');
-        btnEl.classList.add('btn-danger');
+        btnEl.classList.remove('btn-danger');
+        btnEl.classList.add('btn-danger-soft');
         btnEl.textContent = (myAtt.status === 'waitlist') ? '取消候补' : '取消报名';
         btnEl.onclick = async (e) => {
           e.preventDefault();
@@ -579,6 +588,7 @@
         statusEl.classList.add('hidden');
         btnEl.classList.remove('hidden');
         btnEl.classList.remove('btn-danger');
+        btnEl.classList.remove('btn-danger-soft');
         btnEl.classList.add('btn-primary');
         btnEl.textContent = '报名';
         btnEl.onclick = function (e) {
