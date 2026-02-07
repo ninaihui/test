@@ -242,7 +242,7 @@
     (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:requireLogin',message:'redirecting to login',data:{reason:reason||'',origin:window.location.origin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4,H5'});
     // #endregion
     console.warn('首页：跳转登录页 —', reason || '未登录或登录已失效');
-    window.location.replace(window.location.origin + '/login.html');
+    window.location.href = window.location.origin + '/login.html';
   }
 
   function setGreeting(username) {
@@ -896,21 +896,22 @@
   })();
 
   (function init() {
-    // 立刻读取 token；避免 iOS Safari 某些情况下 setTimeout(0) 被延后导致页面停留在“加载中”
-    token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
-    // #region agent log
-    (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:init',message:'token read',data:{origin:window.location.origin,hasToken:!!token,tokenLen:token?token.length:0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'});
-    // #endregion
-    if (!token) {
-      requireLogin('无 token（请确保从登录页跳转且未清除缓存）');
-      return;
-    }
-    (async function () {
-      await loadMe();
-      loadWeekendActivity();
-      loadAllActivities();
-      setBottomNavActive();
-    })();
+    setTimeout(function () {
+      token = localStorage.getItem(TOKEN_KEY);
+      // #region agent log
+      (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:init',message:'token read',data:{origin:window.location.origin,hasToken:!!token,tokenLen:token?token.length:0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'});
+      // #endregion
+      if (!token) {
+        requireLogin('无 token（请确保从登录页跳转且未清除缓存）');
+        return;
+      }
+      (async function () {
+        await loadMe();
+        loadWeekendActivity();
+        loadAllActivities();
+        setBottomNavActive();
+      })();
+    }, 0);
   })();
 })();
   </script>
