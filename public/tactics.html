@@ -11,11 +11,16 @@
   <style>html,body{background:#080d17;color:#e2e8f0;min-height:100%;margin:0}</style>
   <style>
     body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
-      background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
-        url('/assets/login-bg.jpg') no-repeat center center fixed;
-      background-size: cover; }
+      background:
+        radial-gradient(900px 480px at 20% 10%, rgba(59,130,246,.18), transparent 55%),
+        radial-gradient(900px 480px at 85% 0%, rgba(16,185,129,.12), transparent 55%),
+        linear-gradient(180deg, #070A12 0%, #0B1530 100%);
+      background-attachment: fixed; }
 
-    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+    .glass { background: rgba(255,255,255,.06); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+    }
     .shadow-field { box-shadow: 0 8px 32px rgba(0,0,0,.35); }
 
     /* ====== Layout ====== */
@@ -58,6 +63,11 @@
       justify-content: center;
     }
     .pill-btn:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.20); }
+
+    /* 简约大气：主按钮统一胶囊 */
+    .btn.btn-primary { border-radius: 999px; font-weight: 800; box-shadow: none !important; }
+    .btn.btn-primary:hover { filter: brightness(1.02); }
+    .btn.btn-primary:active { transform: translateY(0.5px); }
     .pill-btn:active { transform: scale(0.99); }
 
     .tactics-grid {
@@ -367,7 +377,7 @@
     </div>
   </nav>
 
-  <script src="/js/fancy-background.js"></script>
+  <!-- fancy-background removed for minimalist UI -->
   <style>
     .team-bands{ position:absolute; inset:0; display:flex; flex-direction:column; gap:0; z-index:3; padding:10px; }
     .team-band{ flex:1; border:1px dashed rgba(255,255,255,.28); border-radius:14px; background: rgba(0,0,0,.12);
