@@ -273,6 +273,20 @@
 
   var weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
+  function getDayChip(iso) {
+    try {
+      if (!iso) return { m: '', d: '', wd: '' };
+      var dt = new Date(iso);
+      var m = String(dt.getMonth() + 1);
+      var day = String(dt.getDate());
+      var wds = ['日','一','二','三','四','五','六'];
+      var wd = '周' + (wds[dt.getDay()] || '');
+      return { m: m, d: day, wd: wd };
+    } catch (e) {
+      return { m: '', d: '', wd: '' };
+    }
+  }
+
   function formatActivityDate(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -618,14 +632,24 @@
             }
           }
         } catch (e) {}
+        var chip = getDayChip(a.date);
+        var dayChip = '<div class="shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-white/10 bg-white/5">'
+          + '<div class="text-white/70 text-[11px] font-semibold">' + (chip.wd || '') + '</div>'
+          + '<div class="text-white text-lg font-black leading-none" style="margin-top:2px">' + (chip.d || '') + '</div>'
+          + '<div class="text-white/55 text-[11px] font-semibold" style="margin-top:2px">' + (chip.m ? (chip.m + '月') : '') + '</div>'
+          + '</div>';
+
         const row = document.createElement('a');
         row.href = '/activities.html?id=' + (a.id || '');
         row.className = 'activity-row block';
         row.innerHTML =
           '<span class="badge ' + badge.cls + '">' + badge.text + '</span>' +
-          '<div class="body flex-1 min-w-0">' +
-            '<div class="name-row flex items-center gap-2 flex-wrap"><span class="name">' + escapeHtml(nameText) + '</span>' + registeredBadge + '</div>' +
-            '<div class="meta">' + escapeHtml(venueText) + ' · ' + formatActivityDate(a.date) + ' · <span class="tabular-nums">' + countText + '</span></div>' +
+          '<div class="body flex-1 min-w-0" style="display:flex; gap:14px; align-items:flex-start">' +
+            dayChip +
+            '<div class="min-w-0 flex-1">' +
+              '<div class="name-row flex items-center gap-2 flex-wrap"><span class="name">' + escapeHtml(nameText) + '</span>' + registeredBadge + '</div>' +
+              '<div class="meta">' + escapeHtml(venueText) + ' · ' + formatActivityDate(a.date) + ' · <span class="tabular-nums">' + countText + '</span></div>' +
+            '</div>' +
           '</div>' +
           '<span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>';
         itemsEl.appendChild(row);
