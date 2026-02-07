@@ -232,8 +232,9 @@
     <!-- 炫酷背景效果 -->
     <!-- fancy-background removed for minimalist UI -->
     <script src="/js/position-options.js"></script>
+    <script src="/js/auth.js"></script>
     <script>
-        const authToken = (localStorage.getItem('authToken') || sessionStorage.getItem('authToken'));
+        const authToken = (window.Auth && Auth.getAuthToken ? Auth.getAuthToken() : (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')));
         const LAST_LOCATION_KEY = 'team_management:lastActivityLocation';
         const LAST_ACTIVITY_NAME_KEY = 'team_management:lastActivityName';
         var currentUser = null;
@@ -248,7 +249,8 @@
             return currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin');
         }
         if (!authToken) {
-            window.location.href = '/login.html';
+            if (window.Auth && Auth.redirectToLogin) Auth.redirectToLogin('无 token');
+            else window.location.href = '/login.html';
         }
 
         function logout() {

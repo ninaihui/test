@@ -223,9 +223,10 @@
 
   <!-- fancy-background removed for minimalist UI -->
   <script src="/js/position-options.js"></script>
+  <script src="/js/auth.js"></script>
   <script>
 (function () {
-  const TOKEN_KEY = 'authToken';
+  // auth helpers
   const USER_KEY = 'user';
 
   function escapeHtml(s) {
@@ -268,7 +269,7 @@
   }
 
   async function loadMe() {
-    var t = token || localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+    var t = token || (window.Auth && Auth.getAuthToken ? Auth.getAuthToken() : '') || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     if (!t) {
       requireLogin('无 token');
       return;
@@ -469,7 +470,7 @@
     const btnEl = document.getElementById('weekendRegisterBtn');
 
     try {
-      const res = await fetch('/activities?upcoming=1', { headers: { Authorization: 'Bearer ' + token } });
+      const res = await (window.Auth && Auth.authFetch ? Auth.authFetch('/activities?upcoming=1') : fetch('/activities?upcoming=1', { headers: { Authorization: 'Bearer ' + token } }));
       if (!res.ok) return;
       const activities = await res.json();
       const list = Array.isArray(activities) ? activities : [];
@@ -485,7 +486,7 @@
         contentEl.classList.add('hidden');
         return;
       }
-      const detailRes = await fetch('/activities/' + first.id, { headers: { Authorization: 'Bearer ' + token } });
+      const detailRes = await (window.Auth && Auth.authFetch ? Auth.authFetch('/activities/' + first.id) : fetch('/activities/' + first.id, { headers: { Authorization: 'Bearer ' + token } }));
       if (!detailRes.ok) {
         var cardEl = document.getElementById('weekendCard');
         var weatherBg = document.getElementById('weekendCardWeatherBg');
@@ -614,10 +615,12 @@
           if (!confirm('确定取消？')) return;
           btnEl.disabled = true;
           try {
-            const r = await fetch('/activities/' + activity.id + '/register', {
+            const r = await (window.Auth && Auth.authFetch ? Auth.authFetch('/activities/' + activity.id + '/register', {
+              method: 'DELETE'
+            }) : fetch('/activities/' + activity.id + '/register', {
               method: 'DELETE',
               headers: { Authorization: 'Bearer ' + token },
-            });
+            }));
             if (r.ok) loadWeekendActivity();
             else {
               const err = await r.json().catch(() => ({}));
@@ -655,7 +658,7 @@
     const itemsEl = document.getElementById('activityItems');
 
     try {
-      const res = await fetch('/activities', { headers: { Authorization: 'Bearer ' + token } });
+      const res = await (window.Auth && Auth.authFetch ? Auth.authFetch('/activities') : fetch('/activities', { headers: { Authorization: 'Bearer ' + token } }));
       if (!res.ok) return;
       const activities = await res.json();
       const list = Array.isArray(activities) ? activities : [];
@@ -916,12 +919,13 @@
 
   (function init() {
     setTimeout(function () {
-      token = localStorage.getItem(TOKEN_KEY);
+      token = (window.Auth && Auth.getAuthToken ? Auth.getAuthToken() : '') || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       // #region agent log
       (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:init',message:'token read',data:{origin:window.location.origin,hasToken:!!token,tokenLen:token?token.length:0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'});
       // #endregion
       if (!token) {
-        requireLogin('无 token（请确保从登录页跳转且未清除缓存）');
+        if (window.Auth && Auth.redirectToLogin) Auth.redirectToLogin('无 token');
+        else requireLogin('无 token（请确保从登录页跳转且未清除缓存）');
         return;
       }
       (async function () {
