@@ -42,6 +42,7 @@
     .next-card-weather-bg .weather-dots i:nth-child(6){ right:68px; top:20px; width:3px; height:3px; opacity:.55 }
     .next-card-weather-bg .weather-dots i:nth-child(7){ right:84px; top:34px; width:4px; height:4px; opacity:.40 }
     .next-card-weather-bg .weather-dots i:nth-child(8){ right:100px; top:18px; width:3px; height:3px; opacity:.40 }
+    .next-card-weather-bg .weather-dots i:nth-child(n+9){ background: rgba(255,255,255,.18); opacity:.35; }
 
     .next-card-content { position: relative; z-index: 1; }
     #weekendCard[data-activity-id] { cursor: pointer; }
@@ -139,8 +140,7 @@
               <span id="weekendVenue">—</span>
               <span class="next-card-meta-sep"> · </span>
               <span id="weekendTime" class="meta-item">—</span>
-              <span class="next-card-meta-sep"> · </span>
-              <span id="weekendWeatherBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-xs font-semibold">—</span>
+              <span id="weekendWeatherBadge" class="inline-flex items-center gap-1.5 ml-2 px-2.5 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-xs font-semibold">—</span>
             </div>
             <div id="weekendRoster" class="hidden">
               <div class="roster-label"><span>已报名队员</span><span id="weekendRosterCount" class="roster-count">0/11</span></div>
@@ -426,8 +426,15 @@
       var dots = '<span class="weather-dots" aria-hidden="true">'
         + '<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>'
         + '</span>';
+
+      // A 方案背景层：根据天气 code 控制点的“密度”
+      try {
+        var dotCount = (code != null && (code === 71 || code === 73 || code === 75 || code === 77 || code === 85 || code === 86)) ? 14
+          : (code != null && (code === 61 || code === 63 || code === 65 || code === 80 || code === 81 || code === 82)) ? 12
+          : 8;
+        dots = '<span class="weather-dots" aria-hidden="true">' + new Array(dotCount).fill('<i></i>').join('') + '</span>';
+      } catch (e) {}
       weatherBg.innerHTML =
-        '<span class="weather-bg-icon" aria-hidden="true">' + weatherCodeToIcon(code) + '</span>' +
         (tempStr ? '<span class="weather-bg-temp">' + tempStr + '</span>' : '') +
         dots;
 
@@ -436,7 +443,10 @@
         var badgeEl = document.getElementById('weekendWeatherBadge');
         if (badgeEl) {
           if (tempStr) {
-            badgeEl.textContent = weatherCodeToIcon(code) + ' ' + tempStr;
+            // 只保留温度信息，图标用更大的样式显示（不需要 emoji）
+            badgeEl.textContent = tempStr;
+            badgeEl.style.fontSize = '13px';
+            badgeEl.style.fontWeight = '800';
             badgeEl.classList.remove('hidden');
           } else {
             badgeEl.classList.add('hidden');
