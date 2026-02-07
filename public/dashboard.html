@@ -7,9 +7,11 @@
   <link rel="stylesheet" href="/assets/app.css?v=20260130-1" />
   <style>
     body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
-      background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
-        url('/assets/login-bg.jpg') no-repeat center center fixed;
-      background-size: cover; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; }
+      background:
+        radial-gradient(900px 480px at 20% 10%, rgba(59,130,246,.18), transparent 55%),
+        radial-gradient(900px 480px at 85% 0%, rgba(16,185,129,.12), transparent 55%),
+        linear-gradient(180deg, #070A12 0%, #0B1530 100%);
+      background-attachment: fixed; }
     .card, .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
     .card-hover:hover { background: rgba(0,0,0,.28); border-color: rgba(255,255,255,.18); }
     .stat-num { font-variant-numeric: tabular-nums; }
@@ -193,7 +195,7 @@
     </div>
   </nav>
 
-  <script src="/js/fancy-background.js"></script>
+  <!-- fancy-background removed for minimalist UI -->
   <script src="/js/position-options.js"></script>
   <script>
 (function () {
