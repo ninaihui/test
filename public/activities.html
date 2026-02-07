@@ -18,6 +18,12 @@
         }
         .glass input, .glass select, .glass textarea { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #e2e8f0; }
         .activity-list-item { border-bottom: 1px solid rgba(255,255,255,.08); }
+
+        /* 简约大气：主按钮统一胶囊，不用大阴影抢戏 */
+        .btn.btn-primary { border-radius: 999px; font-weight: 800; box-shadow: none !important; }
+        .btn.btn-primary:hover { filter: brightness(1.02); }
+        .btn.btn-primary:active { transform: translateY(0.5px); }
+
         .activity-list-item:last-child { border-bottom: none; }
         .activity-list-item .nav-arrow { color: rgba(255,255,255,.4); display: inline-flex; align-items: center; gap: 0.25rem; transition: color .2s, transform .2s; }
         .activity-list-item a:hover .nav-arrow { color: rgba(255,255,255,.7); transform: translateX(2px); }
@@ -60,7 +66,7 @@
                 <p class="text-white/60 text-sm">报名与管理活动</p>
             </div>
             <div id="createActivityWrap" class="hidden">
-                <button type="button" onclick="showCreateActivityModal()" class="btn btn-primary gap-2 py-3 px-5 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30">
+                <button type="button" onclick="showCreateActivityModal()" class="btn btn-primary gap-2 py-3 px-5">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -212,7 +218,7 @@
                 </div>
                 <div class="activity-modal-footer p-4 sm:p-6 pt-4 shrink-0 border-t border-white/10 bg-black/20 sm:bg-transparent sm:border-t-0">
                     <div id="activityError" class="hidden rounded-xl px-4 py-3 text-sm text-red-200 bg-red-500/15 border border-red-500/40 mb-3"></div>
-                    <button type="submit" id="activitySubmitBtn" class="btn btn-primary w-full py-3.5 text-base font-semibold gap-2 shadow-lg shadow-cyan-500/25 active:scale-[0.98]">
+                    <button type="submit" id="activitySubmitBtn" class="btn btn-primary w-full py-3.5 text-base font-semibold gap-2">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                         </svg>

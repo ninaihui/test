@@ -18,6 +18,12 @@
         }
         .glass input, .glass select, .glass textarea { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #e2e8f0; }
         .detail-nav-icon { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+
+        /* 简约大气：主按钮统一胶囊，不用大阴影抢戏 */
+        .btn.btn-primary { border-radius: 999px; font-weight: 800; box-shadow: none !important; }
+        .btn.btn-primary:hover { filter: brightness(1.02); }
+        .btn.btn-primary:active { transform: translateY(0.5px); }
+
         .register-modal-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 1rem; }
         .register-modal-overlay.show { display: flex; }
         .register-modal { width: 100%; max-width: 22rem; background: rgba(15,23,42,.95); border: 1px solid rgba(255,255,255,.15); border-radius: 1rem; padding: 1.25rem; box-shadow: 0 20px 40px rgba(0,0,0,.4); }
