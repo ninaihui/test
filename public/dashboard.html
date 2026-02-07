@@ -242,10 +242,7 @@
     (function(d){fetch('http://127.0.0.1:7242/ingest/f9c175ba-04d6-464f-bb6b-0d5e0ace1822',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});})({location:'dashboard.html:requireLogin',message:'redirecting to login',data:{reason:reason||'',origin:window.location.origin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4,H5'});
     // #endregion
     console.warn('首页：跳转登录页 —', reason || '未登录或登录已失效');
-    var url = window.location.origin + '/login.html';
-    try { window.location.replace(url); } catch (e) { window.location.href = url; }
-    // iOS/Safari 某些情况下 replace 不生效，做一次兜底跳转
-    setTimeout(function(){ try { if (!String(window.location.pathname || '').endsWith('/login.html')) window.location.href = url; } catch(e){} }, 250);
+    window.location.replace(window.location.origin + '/login.html');
   }
 
   function setGreeting(username) {
