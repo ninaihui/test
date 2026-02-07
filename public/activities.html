@@ -43,6 +43,10 @@
         .register-modal .btn-ghost:hover { background: rgba(255,255,255,.15); }
         /* 已报名角标：与标题同行，不遮挡查看 */
         .registered-badge { white-space: nowrap; flex-shrink: 0; background: rgba(16,185,129,0.22); border: 1px solid rgba(16,185,129,0.5); color: #a7f3d0; }
+
+        /* 简约大气：危险按钮更克制（不抢主操作） */
+        .btn-danger-soft { background: rgba(239,68,68,.10) !important; border: 1px solid rgba(239,68,68,.30) !important; color: rgba(254,202,202,.95) !important; }
+        .btn-danger-soft:hover { background: rgba(239,68,68,.14) !important; border-color: rgba(239,68,68,.42) !important; }
         .registered-badge svg { width: 0.875rem; height: 0.875rem; flex-shrink: 0; }
     </style>
 </head>
@@ -552,7 +556,7 @@
                         '<div class="text-white/60 text-sm mt-0.5">' + venueEsc + ' · ' + formatActivityDate(a.date) + ' · <span class="tabular-nums">' + countText + '</span></div></div>' +
                         '<span class="nav-arrow text-sm shrink-0"><span>查看</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span></a>';
                     if (canDel) {
-                        row += '<button type="button" class="btn btn-danger btn-sm shrink-0" data-activity-id="' + (a.id || '') + '" aria-label="删除活动">删除</button>';
+                        row += '<button type="button" class="btn btn-danger-soft btn-sm shrink-0" data-activity-id="' + (a.id || '') + '" aria-label="删除活动">删除</button>';
                     }
                     row += '</div>';
                     return row;
@@ -958,7 +962,7 @@ html += '</div>';
                 }
                 html += '</div>';
                 if (canDeleteActivity(activity)) {
-                    html += '<div class="pt-4 border-t border-white/10"><button type="button" class="btn btn-danger w-full" id="activityDetailDeleteBtn" data-activity-id="' + (activity.id || '') + '">删除活动</button></div>';
+                    html += '<div class="pt-4 border-t border-white/10"><button type="button" class="btn btn-danger-soft w-full" id="activityDetailDeleteBtn" data-activity-id="' + (activity.id || '') + '">删除活动</button></div>';
                 }
                 content.innerHTML = html;
                 var delBtn = document.getElementById('activityDetailDeleteBtn');
