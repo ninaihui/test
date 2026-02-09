@@ -14,14 +14,17 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Install deps
+# NOTE: package.json has a postinstall that runs `prisma generate`.
+# In this stage prisma/ hasn't been copied yet, so we must ignore scripts here.
+ENV npm_config_ignore_scripts=true
 COPY package*.json ./
 RUN npm ci
+ENV npm_config_ignore_scripts=
 
 # Copy source
 COPY . .
 
 # Generate Prisma Client for the target platform (linux in Docker)
-# This must happen before `nest build` because the code imports from ./generated/prisma
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Build
