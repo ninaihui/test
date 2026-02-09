@@ -24,9 +24,30 @@ if [ ! -d "node_modules" ]; then
   npm install
 fi
 
+echo -e "${BLUE}启动本地 Postgres（docker compose）...${NC}"
+docker compose up -d
+
+echo -e "${BLUE}等待数据库就绪...${NC}"
+for i in {1..30}; do
+  if docker exec team_management_db pg_isready -U postgres >/dev/null 2>&1; then
+    echo -e "${GREEN}数据库已就绪${NC}"
+    break
+  fi
+  sleep 1
+  if [ "$i" -eq 30 ]; then
+    echo -e "${RED}数据库启动超时，请检查 docker logs team_management_db${NC}"
+    exit 1
+  fi
+done
+
 echo -e "${BLUE}生成 Prisma Client...${NC}"
 npx prisma generate --schema=./prisma/schema.prisma
 
+echo -e "${BLUE}应用数据库迁移（deploy）...${NC}"
+npx prisma migrate deploy
+
+PORT_TO_USE=${PORT:-3000}
+
 echo -e "${GREEN}启动开发服务（热重载）...${NC}"
-echo -e "${YELLOW}访问 http://localhost:3000${NC}"
-exec npm run start:dev
+echo -e "${YELLOW}访问 http://localhost:${PORT_TO_USE}${NC}"
+PORT=${PORT_TO_USE} exec npm run start:dev
