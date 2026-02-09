@@ -41,8 +41,12 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Only production deps
+# NOTE: our package.json has a postinstall that runs `prisma generate`.
+# In the runtime stage we haven't copied prisma/ yet, so we must ignore scripts here.
+ENV npm_config_ignore_scripts=true
 COPY package*.json ./
 RUN npm ci --omit=dev
+ENV npm_config_ignore_scripts=
 
 # App artifacts
 COPY --from=build /app/dist ./dist
