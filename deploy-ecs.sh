@@ -6,9 +6,9 @@ set -e
 
 # ========== 请填写你的 ECS 信息 ==========
 ECS_HOST="47.237.69.93"   # ECS 公网 IP
-ECS_USER="root"       # SSH 登录用户名
+ECS_USER="deploy"       # SSH 登录用户名（推荐 deploy；root 通常禁用）
 ECS_APP_PATH="/opt/test"   # ECS 上项目所在目录
-SSH_KEY=""            # 密码登录留空；密钥登录填: -i ~/.ssh/你的密钥.pem
+SSH_KEY="-i ~/.ssh/clawdbot_deploy"            # 密钥登录参数（例如：-i ~/.ssh/xxx.pem）
 # =========================================
 
 RED='\033[0;31m'
@@ -22,7 +22,7 @@ if [ -z "$ECS_HOST" ]; then
   exit 1
 fi
 
-SSH_OPTS="${SSH_KEY}"
+SSH_OPTS="${SSH_KEY} -o StrictHostKeyChecking=accept-new"
 RSYNC_EXCLUDE="--exclude=node_modules --exclude=dist --exclude=.env --exclude=.git --exclude=public/uploads --exclude=coverage --exclude=.nyc_output"
 
 echo -e "${BLUE}📤 同步代码到 ECS ${ECS_USER}@${ECS_HOST}:${ECS_APP_PATH} ...${NC}"
