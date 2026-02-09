@@ -23,7 +23,7 @@ if [ -z "$ECS_HOST" ]; then
 fi
 
 SSH_OPTS="${SSH_KEY} -o StrictHostKeyChecking=accept-new"
-RSYNC_EXCLUDE="--exclude=node_modules --exclude=dist --exclude=.env --exclude=.git --exclude=public/uploads --exclude=coverage --exclude=.nyc_output"
+RSYNC_EXCLUDE="--exclude=node_modules --exclude=dist --exclude=.env --exclude=.git --exclude=public/uploads --exclude=data/uploads --exclude=data --exclude=coverage --exclude=.nyc_output"
 
 echo -e "${BLUE}📤 同步代码到 ECS ${ECS_USER}@${ECS_HOST}:${ECS_APP_PATH} ...${NC}"
 echo -e "${YELLOW}   （含 public/assets 如 login-bg.png、profile-bg.png）${NC}"
