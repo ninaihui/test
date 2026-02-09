@@ -107,9 +107,20 @@
         if (!activityIdFromUrl.trim()) { window.location.href = '/activities.html'; }
 
         var registerModalActivityId = null;
+        var registerModalMode = 'register'; // register | adjust-self | adjust-other
+        var registerModalTargetUserId = null;
+
+        function closeRegisterModal() {
+            try { document.getElementById('registerModalOverlay').classList.remove('show'); } catch (e) {}
+            registerModalMode = 'register';
+            registerModalTargetUserId = null;
+            registerModalActivityId = null;
+        }
+
         document.getElementById('registerModalCancel').addEventListener('click', function() {
-            document.getElementById('registerModalOverlay').classList.remove('show');
+            closeRegisterModal();
         });
+
         document.getElementById('registerModalConfirm').addEventListener('click', function() {
             var activityId = registerModalActivityId;
             var selectEl = document.getElementById('registerPositionSelect');
@@ -121,38 +132,55 @@
 
             // If team or position is unselected, confirm with user.
             if (teamNo === 0 || !position) {
-                var msg = '你选择了未定队伍或未定位置。\n\n队伍和位置可能会由队长指定。\n\n仍然要报名吗？';
+                var msg = '你选择了未定队伍或未定位置。\n\n队伍和位置可能会由队长指定。\n\n仍然要继续吗？';
                 if (!confirm(msg)) return;
             }
 
-            document.getElementById('registerModalOverlay').classList.remove('show');
+            closeRegisterModal();
+
             var body = {};
             if (position && position.trim()) body.position = position.trim();
+            // allow teamNo=0 to mean "unassigned"
             if (Number.isFinite(teamNo) && teamNo >= 0) body.teamNo = teamNo;
-            fetch('/activities/' + activityId + '/register', {
-                method: 'POST',
+
+            var url = '';
+            var method = 'POST';
+            if (registerModalMode === 'register') {
+                url = '/activities/' + activityId + '/register';
+                method = 'POST';
+            } else if (registerModalMode === 'adjust-self') {
+                url = '/activities/' + activityId + '/my-position';
+                method = 'PATCH';
+            } else {
+                // adjust-other
+                url = '/activities/' + activityId + '/positions';
+                method = 'PATCH';
+                if (registerModalTargetUserId) body.userId = registerModalTargetUserId;
+            }
+
+            fetch(url, {
+                method: method,
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
                 body: JSON.stringify(body)
             }).then(function(r) {
                 if (r.ok) loadActivity();
-                else r.json().then(function(err) { alert(err.message || '报名失败'); }).catch(function() { alert('报名失败'); });
+                else r.json().then(function(err) { alert(err.message || '操作失败'); }).catch(function() { alert('操作失败'); });
             }).catch(function() { alert('网络错误'); });
         });
 
-        function openRegisterModal(activity) {
-            var activityId = activity && activity.id;
+        function computeTeamMeta(activity) {
             var attendances = (activity && activity.attendances) || [];
-            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14; // used for lineup gate (>=8)
+            var maxParticipants = (activity && activity.maxParticipants != null) ? activity.maxParticipants : 14;
             var teamCount = (activity && activity.teamCount != null) ? activity.teamCount : Math.ceil((maxParticipants || 1) / 12);
             if (teamCount < 1) teamCount = 1;
             if (teamCount > 4) teamCount = 4;
             var teamCap = Math.ceil((maxParticipants || 1) / teamCount);
-            var teamNames = (activity && activity.teamNames && Array.isArray(activity.teamNames)) ? activity.teamNames : [];
+
+            var teamNames = (activity && activity.teamNames && Array.isArray(activity.teamNames)) ? activity.teamNames.slice(0) : [];
             var defaultNames = teamCount === 1 ? ['队伍'] : (teamCount === 2 ? ['红队','蓝队'] : (teamCount === 3 ? ['红队','蓝队','紫队'] : ['红队','蓝队','紫队','黄队']));
             while (teamNames.length < teamCount) teamNames.push(defaultNames[teamNames.length] || ('队伍' + (teamNames.length + 1)));
             if (teamNames.length > teamCount) teamNames = teamNames.slice(0, teamCount);
 
-            // counts (registered only)
             var regAttendances = attendances.filter(function(a){ return a && (a.status === 'registered' || a.status === 'present' || a.status === 'late'); });
             var teamCounts = {};
             for (var i = 1; i <= teamCount; i++) teamCounts[i] = 0;
@@ -163,6 +191,23 @@
                 if (tn >= 1 && tn <= teamCount) teamCounts[tn] = (teamCounts[tn] || 0) + 1;
             });
 
+            return { maxParticipants: maxParticipants, teamCount: teamCount, teamCap: teamCap, teamNames: teamNames, regAttendances: regAttendances, teamCounts: teamCounts };
+        }
+
+        function openRegisterModal(activity, opts) {
+            opts = opts || {};
+            var activityId = activity && activity.id;
+            var meta = computeTeamMeta(activity);
+
+            registerModalMode = opts.mode || 'register';
+            registerModalTargetUserId = opts.userId || null;
+
+            // title + button
+            var titleEl = document.getElementById('registerModalTitle');
+            var confirmEl = document.getElementById('registerModalConfirm');
+            if (titleEl) titleEl.textContent = (registerModalMode === 'register') ? '报名设置' : (registerModalMode === 'adjust-self' ? '修改我的队伍/位置' : '调整队伍/位置');
+            if (confirmEl) confirmEl.textContent = (registerModalMode === 'register') ? '确定报名' : '保存';
+
             // render team select
             var teamEl = document.getElementById('registerTeamSelect');
             if (teamEl) {
@@ -171,38 +216,51 @@
                 opt0.value = '0';
                 opt0.textContent = '未定';
                 teamEl.appendChild(opt0);
-                for (var t = 1; t <= teamCount; t++) {
+                for (var t = 1; t <= meta.teamCount; t++) {
                     var opt = document.createElement('option');
                     opt.value = String(t);
-                    var used = teamCounts[t] || 0;
-                    opt.textContent = (teamNames[t-1] || ('队伍' + t)) + '（' + used + '/' + teamCap + '）';
-                    if (used >= teamCap) {
-                        opt.textContent += ' 已满';
-                    }
+                    var used = meta.teamCounts[t] || 0;
+                    opt.textContent = (meta.teamNames[t-1] || ('队伍' + t)) + '（' + used + '/' + meta.teamCap + '）' + (used >= meta.teamCap ? ' 已满' : '');
                     teamEl.appendChild(opt);
                 }
-                teamEl.value = '0';
             }
 
-            registerModalActivityId = activityId;
+            // fill positions
             var selectEl = document.getElementById('registerPositionSelect');
             if (selectEl && typeof window.fillPositionSelect === 'function') {
-                window.fillPositionSelect(selectEl, maxParticipants);
+                window.fillPositionSelect(selectEl, meta.maxParticipants);
+            }
+
+            // prefill
+            if (opts.prefill) {
+                if (teamEl) teamEl.value = String(opts.prefill.teamNo || 0);
+                if (selectEl) selectEl.value = String(opts.prefill.position || '');
+            } else {
+                // default position = profile position
+                var me = currentUser;
+                var defaultPos = (me && me.playingPosition && String(me.playingPosition).trim()) ? String(me.playingPosition).trim() : '';
+                if (teamEl) teamEl.value = '0';
+                if (selectEl) selectEl.value = defaultPos || '';
+                // ensure option exists
+                var hasOption = false;
+                for (var k = 0; selectEl && k < selectEl.options.length; k++) {
+                    if (selectEl.options[k].value === defaultPos) { hasOption = true; break; }
+                }
+                if (selectEl && !hasOption && defaultPos) selectEl.value = '';
             }
 
             function refreshPositionOccupiedHints() {
                 try {
-                    // If team is unassigned (0), do not show occupied hints
-                    var teamEl2 = document.getElementById('registerTeamSelect');
-                    var tn2 = teamEl2 ? parseInt((teamEl2.value || '0'), 10) : 0;
+                    var tn2 = teamEl ? parseInt((teamEl.value || '0'), 10) : 0;
                     if (!Number.isFinite(tn2) || tn2 < 0) tn2 = 0;
 
                     var occupied = {};
                     if (tn2 > 0) {
-                        regAttendances.forEach(function(a){
+                        meta.regAttendances.forEach(function(a){
                             if (!a || !a.position) return;
                             var uid = a.user && a.user.id;
-                            if (currentUser && uid && currentUser.id && uid === currentUser.id) return; // exclude myself
+                            if (registerModalMode === 'adjust-other' && registerModalTargetUserId && uid === registerModalTargetUserId) return;
+                            if (registerModalMode !== 'adjust-other' && currentUser && uid && currentUser.id && uid === currentUser.id) return;
                             var atn = a.teamNo;
                             if (atn == null) return;
                             if (typeof atn !== 'number') atn = parseInt(String(atn), 10);
@@ -212,31 +270,19 @@
                         });
                     }
 
-                    for (var j = 0; j < selectEl.options.length; j++) {
+                    for (var j = 0; selectEl && j < selectEl.options.length; j++) {
                         var opt = selectEl.options[j];
                         var v = (opt.value || '').trim();
                         if (!v) continue;
                         opt.textContent = opt.textContent.replace(/\s*·\s*已有人\s*$/, '');
-                        if (tn2 > 0 && occupied[v]) {
-                            opt.textContent = opt.textContent + ' · 已有人';
-                        }
+                        if (tn2 > 0 && occupied[v]) opt.textContent = opt.textContent + ' · 已有人';
                     }
                 } catch (e) {}
             }
             refreshPositionOccupiedHints();
-            try {
-                var teamEl3 = document.getElementById('registerTeamSelect');
-                if (teamEl3) teamEl3.addEventListener('change', refreshPositionOccupiedHints);
-            } catch (e) {}
+            try { if (teamEl) teamEl.addEventListener('change', refreshPositionOccupiedHints); } catch (e) {}
 
-            var me = currentUser;
-            var defaultPos = (me && me.playingPosition && String(me.playingPosition).trim()) ? String(me.playingPosition).trim() : '';
-            selectEl.value = defaultPos || '';
-            var hasOption = false;
-            for (var k = 0; k < selectEl.options.length; k++) {
-                if (selectEl.options[k].value === defaultPos) { hasOption = true; break; }
-            }
-            if (!hasOption && defaultPos) selectEl.value = '';
+            registerModalActivityId = activityId;
             document.getElementById('registerModalOverlay').classList.add('show');
         }
 
@@ -389,11 +435,25 @@ html += '</div>';
                         var isOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || (activity && activity.createdById && currentUser.id === activity.createdById));
                         var editors = (activity && activity.editorUserIds && Array.isArray(activity.editorUserIds)) ? activity.editorUserIds : [];
                         var isEditor = att.user && att.user.id ? (editors.indexOf(att.user.id) >= 0) : false;
+                        var isManager = isOwner || (currentUser && currentUser.id && editors.indexOf(currentUser.id) >= 0);
+
                         var editorBtn = '';
                         if (isOwner && att.user && att.user.id) {
                             editorBtn = '<button type="button" class="btn btn-ghost btn-xs text-xs px-2 py-1" data-editor-user-id="' + att.user.id + '" data-editor-on="' + (isEditor ? '1' : '0') + '">' + (isEditor ? '取消协管' : '设为协管') + '</button>';
                         }
-                        html += '<li class="flex justify-between items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5"><span class="text-white/90">' + name + '</span><span class="text-white/60 flex-1 text-right">上场位置：' + pos + ' · ' + statusText + '</span>' + editorBtn + '</li>';
+
+                        var adjustBtn = '';
+                        if (isManager && att.user && att.user.id) {
+                            adjustBtn = '<button type="button" class="btn btn-ghost btn-xs text-xs px-2 py-1" data-adjust-user-id="' + att.user.id + '" data-adjust-user-name="' + String(name).replace(/"/g,'&quot;') + '" data-adjust-team-no="' + (att.teamNo == null ? 0 : att.teamNo) + '" data-adjust-position="' + String(att.position || '') .replace(/"/g,'&quot;') + '">调整</button>';
+                        }
+
+                        html += '<li class="flex justify-between items-center gap-2 text-sm py-2 px-3 rounded-lg bg-white/5">'
+                          + '<div class="min-w-0">'
+                          +   '<div class="text-white/90 truncate">' + name + '</div>'
+                          +   '<div class="text-white/60 text-xs mt-0.5">上场位置：' + pos + ' · ' + statusText + '</div>'
+                          + '</div>'
+                          + '<div class="shrink-0 flex items-center gap-1">' + adjustBtn + editorBtn + '</div>'
+                          + '</li>';
                     });
                     html += '</ul>';
                 }
@@ -426,7 +486,7 @@ html += '</div>';
             var regBtn = document.getElementById('activityDetailRegisterBtn');
             if (regBtn) regBtn.addEventListener('click', function() {
                 var aid = regBtn.getAttribute('data-activity-id');
-                if (aid) openRegisterModal(activity);
+                if (aid) openRegisterModal(activity, { mode: 'register' });
             });
 
             // Captain/admin can toggle editors (exception channel)
@@ -448,6 +508,28 @@ html += '</div>';
                             if (r.ok) loadActivity();
                             else r.json().then(function(err){ alert(err.message || '设置失败'); }).catch(function(){ alert('设置失败'); });
                         }).catch(function(){ alert('网络错误'); });
+                    });
+                });
+            } catch (e) {}
+
+            // Managers can adjust team/position for any user
+            try {
+                document.querySelectorAll('[data-adjust-user-id]').forEach(function(btn){
+                    btn.addEventListener('click', function(){
+                        var uid = btn.getAttribute('data-adjust-user-id');
+                        if (!uid) return;
+                        var uname = btn.getAttribute('data-adjust-user-name') || '';
+                        var teamNo = parseInt(btn.getAttribute('data-adjust-team-no') || '0', 10);
+                        if (!Number.isFinite(teamNo) || teamNo < 0) teamNo = 0;
+                        var pos = btn.getAttribute('data-adjust-position') || '';
+
+                        // confirm intent
+                        if (uname) {
+                            var tEl = document.getElementById('registerModalTitle');
+                            if (tEl) tEl.textContent = '调整：' + uname;
+                        }
+
+                        openRegisterModal(activity, { mode: 'adjust-other', userId: uid, prefill: { teamNo: teamNo, position: pos } });
                     });
                 });
             } catch (e) {}

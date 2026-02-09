@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import helmet from 'helmet';
-import compression from 'compression';
+import * as compression from 'compression';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -19,7 +19,7 @@ async function bootstrap() {
   );
 
   // Response compression
-  app.use(compression());
+  app.use((compression as any)());
 
   // 静态资源：从项目根目录的 public 提供（与运行 dist 时的 cwd 一致，避免 __dirname 导致路径错误）
   const publicDir = join(process.cwd(), 'public');
