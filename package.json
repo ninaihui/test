@@ -30,8 +30,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
     "prisma:list-users": "ts-node -r tsconfig-paths/register prisma/list-users.ts",
-    "prisma:reset-users": "ts-node -r tsconfig-paths/register prisma/reset-users.ts",
-    "postinstall": "prisma generate --schema=./prisma/schema.prisma"
+    "prisma:reset-users": "ts-node -r tsconfig-paths/register prisma/reset-users.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
