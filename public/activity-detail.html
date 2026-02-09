@@ -275,7 +275,15 @@
                         var v = (opt.value || '').trim();
                         if (!v) continue;
                         opt.textContent = opt.textContent.replace(/\s*·\s*已有人\s*$/, '');
-                        if (tn2 > 0 && occupied[v]) opt.textContent = opt.textContent + ' · 已有人';
+                        if (tn2 > 0 && occupied[v]) {
+                            opt.textContent = opt.textContent + ' · 已有人';
+                            // Rule B: do not allow selecting occupied position when adjusting
+                            if (registerModalMode === 'adjust-other' || registerModalMode === 'adjust-self') {
+                                opt.disabled = true;
+                            }
+                        } else {
+                            opt.disabled = false;
+                        }
                     }
                 } catch (e) {}
             }
