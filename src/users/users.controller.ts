@@ -59,10 +59,16 @@ export class UsersController {
         },
       }),
       fileFilter: (req, file, cb) => {
-        // Security: block SVG and other scriptable image types
         if (!file.mimetype || !(file.mimetype in ALLOWED_AVATAR_MIME)) {
           return cb(new BadRequestException('只允许上传 jpg/jpeg/png/webp/gif/heic 图片（含苹果手机照片）'), false);
         }
+        const ext = ALLOWED_AVATAR_MIME[file.mimetype];
+        const originalExt = file.originalname.split('.').pop()?.toLowerCase();
+        const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
+        if (originalExt && !allowedExts.includes(originalExt)) {
+          return cb(new BadRequestException('文件扩展名不合法'), false);
+        }
+        if (!ext) return cb(new BadRequestException('不支持的图片格式'), false);
         cb(null, true);
       },
       limits: {
