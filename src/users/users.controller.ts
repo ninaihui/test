@@ -17,6 +17,8 @@ import * as fs from 'fs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -79,5 +81,17 @@ export class UsersController {
   @Patch('me')
   async updateMe(@Request() req, @Body() dto: UpdateMeDto) {
     return this.usersService.updateMe(req.user.sub, dto);
+  }
+
+  /** 用户自己修改密码 */
+  @Post('me/change-password')
+  async changeMyPassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    return this.usersService.changeMyPassword(req.user.sub, dto.oldPassword, dto.newPassword);
+  }
+
+  /** 管理员重置任意用户密码 */
+  @Post('reset-password')
+  async resetPassword(@Request() req, @Body() dto: ResetPasswordDto) {
+    return this.usersService.resetPassword(req.user.role, dto);
   }
 }
