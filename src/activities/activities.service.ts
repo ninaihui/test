@@ -491,7 +491,7 @@ export class ActivitiesService {
     const canEdit = isSystemAdmin || activity.createdById === currentUserId || editors.includes(currentUserId);
     if (!canEdit) throw new ForbiddenException('无权限保存出场位置');
 
-    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 11;
+    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
     if (positions.length > maxParticipants) {
       throw new BadRequestException(`出场人数不能超过活动人数上限（${maxParticipants} 人）`);
     }
