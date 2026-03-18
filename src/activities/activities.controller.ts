@@ -38,9 +38,13 @@ export class ActivitiesController {
   findAll(
     @Request() req,
     @Query('upcoming') upcoming?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     const isUpcoming = upcoming === '1' || upcoming === 'true';
-    return this.activitiesService.findAll(req.user.sub, isUpcoming);
+    const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit || '20', 10) || 20));
+    return this.activitiesService.findAll(req.user.sub, isUpcoming, pageNum, limitNum);
   }
 
   @Get(':id')

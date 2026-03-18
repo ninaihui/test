@@ -97,37 +97,33 @@ export class ActivitiesService {
     return activity;
   }
 
-  async findAll(userId: string, _upcoming?: boolean) {
+  async findAll(userId: string, _upcoming?: boolean, page = 1, limit = 20) {
     const now = new Date();
-    const activities = await this.prisma.activity.findMany({
-      where: { date: { gte: now } },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
+    const skip = (page - 1) * limit;
+
+    const [activities, total] = await Promise.all([
+      this.prisma.activity.findMany({
+        where: { date: { gte: now } },
+        include: {
+          createdBy: {
+            select: { id: true, username: true, email: true },
+          },
+          venue: {
+            select: { id: true, name: true, address: true },
+          },
+          attendances: {
+            select: { status: true, userId: true },
+          },
+          _count: {
+            select: { attendances: true },
           },
         },
-        venue: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-          },
-        },
-        // 轻量带上状态以便前端展示“已报名/候补”计数
-        attendances: {
-          select: { status: true, userId: true },
-        },
-        _count: {
-          select: {
-            attendances: true,
-          },
-        },
-      },
-      orderBy: { date: 'asc' },
-    });
+        orderBy: { date: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.activity.count({ where: { date: { gte: now } } }),
+    ]);
 
     const activityIds = activities.map((a) => a.id);
     const myAttendanceActivityIds = new Set(
@@ -139,7 +135,7 @@ export class ActivitiesService {
       ).map((r) => r.activityId),
     );
 
-    return activities.map((a) => {
+    const data = activities.map((a) => {
       const registeredCount = (a.attendances || []).filter(
         (r) => r.status === 'registered' || r.status === 'present' || r.status === 'late',
       ).length;
@@ -151,6 +147,14 @@ export class ActivitiesService {
         isRegisteredByCurrentUser: myAttendanceActivityIds.has(a.id),
       };
     });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: string, userId: string, userRole?: string) {
