@@ -57,12 +57,15 @@ export class AuthService {
     });
 
     // 生成 JWT token
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-    });
+    const accessToken = this.jwtService.sign(
+      {
+        sub: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      },
+      { expiresIn: '7d' },
+    );
 
     return {
       user,
@@ -119,12 +122,15 @@ export class AuthService {
     }
 
     // 生成 JWT token
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-    });
+    const accessToken = this.jwtService.sign(
+      {
+        sub: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      },
+      { expiresIn: '7d' },
+    );
 
     return {
       user: {

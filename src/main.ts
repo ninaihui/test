@@ -12,8 +12,16 @@ async function bootstrap() {
   // Basic security headers
   app.use(
     helmet({
-      // keep relaxed for MVP static pages; can be tightened later
-      contentSecurityPolicy: false,
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+          imgSrc: ["'self'", 'data:', 'blob:'],
+          connectSrc: ["'self'"],
+        },
+      },
       crossOriginEmbedderPolicy: false,
     }),
   );
@@ -34,8 +42,14 @@ async function bootstrap() {
     }),
   );
 
-  // CORS: allow all by default for MVP; can be restricted with env later
-  app.enableCors();
+  // CORS: 限制允许的来源，通过环境变量配置
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+    : [];
+  app.enableCors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+    credentials: true,
+  });
 
   const port = Number(process.env.PORT) || 3000;
   await app.listen(port, '0.0.0.0');

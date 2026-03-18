@@ -12,12 +12,16 @@ import { RolesGuard } from './roles.guard';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: '7d', // token 有效期 7 天
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET 环境变量未设置');
+        }
+        return {
+          secret,
+          signOptions: { expiresIn: '7d' },
+        };
+      },
       inject: [ConfigService],
     }),
   ],
