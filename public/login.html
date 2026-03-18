@@ -199,7 +199,8 @@
                         } catch (storageErr) {
                             console.warn('localStorage 写入失败', storageErr);
                         }
-                        var goUrl = apiBase + '/dashboard.html';
+                        var role = result.user && result.user.role;
+                        var goUrl = apiBase + (role === 'admin' ? '/admin-dashboard.html' : '/dashboard.html');
                         console.log('登录成功，即将跳转到', goUrl);
                         redirecting = true;
                         btnLogin.textContent = '登录成功，正在跳转…';

@@ -173,6 +173,31 @@ footer a{color:var(--green);text-decoration:none}
   background-size:400% 100%;animation:shimmer 1.5s infinite;border-radius:.8rem;
 }
 @keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* ── PHOTO WALL ── */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem;margin-top:2.5rem}
+.photo-item{aspect-ratio:1;border-radius:1rem;overflow:hidden;position:relative;border:1px solid var(--border);background:var(--card);cursor:pointer}
+.photo-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease,opacity .3s}
+.photo-item:hover img{transform:scale(1.07)}
+.photo-item.skeleton{aspect-ratio:1}
+.photo-empty{text-align:center;padding:3rem;color:var(--muted);grid-column:1/-1}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  .hero-cta{gap:.6rem}
+  .btn-primary,.btn-ghost{padding:.7rem 1.4rem;font-size:.88rem}
+  .section{padding:4rem 1rem}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:1.25rem}
+  .stat-num{font-size:2.2rem}
+  .acts-grid{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .photo-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem}
+}
+@media(max-width:380px){
+  .hero-title{font-size:2.6rem}
+  .features-grid{grid-template-columns:1fr}
+  .photo-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
@@ -268,6 +293,25 @@ footer a{color:var(--green);text-decoration:none}
       <div class="feat-title">球员档案</div>
       <div class="feat-desc">记录每位球员的惯用位置、出勤历史和个人信息</div>
     </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── PHOTO WALL ─── -->
+<section class="section" id="photos">
+  <div class="fade-up">
+    <div class="section-label">精彩瞬间</div>
+    <h2 class="section-title">球队相册</h2>
+    <p class="section-sub">每次活动留下的珍贵记忆</p>
+  </div>
+  <div class="photo-grid fade-up" id="photoGrid">
+    <div class="photo-item skeleton"></div>
+    <div class="photo-item skeleton"></div>
+    <div class="photo-item skeleton"></div>
+    <div class="photo-item skeleton"></div>
+    <div class="photo-item skeleton"></div>
+    <div class="photo-item skeleton"></div>
   </div>
 </section>
 
@@ -459,6 +503,29 @@ async function loadActivities(){
   }
 }
 loadActivities();
+
+// ── LOAD PHOTOS ──
+async function loadPhotos(){
+  const grid = document.getElementById('photoGrid');
+  try{
+    const res = await fetch('/public/photos?limit=12');
+    if(!res.ok) throw new Error();
+    const json = await res.json();
+    const photos = Array.isArray(json) ? json : (json.data || []);
+    if(!photos.length){
+      grid.innerHTML='<div class="photo-empty">暂无照片，活动结束后上传精彩瞬间 📸</div>';
+      return;
+    }
+    grid.innerHTML = photos.map(p=>`
+      <div class="photo-item fade-up">
+        <img src="${p.url}" alt="球队照片" loading="lazy" onerror="this.closest('.photo-item').style.display='none'"/>
+      </div>`).join('');
+    grid.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+  } catch(e){
+    grid.innerHTML='<div class="photo-empty">照片加载失败，请稍后再试</div>';
+  }
+}
+loadPhotos();
 </script>
 </body>
 </html>

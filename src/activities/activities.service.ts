@@ -157,6 +157,25 @@ export class ActivitiesService {
     };
   }
 
+  async findPublic(id: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id },
+      include: {
+        createdBy: { select: { id: true, username: true } },
+        venue: { select: { id: true, name: true, address: true } },
+        attendances: {
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true, playingPosition: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+    if (!activity) throw new NotFoundException('活动不存在');
+    const maxParticipants = activity.maxParticipants != null && activity.maxParticipants >= 1 ? activity.maxParticipants : 14;
+    return { ...activity, canEdit: false, canLineup: maxParticipants >= 8 } as any;
+  }
+
   async findOne(id: string, userId: string, userRole?: string) {
     const activity = await this.prisma.activity.findUnique({
       where: { id },

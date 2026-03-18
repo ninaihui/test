@@ -23,6 +23,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
+/** 无需登录的公开活动接口 */
+@Controller('activities')
+export class ActivitiesPublicController {
+  constructor(private readonly activitiesService: ActivitiesService) {}
+
+  @Get('public/:id')
+  findPublic(@Param('id') id: string) {
+    return this.activitiesService.findPublic(id);
+  }
+}
+
 @Controller('activities')
 @UseGuards(JwtAuthGuard)
 export class ActivitiesController {
