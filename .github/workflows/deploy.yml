@@ -19,7 +19,7 @@ jobs:
           host: 47.237.69.93
           username: root
           key: ${{ secrets.ECS_SSH_KEY }}
-          command_timeout: 30m
+          command_timeout: 60m
           script: |
             set -e
             cd /opt/test
@@ -51,9 +51,9 @@ jobs:
               fi
             else
               echo "🔨 代码变更，重新构建镜像（使用缓存加速）..."
+              docker buildx rm 2>/dev/null || true
               DOCKER_BUILDKIT=1 docker compose -f docker-compose.prod.yml build api
               docker compose -f docker-compose.prod.yml up -d
-
               echo "🧹 清理旧镜像..."
               docker image prune -f
             fi
