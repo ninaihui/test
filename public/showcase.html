@@ -1,159 +1,464 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>展示 - footballgo.club</title>
-  <link rel="stylesheet" href="/assets/app.css?v=20260206-2" />
-  <style>
-    body { margin: 0; min-height: 100vh; color: #e2e8f0; box-sizing: border-box;
-      background: radial-gradient(1200px 800px at 20% 0%, rgba(56,189,248,.18), transparent 55%),
-                  radial-gradient(900px 700px at 80% 10%, rgba(34,197,94,.14), transparent 55%),
-                  linear-gradient(180deg, rgba(0,8,24,.66) 0%, rgba(0,4,16,.80) 100%),
-                  url('/assets/login-bg.jpg') no-repeat center center fixed;
-      background-size: cover; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootballGo · 业余足球队</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#22c55e;--green-dim:rgba(34,197,94,.15);
+  --gold:#f59e0b;--gold-dim:rgba(245,158,11,.12);
+  --white:rgba(255,255,255,.92);--muted:rgba(255,255,255,.45);
+  --card:rgba(255,255,255,.045);--border:rgba(255,255,255,.09);
+  --font:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);background:#050a0f;color:var(--white);
+  min-height:100vh;overflow-x:hidden;
+}
 
-    .glass { background: rgba(0,0,0,.18); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.12); }
+/* ── CANVAS HERO ── */
+#hero{
+  position:relative;height:100vh;min-height:560px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+#hero canvas{position:absolute;inset:0;width:100%;height:100%}
+.hero-glow{
+  position:absolute;width:900px;height:900px;border-radius:50%;
+  background:radial-gradient(circle,rgba(34,197,94,.12) 0%,transparent 70%);
+  pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.hero-content{
+  position:relative;z-index:2;text-align:center;padding:0 1.5rem;
+  display:flex;flex-direction:column;align-items:center;gap:1.4rem;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.35rem .9rem;border-radius:999px;
+  background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);
+  font-size:.78rem;font-weight:700;color:var(--green);letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.hero-title{
+  font-size:clamp(3rem,8vw,6rem);font-weight:900;letter-spacing:-.03em;line-height:1;
+  background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,.7) 50%,var(--green) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  font-size:clamp(.95rem,2vw,1.2rem);color:var(--muted);max-width:520px;line-height:1.6;
+}
+.hero-cta{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.8rem 2rem;border-radius:999px;
+  background:linear-gradient(135deg,var(--green),#16a34a);
+  color:#fff;font-weight:700;font-size:.95rem;text-decoration:none;
+  box-shadow:0 0 32px rgba(34,197,94,.35);
+  transition:transform .2s,box-shadow .2s;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 48px rgba(34,197,94,.5)}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.8rem 2rem;border-radius:999px;
+  border:1px solid var(--border);background:var(--card);
+  color:var(--white);font-weight:600;font-size:.95rem;text-decoration:none;
+  backdrop-filter:blur(8px);transition:border-color .2s,background .2s;
+}
+.btn-ghost:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07)}
+.hero-scroll{
+  position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  color:var(--muted);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;
+}
+.scroll-line{width:1px;height:48px;background:linear-gradient(to bottom,transparent,var(--muted));animation:scrollLine 2s ease-in-out infinite}
+@keyframes scrollLine{0%,100%{opacity:.3;transform:scaleY(.5)}50%{opacity:1;transform:scaleY(1)}}
 
-    .hero { position: relative; overflow: hidden; border-radius: 1.25rem; padding: 1.25rem; }
-    .hero:before { content:''; position:absolute; inset:-2px; background: radial-gradient(700px 400px at 20% 10%, rgba(59,130,246,.22), transparent 55%),
-                                                radial-gradient(700px 400px at 90% 0%, rgba(168,85,247,.18), transparent 55%);
-      pointer-events:none; }
-    .hero-inner { position: relative; z-index: 1; display:flex; flex-direction:column; gap: .65rem; }
-    .hero-title { font-size: 1.55rem; font-weight: 950; color: #fff; letter-spacing: .2px; }
-    .hero-sub { color: rgba(255,255,255,.70); font-size: .95rem; line-height: 1.4; }
+/* ── LAYOUT ── */
+.section{padding:6rem 1.5rem;max-width:1200px;margin:0 auto}
+.section-label{
+  display:inline-flex;align-items:center;gap:.5rem;margin-bottom:1rem;
+  font-size:.75rem;font-weight:700;color:var(--green);letter-spacing:.12em;text-transform:uppercase;
+}
+.section-label::before{content:'';width:20px;height:2px;background:var(--green)}
+.section-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-.02em;line-height:1.1;margin-bottom:.6rem}
+.section-sub{color:var(--muted);font-size:1rem;line-height:1.6;max-width:480px}
 
-    .btn-soft { padding: .55rem .8rem; border-radius: 999px; background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12); color:#fff; text-decoration:none; font-weight:850; font-size:.88rem; }
-    .btn-soft:hover { background: rgba(255,255,255,.14); }
+/* ── STATS ── */
+.stats-section{background:linear-gradient(135deg,rgba(34,197,94,.06),rgba(245,158,11,.04));border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:4rem 1.5rem}
+.stats-grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:2rem;text-align:center}
+.stat-num{font-size:3rem;font-weight:900;letter-spacing:-.04em;line-height:1;background:linear-gradient(135deg,#fff,var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{margin-top:.4rem;font-size:.85rem;color:var(--muted);font-weight:500}
 
-    .grid { display:grid; grid-template-columns: 1fr; gap: 1rem; }
-    @media (min-width: 900px){ .grid { grid-template-columns: 1.2fr .8fr; } }
+/* ── ACTIVITIES ── */
+.acts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;margin-top:2.5rem}
+.act-card{
+  padding:1.4rem;border-radius:1.2rem;border:1px solid var(--border);
+  background:var(--card);backdrop-filter:blur(12px);
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+  cursor:default;
+}
+.act-card:hover{border-color:rgba(34,197,94,.3);transform:translateY(-4px);box-shadow:0 20px 48px rgba(0,0,0,.4)}
+.act-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.act-date{
+  flex-shrink:0;width:48px;text-align:center;
+  background:var(--green-dim);border:1px solid rgba(34,197,94,.25);border-radius:.7rem;padding:.4rem .2rem;
+}
+.act-date .month{font-size:.65rem;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.act-date .day{font-size:1.5rem;font-weight:900;line-height:1;color:#fff}
+.act-status{
+  padding:.25rem .6rem;border-radius:999px;font-size:.72rem;font-weight:700;
+}
+.act-status.open{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.act-status.full{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.act-name{font-size:1.1rem;font-weight:700;color:#fff;line-height:1.3;margin-bottom:.4rem}
+.act-meta{display:flex;flex-direction:column;gap:.3rem}
+.act-meta-row{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--muted)}
+.act-meta-row svg{flex-shrink:0;opacity:.6}
+.act-footer{
+  margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.act-spots{font-size:.8rem;color:var(--muted)}
+.act-spots b{color:var(--white)}
+.progress-bar{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:999px;margin-top:.4rem;overflow:hidden}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),#16a34a);transition:width .6s ease}
+.act-join{
+  padding:.4rem .9rem;border-radius:999px;font-size:.78rem;font-weight:700;
+  background:linear-gradient(135deg,var(--green),#16a34a);color:#fff;text-decoration:none;
+  transition:opacity .2s;
+}
+.act-join:hover{opacity:.85}
+.acts-empty{text-align:center;padding:3rem;color:var(--muted)}
 
-    .section-title { font-size: .9rem; font-weight: 900; color: rgba(255,255,255,.85); margin: 0 0 .6rem; }
+/* ── FEATURES ── */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.25rem;margin-top:2.5rem}
+.feat-card{
+  padding:1.6rem;border-radius:1.2rem;border:1px solid var(--border);
+  background:var(--card);backdrop-filter:blur(8px);
+  transition:border-color .2s,transform .2s;
+}
+.feat-card:hover{border-color:var(--border);transform:translateY(-2px)}
+.feat-icon{
+  width:44px;height:44px;border-radius:.8rem;display:flex;align-items:center;justify-content:center;
+  margin-bottom:1rem;font-size:1.4rem;
+}
+.feat-icon.green{background:var(--green-dim);border:1px solid rgba(34,197,94,.2)}
+.feat-icon.gold{background:var(--gold-dim);border:1px solid rgba(245,158,11,.2)}
+.feat-icon.blue{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2)}
+.feat-icon.purple{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2)}
+.feat-title{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.feat-desc{font-size:.85rem;color:var(--muted);line-height:1.6}
 
-    .gallery { border-radius: 1.25rem; overflow:hidden; }
-    .masonry { columns: 2; column-gap: .75rem; padding: .75rem; }
-    @media (min-width: 900px){ .masonry { columns: 3; } }
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);padding:2.5rem 1.5rem;
+  text-align:center;color:var(--muted);font-size:.85rem;
+}
+footer a{color:var(--green);text-decoration:none}
 
-    .photo { break-inside: avoid; margin: 0 0 .75rem; border-radius: 1rem; overflow:hidden;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.22);
-    }
-    .ph { width:100%; aspect-ratio: 4/3; display:block;
-      background:
-        radial-gradient(600px 280px at 20% 10%, rgba(34,197,94,.25), transparent 55%),
-        radial-gradient(540px 260px at 80% 0%, rgba(59,130,246,.25), transparent 55%),
-        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-    }
-    .photo .meta { padding: .55rem .7rem; font-size: .78rem; color: rgba(255,255,255,.65); display:flex; justify-content:space-between; gap:.5rem; }
+/* ── ENTRANCE ANIMATIONS ── */
+.fade-up{opacity:0;transform:translateY(32px);transition:opacity .6s ease,transform .6s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
 
-    .card { padding: .9rem; border-radius: 1.1rem; border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.20); }
-    .activity { display:flex; gap:.75rem; align-items:flex-start; justify-content:space-between; }
-    .activity .name { font-weight: 950; color:#fff; }
-    .activity .meta { font-size: .82rem; color: rgba(255,255,255,.68); margin-top: .15rem; }
+/* ── DIVIDER ── */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0}
 
-    .tag { display:inline-flex; align-items:center; gap:.35rem; padding:.2rem .55rem; border-radius:999px;
-      border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.08); color: rgba(255,255,255,.78);
-      font-size:.75rem; font-weight:850;
-    }
-  </style>
+/* ── LOADING ── */
+.skeleton{
+  background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);
+  background-size:400% 100%;animation:shimmer 1.5s infinite;border-radius:.8rem;
+}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+</style>
 </head>
-<body class="min-h-screen">
-  <div class="max-w-6xl mx-auto px-4 py-6">
+<body>
 
-    <section class="glass hero">
-      <div class="hero-inner">
-        <div class="hero-title">footballgo.club</div>
-        <div class="hero-sub">球队展示页（公开）｜照片墙 + 近期活动（先静态占位，后续再接真实数据）</div>
-        <div class="flex items-center gap-2 flex-wrap mt-1">
-          <a class="btn btn-primary btn-sm" href="/activities.html" style="border-radius:999px; padding:.62rem .95rem; font-weight:950;">查看活动</a>
-          <a class="btn-soft" href="/login.html">登录</a>
-          <span class="tag">公开</span>
-        </div>
-      </div>
-    </section>
-
-    <div class="grid mt-4">
-      <section class="glass gallery">
-        <div class="p-4 pb-0 flex items-end justify-between gap-3 flex-wrap">
-          <h2 class="section-title">照片墙</h2>
-          <div class="text-white/60 text-xs">占位图：下一步接入真实照片</div>
-        </div>
-        <div class="masonry" id="masonry">
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/1.jpg" alt="训练" /><div class="meta"><span>训练</span><span>样图</span></div></div>
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/6.jpg" alt="比赛" /><div class="meta"><span>比赛</span><span>样图</span></div></div>
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/2.jpg" alt="团队" /><div class="meta"><span>团队</span><span>样图</span></div></div>
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/8.jpg" alt="周末" /><div class="meta"><span>周末</span><span>样图</span></div></div>
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/7.jpg" alt="草坪" /><div class="meta"><span>草坪</span><span>样图</span></div></div>
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/5.jpg" alt="装备" /><div class="meta"><span>装备</span><span>样图</span></div></div>
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/3.jpg" alt="活动" /><div class="meta"><span>活动</span><span>样图</span></div></div>
-          <div class="photo"><img loading="lazy" decoding="async" src="/assets/showcase/4.jpg" alt="球场" /><div class="meta"><span>球场</span><span>样图</span></div></div>
-        </div>
-        <div class="px-4 pb-4 text-white/45 text-[11px] leading-snug">
-          图片来源：临时样图（本地托管）。下一步可替换成队内照片或精选图库。
-        </div>
-      </section>
-
-      <aside class="glass" style="border-radius:1.25rem; padding:1rem;">
-        <h2 class="section-title">近期活动</h2>
-        <div class="space-y-3">
-          <div class="card activity">
-            <div>
-              <div class="name">周末踢球</div>
-              <div class="meta">某某球场 · 2月x号 19:00</div>
-            </div>
-            <a class="btn-soft" href="/activities.html">查看</a>
-          </div>
-          <div class="card activity">
-            <div>
-              <div class="name">训练日</div>
-              <div class="meta">某某公园 · 2月x号 19:00</div>
-            </div>
-            <a class="btn-soft" href="/activities.html">查看</a>
-          </div>
-          <div class="text-white/50 text-xs">说明：这一步先静态展示。你确认 UI 风格后，下一步我再做“自动读取近期活动”。</div>
-        </div>
-      </aside>
-    </div>
-
-  </div>
-
-  <!-- Sticky CTA (mobile) -->
-  <div id="stickyCtaWrap" style="position: fixed; left: 0; right: 0; bottom: 0; padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom)); z-index: 50; pointer-events: none; transition: transform .22s ease, opacity .22s ease; will-change: transform, opacity;">
-    <div style="max-width: 980px; margin: 0 auto; display:flex; justify-content:center;">
-      <a href="/activities.html" class="btn btn-primary" style="pointer-events:auto; width: min(520px, 100%); border-radius: 999px; padding: 0.9rem 1rem; font-weight: 950; box-shadow: 0 18px 44px rgba(0,0,0,.45);">查看活动报名</a>
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <canvas id="c"></canvas>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-badge">⚽ 业余足球俱乐部</div>
+    <h1 class="hero-title">FootballGo</h1>
+    <p class="hero-sub">我们踢球，我们连接。每周定期活动，欢迎加入这个热爱足球的团队。</p>
+    <div class="hero-cta">
+      <a href="/login.html" class="btn-primary">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 3h6v18h-6M10 17l5-5-5-5M3 12h12"/></svg>
+        立即加入
+      </a>
+      <a href="#activities" class="btn-ghost">查看活动</a>
     </div>
   </div>
+  <div class="hero-scroll">
+    <span>向下滚动</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
 
-  <script>
-    // Hide sticky CTA when user scrolls down; show when scrolls up (mobile-friendly)
-    (function(){
-      var wrap = document.getElementById('stickyCtaWrap');
-      if (!wrap) return;
-      var lastY = window.scrollY || 0;
-      var hidden = false;
-      function setHidden(h){
-        if (hidden === h) return;
-        hidden = h;
-        wrap.style.opacity = h ? '0' : '1';
-        wrap.style.transform = h ? 'translateY(18px)' : 'translateY(0)';
+<!-- ─── STATS ─── -->
+<div class="stats-section">
+  <div class="stats-grid">
+    <div class="fade-up">
+      <div class="stat-num" data-target="200">0</div>
+      <div class="stat-label">累计活动场次</div>
+    </div>
+    <div class="fade-up">
+      <div class="stat-num" data-target="80">0</div>
+      <div class="stat-label">注册球员</div>
+    </div>
+    <div class="fade-up">
+      <div class="stat-num" data-target="3">0</div>
+      <div class="stat-label">合作球场</div>
+    </div>
+    <div class="fade-up">
+      <div class="stat-num" data-target="98">0</div>
+      <div class="stat-label">好评率 %</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ─── ACTIVITIES ─── -->
+<section class="section" id="activities">
+  <div class="fade-up">
+    <div class="section-label">近期活动</div>
+    <h2 class="section-title">即将开始的活动</h2>
+    <p class="section-sub">每周定期举办，登录后即可一键报名</p>
+  </div>
+  <div class="acts-grid fade-up" id="actsGrid">
+    <!-- skeleton -->
+    <div style="height:200px" class="skeleton act-card"></div>
+    <div style="height:200px" class="skeleton act-card"></div>
+    <div style="height:200px" class="skeleton act-card"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── FEATURES ─── -->
+<section class="section">
+  <div class="fade-up">
+    <div class="section-label">平台功能</div>
+    <h2 class="section-title">专为业余球队打造</h2>
+    <p class="section-sub">从报名到战术板，一站式球队管理</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card fade-up">
+      <div class="feat-icon green">📅</div>
+      <div class="feat-title">活动管理</div>
+      <div class="feat-desc">队长创建活动，队员一键报名，自动维护候补队列</div>
+    </div>
+    <div class="feat-card fade-up">
+      <div class="feat-icon gold">⚔️</div>
+      <div class="feat-title">战术板</div>
+      <div class="feat-desc">可视化阵型布置，拖拽排兵布阵，支持多队对阵</div>
+    </div>
+    <div class="feat-card fade-up">
+      <div class="feat-icon blue">📸</div>
+      <div class="feat-title">照片记录</div>
+      <div class="feat-desc">每次活动的精彩瞬间，永久保存在球队相册</div>
+    </div>
+    <div class="feat-card fade-up">
+      <div class="feat-icon purple">👤</div>
+      <div class="feat-title">球员档案</div>
+      <div class="feat-desc">记录每位球员的惯用位置、出勤历史和个人信息</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <p>© 2026 FootballGo · <a href="/login.html">登录管理后台</a></p>
+</footer>
+
+<script>
+// ── CANVAS PARTICLE FIELD ──
+(function(){
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  let W, H, pts = [], lines = [];
+  const N = 60;
+
+  function resize(){
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for(let i=0;i<N;i++) pts.push({
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()-.5)*.4, vy: (Math.random()-.5)*.4,
+    r: Math.random()*1.5+.5
+  });
+
+  // draw football field lines in background
+  function drawField(){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(34,197,94,.06)';
+    ctx.lineWidth = 1;
+    // center circle
+    ctx.beginPath();
+    ctx.arc(W/2, H/2, Math.min(W,H)*.18, 0, Math.PI*2);
+    ctx.stroke();
+    // center line
+    ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+    // penalty boxes
+    const bw = W*.25, bh = H*.35;
+    ctx.strokeRect(0, H/2-bh/2, bw, bh);
+    ctx.strokeRect(W-bw, H/2-bh/2, bw, bh);
+    ctx.restore();
+  }
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    drawField();
+    // update
+    for(const p of pts){
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>W) p.vx*=-1;
+      if(p.y<0||p.y>H) p.vy*=-1;
+    }
+    // connections
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x,pts[i].y);
+          ctx.lineTo(pts[j].x,pts[j].y);
+          ctx.strokeStyle=`rgba(34,197,94,${(.12*(1-d/120)).toFixed(3)})`;
+          ctx.lineWidth=.6;
+          ctx.stroke();
+        }
       }
-      var ticking = false;
-      window.addEventListener('scroll', function(){
-        if (ticking) return;
-        ticking = true;
-        requestAnimationFrame(function(){
-          var y = window.scrollY || 0;
-          var dy = y - lastY;
-          // near top: always show
-          if (y < 40) setHidden(false);
-          else if (dy > 6) setHidden(true);
-          else if (dy < -6) setHidden(false);
-          lastY = y;
-          ticking = false;
-        });
-      }, { passive: true });
-    })();
-  </script>
+    }
+    // dots
+    for(const p of pts){
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(34,197,94,.5)';
+      ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ── INTERSECTION OBSERVER (fade-up) ──
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:.1});
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+
+// ── STATS COUNTER ──
+function animateCount(el, target){
+  let start=0, dur=1800, startTime=null;
+  function step(ts){
+    if(!startTime) startTime=ts;
+    const p=Math.min((ts-startTime)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    el.textContent=Math.round(ease*target);
+    if(p<1) requestAnimationFrame(step);
+    else el.textContent=target;
+  }
+  requestAnimationFrame(step);
+}
+const statObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const t=parseInt(e.target.dataset.target);
+      animateCount(e.target,t);
+      statObs.unobserve(e.target);
+    }
+  });
+},{threshold:.5});
+document.querySelectorAll('[data-target]').forEach(el=>statObs.observe(el));
+
+// ── LOAD ACTIVITIES ──
+async function loadActivities(){
+  const grid = document.getElementById('actsGrid');
+  try{
+    const res = await fetch('/activities', {
+      headers:{'Authorization':'Bearer ' + (localStorage.getItem('authToken')||sessionStorage.getItem('authToken')||'')}
+    });
+    if(!res.ok) throw new Error('need login');
+    const json = await res.json();
+    const acts = (json.data || json).slice(0,6);
+    if(!acts.length){ grid.innerHTML='<div class="acts-empty">暂无近期活动，敬请期待</div>'; return; }
+    grid.innerHTML = acts.map(a=>{
+      const d = new Date(a.date);
+      const month = d.toLocaleDateString('zh-CN',{month:'short'}).replace('月','');
+      const day = d.getDate();
+      const time = d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+      const reg = a.registeredCount||0;
+      const max = a.maxParticipants||14;
+      const pct = Math.min(100,Math.round(reg/max*100));
+      const full = reg>=max;
+      const venue = a.venue?.name || a.location || '待定';
+      return `
+      <div class="act-card fade-up">
+        <div class="act-header">
+          <div class="act-date">
+            <div class="month">${month}</div>
+            <div class="day">${day}</div>
+          </div>
+          <div class="act-status ${full?'full':'open'}">${full?'已满':'报名中'}</div>
+        </div>
+        <div class="act-name">${a.name}</div>
+        <div class="act-meta">
+          <div class="act-meta-row">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            ${time}
+          </div>
+          <div class="act-meta-row">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${venue}
+          </div>
+        </div>
+        <div class="act-footer">
+          <div class="act-spots">
+            <div><b>${reg}</b> / ${max} 人</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <a class="act-join" href="/login.html">报名</a>
+        </div>
+      </div>`;
+    }).join('');
+    // re-observe new elements
+    grid.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+  } catch(e){
+    // show placeholder cards if not logged in
+    grid.innerHTML = `
+      <div class="act-card fade-up">
+        <div class="act-header"><div class="act-date"><div class="month">活动</div><div class="day">∞</div></div><div class="act-status open">报名中</div></div>
+        <div class="act-name">周末踢球</div>
+        <div class="act-meta"><div class="act-meta-row"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>每周六 19:00</div></div>
+        <div class="act-footer"><div class="act-spots"><div>登录后查看详情</div></div><a class="act-join" href="/login.html">登录</a></div>
+      </div>
+      <div class="act-card fade-up">
+        <div class="act-header"><div class="act-date"><div class="month">训练</div><div class="day">∞</div></div><div class="act-status open">报名中</div></div>
+        <div class="act-name">技术训练日</div>
+        <div class="act-meta"><div class="act-meta-row"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>每周三 19:30</div></div>
+        <div class="act-footer"><div class="act-spots"><div>登录后查看详情</div></div><a class="act-join" href="/login.html">登录</a></div>
+      </div>
+      <div class="act-card fade-up">
+        <div class="act-header"><div class="act-date"><div class="month">对抗</div><div class="day">∞</div></div><div class="act-status open">报名中</div></div>
+        <div class="act-name">5v5 对抗赛</div>
+        <div class="act-meta"><div class="act-meta-row"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>不定期举办</div></div>
+        <div class="act-footer"><div class="act-spots"><div>登录后查看详情</div></div><a class="act-join" href="/login.html">登录</a></div>
+      </div>
+    `;
+    grid.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+  }
+}
+loadActivities();
+</script>
 </body>
 </html>
