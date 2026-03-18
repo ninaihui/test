@@ -19,6 +19,7 @@ jobs:
           host: 47.237.69.93
           username: root
           key: ${{ secrets.ECS_SSH_KEY }}
+          command_timeout: 30m
           script: |
             set -e
             cd /opt/test
