@@ -15,7 +15,33 @@ import { normalizeEditorUserIds } from './activities.editors';
 export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, userRole: string | undefined, createActivityDto: CreateActivityDto) {
+  /** 公开活动列表（无需登录，展示页用） */
+  async findAllPublic(limit = 6) {
+    const now = new Date();
+    const activities = await this.prisma.activity.findMany({
+      where: { date: { gte: now } },
+      include: {
+        venue: { select: { id: true, name: true, address: true } },
+        attendances: {
+          where: { status: { in: ['registered', 'present', 'late'] } },
+          select: { status: true },
+        },
+      },
+      orderBy: { date: 'asc' },
+      take: limit,
+    });
+    return activities.map(a => ({
+      id: a.id,
+      name: a.name,
+      date: a.date,
+      location: a.location,
+      venue: a.venue,
+      maxParticipants: a.maxParticipants ?? 14,
+      registeredCount: a.attendances.length,
+    }));
+  }
+
+    async create(userId: string, userRole: string | undefined, createActivityDto: CreateActivityDto) {
     // Permission: system admin OR captain
     const isSystemAdmin = userRole === 'admin' || userRole === 'super_admin';
     if (!isSystemAdmin) {
