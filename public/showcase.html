@@ -114,6 +114,7 @@ body{
 }
 .act-status.open{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,.25)}
 .act-status.full{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.act-status.expired{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1)}
 .act-name{font-size:1.1rem;font-weight:700;color:#fff;line-height:1.3;margin-bottom:.4rem}
 .act-meta{display:flex;flex-direction:column;gap:.3rem}
 .act-meta-row{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--muted)}
@@ -427,59 +428,46 @@ document.querySelectorAll('[data-target]').forEach(el=>statObs.observe(el));
 
 // ── LOAD ACTIVITIES ──
 async function loadActivities(){
-  const grid = document.getElementById('actsGrid');
-  try{
-    const res = await fetch('/activities', {
-      headers:{'Authorization':'Bearer ' + (localStorage.getItem('authToken')||sessionStorage.getItem('authToken')||'')}
-    });
-    if(!res.ok) throw new Error('need login');
-    const json = await res.json();
-    const acts = (json.data || json).slice(0,6);
-    if(!acts.length){ grid.innerHTML='<div class="acts-empty">暂无近期活动，敬请期待</div>'; return; }
-    grid.innerHTML = acts.map(a=>{
-      const d = new Date(a.date);
-      const month = d.toLocaleDateString('zh-CN',{month:'short'}).replace('月','');
-      const day = d.getDate();
-      const time = d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-      const reg = a.registeredCount||0;
-      const max = a.maxParticipants||14;
-      const pct = Math.min(100,Math.round(reg/max*100));
-      const full = reg>=max;
-      const venue = a.venue?.name || a.location || '待定';
-      return `
-      <div class="act-card fade-up">
-        <div class="act-header">
-          <div class="act-date">
-            <div class="month">${month}</div>
-            <div class="day">${day}</div>
+    const grid = document.getElementById('actsGrid');
+    try{
+      const res = await fetch('/activities/public?limit=6');
+      if(!res.ok) throw new Error('fail');
+      const acts = await res.json();
+      if(!acts.length){ grid.innerHTML='<div class="acts-empty">暂无近期活动，敬请期待</div>'; return; }
+      grid.innerHTML = acts.map(a=>{
+        const d = new Date(a.date);
+        const month = d.toLocaleDateString('zh-CN',{month:'short'}).replace('月','');
+        const day = d.getDate();
+        const time = d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+        const reg = a.registeredCount||0;
+        const max = a.maxParticipants||14;
+        const pct = Math.min(100,Math.round(reg/max*100));
+        const full = reg>=max;
+        const venue = a.venue?.name || a.location || '待定';
+        const now = new Date();
+        const isExpired = d < now;
+        const statusClass = isExpired ? 'expired' : (full ? 'full' : 'open');
+        const statusText = isExpired ? '已结束' : (full ? '已满' : '报名中');
+        return `
+        <div class="act-card fade-up">
+          <div class="act-header">
+            <div class="act-date"><div class="month">${month}</div><div class="day">${day}</div></div>
+            <div class="act-status ${statusClass}">${statusText}</div>
           </div>
-          <div class="act-status ${full?'full':'open'}">${full?'已满':'报名中'}</div>
-        </div>
-        <div class="act-name">${a.name}</div>
-        <div class="act-meta">
-          <div class="act-meta-row">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            ${time}
+          <div class="act-name">${a.name}</div>
+          <div class="act-meta">
+            <div class="act-meta-row"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>${time}</div>
+            <div class="act-meta-row"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${venue}</div>
           </div>
-          <div class="act-meta-row">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            ${venue}
+          <div class="act-footer">
+            <div class="act-spots"><div><b>${reg}</b> / ${max} 人</div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+            ${isExpired ? '<span class="act-join" style="opacity:.5;pointer-events:none">已结束</span>' : '<a class="act-join" href="/login.html">报名</a>'}
           </div>
-        </div>
-        <div class="act-footer">
-          <div class="act-spots">
-            <div><b>${reg}</b> / ${max} 人</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-          </div>
-          <a class="act-join" href="/login.html">报名</a>
-        </div>
-      </div>`;
-    }).join('');
-    // re-observe new elements
-    grid.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
-  } catch(e){
-    // show placeholder cards if not logged in
-    grid.innerHTML = `
+        </div>`;
+      }).join('');
+      grid.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+    } catch(e){
+      grid.innerHTML = `
       <div class="act-card fade-up">
         <div class="act-header"><div class="act-date"><div class="month">活动</div><div class="day">∞</div></div><div class="act-status open">报名中</div></div>
         <div class="act-name">周末踢球</div>
@@ -491,18 +479,12 @@ async function loadActivities(){
         <div class="act-name">技术训练日</div>
         <div class="act-meta"><div class="act-meta-row"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>每周三 19:30</div></div>
         <div class="act-footer"><div class="act-spots"><div>登录后查看详情</div></div><a class="act-join" href="/login.html">登录</a></div>
-      </div>
-      <div class="act-card fade-up">
-        <div class="act-header"><div class="act-date"><div class="month">对抗</div><div class="day">∞</div></div><div class="act-status open">报名中</div></div>
-        <div class="act-name">5v5 对抗赛</div>
-        <div class="act-meta"><div class="act-meta-row"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>不定期举办</div></div>
-        <div class="act-footer"><div class="act-spots"><div>登录后查看详情</div></div><a class="act-join" href="/login.html">登录</a></div>
-      </div>
-    `;
-    grid.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+      </div>`;
+      grid.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+    }
   }
-}
-loadActivities();
+  
+  loadActivities();
 
 // ── LOAD PHOTOS ──
 async function loadPhotos(){
