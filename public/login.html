@@ -16,12 +16,9 @@
         justify-content: center;
         padding: 1rem 1.25rem 2.5rem;
         box-sizing: border-box;
-        background: linear-gradient(180deg, rgba(0,8,24,.55) 0%, rgba(0,4,16,.72) 100%),
-          url('/assets/login-bg.jpg') no-repeat center center fixed;
-        background-size: cover;
-        -webkit-background-size: cover;
-        -moz-background-size: cover;
-        -o-background-size: cover;
+        background:
+              radial-gradient(600px 400px at 50% 20%, rgba(34,197,94,.08), transparent 60%),
+              linear-gradient(180deg, #050a0f 0%, #0a1628 100%);
       }
       .login-box {
         background: rgba(0,0,0,.18);
@@ -67,6 +64,10 @@
 <body class="min-h-screen flex items-center justify-center px-4 py-10 text-slate-100 safe-bottom">
     <a href="/register.html" class="top-nav-login" aria-label="注册">注册</a>
     <div class="w-full max-w-md">
+        <div class="text-center mb-4">
+          <h1 style="font-size:2rem;font-weight:900;letter-spacing:-.03em;background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,.7) 50%,#22c55e 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">FootballGo</h1>
+          <p style="color:rgba(255,255,255,.45);font-size:.85rem;margin-top:.3rem;">业余足球队管理系统</p>
+        </div>
         <div class="login-box">
 
             <form id="loginForm" class="space-y-4">
