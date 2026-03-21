@@ -28,6 +28,13 @@ import { Roles } from '../auth/roles.decorator';
 export class ActivitiesPublicController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
+  /** 无需登录的公开活动列表（展示页用） */
+  @Get('public')
+  findAllPublic(@Query('limit') limit?: string) {
+    const limitNum = Math.min(10, Math.max(1, parseInt(limit || '6', 10) || 6));
+    return this.activitiesService.findAllPublic(limitNum);
+  }
+
   @Get('public/:id')
   findPublic(@Param('id') id: string) {
     return this.activitiesService.findPublic(id);
