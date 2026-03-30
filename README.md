@@ -1,5 +1,7 @@
 # 业余球队管理系统后端 API
 
+> Deployed via GitHub Actions CI/CD Pipeline
+
 ## 技术栈
 
 - Node.js 20
