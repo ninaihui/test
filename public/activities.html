@@ -332,7 +332,9 @@
                 document.getElementById('activityMapLink').textContent = '在 Google 地图中选位置';
                 document.getElementById('activityMapWrap').style.display = 'none';
             }
-            document.getElementById('activityModal').classList.remove('hidden');
+            var modal = document.getElementById('activityModal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
         }
 
         // Update default team count + names when maxParticipants changes (only when teamCount is empty)
@@ -373,7 +375,9 @@
         });
 
         function closeActivityModal() {
-            document.getElementById('activityModal').classList.add('hidden');
+            var modal = document.getElementById('activityModal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
         }
 
         document.getElementById('activityForm').addEventListener('submit', async function(e) {
@@ -1150,9 +1154,49 @@ html += '</div>';
             }
         }
 
-        (function initActivityPage() {
+        /** 从服务端获取真实用户信息，修复 localStorage 缺失/过期导致按钮不显示的问题 */
+        async function ensureCurrentUser() {
+            try {
+                var res = await fetch('/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                if (res.status === 401) {
+                    if (window.Auth && Auth.redirectToLogin) Auth.redirectToLogin('token 失效');
+                    else window.location.href = '/login.html';
+                    return;
+                }
+                var user = await res.json();
+                if (user && user.id) {
+                    currentUser = user;
+                    try { localStorage.setItem('user', JSON.stringify(user)); } catch (e) {}
+                }
+            } catch (e) {
+                console.warn('ensureCurrentUser 失败', e);
+            }
+            // 不论成功与否，刷新按钮可见性
             var createWrap = document.getElementById('createActivityWrap');
             if (createWrap) createWrap.classList.toggle('hidden', !canCreateActivity());
+        }
+
+        (function initActivityPage() {
+            // 先用 localStorage 快速判断（避免闪烁）
+            var createWrap = document.getElementById('createActivityWrap');
+            if (createWrap) createWrap.classList.toggle('hidden', !canCreateActivity());
+            // 再从服务端确认真实角色
+            ensureCurrentUser();
+        })();
+
+        // 安全兜底：为创建按钮绑定 addEventListener（防止 onclick 属性丢失）
+        (function bindCreateBtn() {
+            var wrap = document.getElementById('createActivityWrap');
+            if (!wrap) return;
+            var btn = wrap.querySelector('button');
+            if (btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showCreateActivityModal();
+                });
+            }
         })();
 
         (function setBottomNavActive(){
